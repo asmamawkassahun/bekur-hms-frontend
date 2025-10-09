@@ -49,7 +49,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // Load initial data
     dispatch(fetchReservations({}));
-    dispatch(fetchProperties());
+    dispatch(fetchProperties({}));
   }, [dispatch]);
 
   // Hotel PMS specific stats
@@ -177,10 +177,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Welcome back, {user?.firstName}! Here&apos;s your hotel&apos;s
-            performance overview for today.
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Welcome back, {user?.firstName}! Here's your hotel's performance
+            overview for today.
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -189,7 +189,10 @@ export default function DashboardPage() {
             Last 3 months
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
-          <Button size="sm" className="bg-black text-white hover:bg-gray-800">
+          <Button
+            size="sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
             <Plus className="mr-2 h-4 w-4" />
             New Reservation
             <Calendar className="ml-2 h-4 w-4" />
@@ -199,15 +202,15 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-white border-0 shadow-sm">
+        <Card className="bg-card border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Revenue
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-gray-400" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-card-foreground">
               ${stats.totalRevenue.toLocaleString()}
             </div>
             <div className="flex items-center mt-1">
@@ -215,25 +218,25 @@ export default function DashboardPage() {
               <span className="text-sm text-green-600 font-medium">
                 +{stats.revenueChange}%
               </span>
-              <span className="text-sm text-gray-500 ml-2">
+              <span className="text-sm text-muted-foreground ml-2">
                 Trending up this month
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Revenue for the last 6 months
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-0 shadow-sm">
+        <Card className="bg-card border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Guests
             </CardTitle>
-            <Users className="h-4 w-4 text-gray-400" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-card-foreground">
               {stats.totalGuests.toLocaleString()}
             </div>
             <div className="flex items-center mt-1">
@@ -241,25 +244,25 @@ export default function DashboardPage() {
               <span className="text-sm text-red-600 font-medium">
                 {stats.guestsChange}%
               </span>
-              <span className="text-sm text-gray-500 ml-2">
+              <span className="text-sm text-muted-foreground ml-2">
                 Down this period
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Guest acquisition needs attention
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-0 shadow-sm">
+        <Card className="bg-card border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Occupancy Rate
             </CardTitle>
-            <Activity className="h-4 w-4 text-gray-400" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-card-foreground">
               {stats.occupancyRate}%
             </div>
             <div className="flex items-center mt-1">
@@ -267,25 +270,25 @@ export default function DashboardPage() {
               <span className="text-sm text-green-600 font-medium">
                 +{stats.occupancyChange}%
               </span>
-              <span className="text-sm text-gray-500 ml-2">
+              <span className="text-sm text-muted-foreground ml-2">
                 Strong occupancy performance
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Room utilization exceeds targets
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-0 shadow-sm">
+        <Card className="bg-card border-0 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Average Stay
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-gray-400" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-card-foreground">
               {stats.averageStay} days
             </div>
             <div className="flex items-center mt-1">
@@ -293,11 +296,11 @@ export default function DashboardPage() {
               <span className="text-sm text-green-600 font-medium">
                 +{stats.stayChange}%
               </span>
-              <span className="text-sm text-gray-500 ml-2">
+              <span className="text-sm text-muted-foreground ml-2">
                 Guest satisfaction improving
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Extended stays increasing
             </p>
           </CardContent>
@@ -305,14 +308,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Chart Section */}
-      <Card className="bg-white border-0 shadow-sm">
+      <Card className="bg-card border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-semibold text-gray-900">
+              <CardTitle className="text-lg font-semibold text-card-foreground">
                 Occupancy Rate
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-muted-foreground">
                 Hotel occupancy rate for the last 3 months
               </CardDescription>
             </div>
@@ -346,14 +349,14 @@ export default function DashboardPage() {
         <CardContent>
           <div className="h-80 w-full">
             {/* Placeholder for chart - you can integrate Recharts here */}
-            <div className="flex items-end justify-between h-full p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-end justify-between h-full p-4 bg-muted rounded-lg">
               {chartData.map((point, index) => (
                 <div key={index} className="flex flex-col items-center">
                   <div
-                    className="w-8 bg-blue-500 rounded-t"
+                    className="w-8 bg-primary rounded-t"
                     style={{ height: `${point.occupancy * 2}px` }}
                   />
-                  <span className="text-xs text-gray-500 mt-2">
+                  <span className="text-xs text-muted-foreground mt-2">
                     {point.date}
                   </span>
                 </div>
@@ -364,7 +367,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* Main Table Section */}
-      <Card className="bg-white border-0 shadow-sm">
+      <Card className="bg-card border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -403,7 +406,7 @@ export default function DashboardPage() {
               </Button>
               <Button
                 size="sm"
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 New Reservation
@@ -412,10 +415,10 @@ export default function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg">
+          <div className="border border-border rounded-lg">
             <Table>
               <TableHeader>
-                <TableRow className="border-b">
+                <TableRow className="border-b border-border">
                   <TableHead className="w-12"></TableHead>
                   <TableHead className="w-12"></TableHead>
                   <TableHead className="font-semibold">Guest Name</TableHead>
@@ -435,24 +438,24 @@ export default function DashboardPage() {
                 {recentReservations.map((reservation) => (
                   <TableRow
                     key={reservation.id}
-                    className="border-b hover:bg-gray-50"
+                    className="border-b border-border hover:bg-muted/50"
                   >
                     <TableCell>
-                      <div className="flex items-center justify-center w-6 h-6 text-gray-400">
+                      <div className="flex items-center justify-center w-6 h-6 text-muted-foreground">
                         <div className="flex flex-col space-y-0.5">
-                          <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                          <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                          <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                          <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                          <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                          <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <input
                         type="checkbox"
-                        className="rounded border-gray-300"
+                        className="rounded border-border"
                       />
                     </TableCell>
                     <TableCell className="font-medium">
@@ -493,7 +496,7 @@ export default function DashboardPage() {
                       ${reservation.totalAmount}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-foreground">
                         {reservation.assignedTo}
                       </span>
                     </TableCell>
@@ -509,12 +512,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Table Footer */}
-          <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+          <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
             <div>0 of 5 reservation(s) selected.</div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span>Rows per page</span>
-                <select className="border rounded px-2 py-1">
+                <select className="border border-border rounded px-2 py-1 bg-background">
                   <option>10</option>
                   <option>25</option>
                   <option>50</option>

@@ -1,116 +1,57 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-
-interface Guest {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  dateOfBirth?: string;
-  nationality?: string;
-  idType?: 'PASSPORT' | 'ID_CARD' | 'DRIVER_LICENSE';
-  idNumber?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface GuestFilters {
-  search?: string;
-  nationality?: string;
-  isActive?: boolean;
-}
+import { guestService } from '@/services/guest.service';
+import {
+  Guest,
+  GuestDocument,
+  CreateGuestData,
+  UpdateGuestData,
+  UpdateLoyaltyTierData,
+  UploadDocumentData,
+} from '@/types';
 
 interface GuestState {
   guests: Guest[];
   currentGuest: Guest | null;
-  filters: GuestFilters;
+  guestDocuments: GuestDocument[];
+  loading: boolean;
+  error: string | null;
   pagination: {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   };
-  loading: boolean;
-  error: string | null;
 }
 
 const initialState: GuestState = {
   guests: [],
   currentGuest: null,
-  filters: {},
+  guestDocuments: [],
+  loading: false,
+  error: null,
   pagination: {
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
   },
-  loading: false,
-  error: null,
 };
 
 // Async thunks
 export const fetchGuests = createAsyncThunk(
   'guest/fetchGuests',
   async (
-    params: { page?: number; limit?: number; filters?: GuestFilters } = {},
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      loyaltyTier?: string;
+    } = {},
     { rejectWithValue },
   ) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await guestService.getAll(params);
-      // return response.data;
-
-      // Mock data for now
-      const mockGuests: Guest[] = [
-        {
-          id: '1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@email.com',
-          phone: '+1-555-0123',
-          dateOfBirth: '1990-01-15',
-          nationality: 'US',
-          idType: 'PASSPORT',
-          idNumber: 'A1234567',
-          address: '123 Main St',
-          city: 'New York',
-          country: 'USA',
-          isActive: true,
-          createdAt: '2024-01-10T10:00:00Z',
-          updatedAt: '2024-01-10T10:00:00Z',
-        },
-        {
-          id: '2',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.smith@email.com',
-          phone: '+1-555-0124',
-          dateOfBirth: '1985-05-20',
-          nationality: 'CA',
-          idType: 'ID_CARD',
-          idNumber: 'B7654321',
-          address: '456 Oak Ave',
-          city: 'Toronto',
-          country: 'Canada',
-          isActive: true,
-          createdAt: '2024-01-11T10:00:00Z',
-          updatedAt: '2024-01-11T10:00:00Z',
-        },
-      ];
-
-      return {
-        data: mockGuests,
-        pagination: {
-          page: params.page || 1,
-          limit: params.limit || 10,
-          total: mockGuests.length,
-          totalPages: Math.ceil(mockGuests.length / (params.limit || 10)),
-        },
-      };
+      const response = await guestService.getAll(params);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch guests';
@@ -121,26 +62,10 @@ export const fetchGuests = createAsyncThunk(
 
 export const createGuest = createAsyncThunk(
   'guest/createGuest',
-  async (guestData: Partial<Guest>, { rejectWithValue }) => {
+  async (data: CreateGuestData, { rejectWithValue }) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await guestService.create(guestData);
-      // return response.data;
-
-      // Mock response
-      const newGuest: Guest = {
-        id: Date.now().toString(),
-        firstName: guestData.firstName || '',
-        lastName: guestData.lastName || '',
-        email: guestData.email || '',
-        phone: guestData.phone || '',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ...guestData,
-      } as Guest;
-
-      return newGuest;
+      const response = await guestService.create(data);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create guest';
@@ -152,27 +77,12 @@ export const createGuest = createAsyncThunk(
 export const updateGuest = createAsyncThunk(
   'guest/updateGuest',
   async (
-    { id, data }: { id: string; data: Partial<Guest> },
+    { id, data }: { id: string; data: UpdateGuestData },
     { rejectWithValue },
   ) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await guestService.update(id, data);
-      // return response.data;
-
-      // Mock response
-      const updatedGuest: Guest = {
-        id,
-        firstName: data.firstName || '',
-        lastName: data.lastName || '',
-        email: data.email || '',
-        phone: data.phone || '',
-        isActive: data.isActive ?? true,
-        updatedAt: new Date().toISOString(),
-        ...data,
-      } as Guest;
-
-      return updatedGuest;
+      const response = await guestService.update(id, data);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update guest';
@@ -181,37 +91,115 @@ export const updateGuest = createAsyncThunk(
   },
 );
 
+export const deleteGuest = createAsyncThunk(
+  'guest/deleteGuest',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await guestService.delete(id);
+      return id;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete guest';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const searchGuests = createAsyncThunk(
   'guest/searchGuests',
-  async (searchTerm: string, { rejectWithValue }) => {
+  async (
+    {
+      query,
+      params,
+    }: { query: string; params?: { page?: number; limit?: number } },
+    { rejectWithValue },
+  ) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await guestService.search(searchTerm);
-      // return response.data;
-
-      // Mock search - in real app this would be server-side
-      const mockGuests: Guest[] = [
-        {
-          id: '1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@email.com',
-          phone: '+1-555-0123',
-          isActive: true,
-          createdAt: '2024-01-10T10:00:00Z',
-          updatedAt: '2024-01-10T10:00:00Z',
-        },
-      ];
-
-      return mockGuests.filter(
-        (guest) =>
-          guest.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          guest.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          guest.email.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+      const response = await guestService.search(query, params);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to search guests';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const getGuestByEmail = createAsyncThunk(
+  'guest/getGuestByEmail',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const response = await guestService.getByEmail(email);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to get guest by email';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const getGuestByPhone = createAsyncThunk(
+  'guest/getGuestByPhone',
+  async (phone: string, { rejectWithValue }) => {
+    try {
+      const response = await guestService.getByPhone(phone);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to get guest by phone';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const updateLoyaltyTier = createAsyncThunk(
+  'guest/updateLoyaltyTier',
+  async (
+    { id, data }: { id: string; data: UpdateLoyaltyTierData },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await guestService.updateLoyaltyTier(id, data);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to update loyalty tier';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const uploadDocument = createAsyncThunk(
+  'guest/uploadDocument',
+  async (
+    { id, data }: { id: string; data: UploadDocumentData },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await guestService.uploadDocument(id, data);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to upload document';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchGuestDocuments = createAsyncThunk(
+  'guest/fetchGuestDocuments',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await guestService.getDocuments(id);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch guest documents';
       return rejectWithValue(errorMessage);
     }
   },
@@ -221,20 +209,17 @@ const guestSlice = createSlice({
   name: 'guest',
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
+    setCurrentGuest: (state, action: PayloadAction<Guest>) => {
+      state.currentGuest = action.payload;
+    },
+    clearCurrentGuest: (state) => {
+      state.currentGuest = null;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    setFilters: (state, action: PayloadAction<GuestFilters>) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-    clearFilters: (state) => {
-      state.filters = {};
-    },
-    setCurrentGuest: (state, action: PayloadAction<Guest | null>) => {
-      state.currentGuest = action.payload;
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
     },
     setPagination: (
       state,
@@ -246,59 +231,154 @@ const guestSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch guests
+      // Fetch Guests
       .addCase(fetchGuests.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchGuests.fulfilled, (state, action) => {
         state.loading = false;
-        state.guests = action.payload.data;
-        state.pagination = action.payload.pagination;
-        state.error = null;
+        state.guests = action.payload.data || [];
+        if (action.payload.meta) {
+          state.pagination.page = action.payload.meta.page || 1;
+          state.pagination.limit = action.payload.meta.limit || 10;
+          state.pagination.total = action.payload.meta.total || 0;
+          state.pagination.totalPages = action.payload.meta.totalPages || 0;
+        }
       })
       .addCase(fetchGuests.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-
-      // Create guest
+      // Create Guest
       .addCase(createGuest.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createGuest.fulfilled, (state, action) => {
         state.loading = false;
-        state.guests.unshift(action.payload);
-        state.error = null;
+        if (action.payload.data) {
+          state.guests.push(action.payload.data);
+        }
       })
       .addCase(createGuest.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-
-      // Update guest
+      // Update Guest
+      .addCase(updateGuest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateGuest.fulfilled, (state, action) => {
-        const index = state.guests.findIndex((g) => g.id === action.payload.id);
-        if (index !== -1) {
-          state.guests[index] = action.payload;
-        }
-        if (state.currentGuest?.id === action.payload.id) {
-          state.currentGuest = action.payload;
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.guests.findIndex(
+            (g) => g.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.guests[index] = action.payload.data!;
+          }
+          if (state.currentGuest?.id === action.payload.data?.id) {
+            state.currentGuest = action.payload.data!;
+          }
         }
       })
-
-      // Search guests
+      .addCase(updateGuest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Delete Guest
+      .addCase(deleteGuest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteGuest.fulfilled, (state, action) => {
+        state.loading = false;
+        state.guests = state.guests.filter((g) => g.id !== action.payload);
+        if (state.currentGuest?.id === action.payload) {
+          state.currentGuest = null;
+        }
+      })
+      .addCase(deleteGuest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Search Guests
       .addCase(searchGuests.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(searchGuests.fulfilled, (state, action) => {
         state.loading = false;
-        state.guests = action.payload;
-        state.error = null;
+        state.guests = action.payload.data || [];
+        if (action.payload.meta) {
+          state.pagination.page = action.payload.meta.page || 1;
+          state.pagination.limit = action.payload.meta.limit || 10;
+          state.pagination.total = action.payload.meta.total || 0;
+          state.pagination.totalPages = action.payload.meta.totalPages || 0;
+        }
       })
       .addCase(searchGuests.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Get Guest by Email
+      .addCase(getGuestByEmail.fulfilled, (state, action) => {
+        state.currentGuest = action.payload.data || null;
+      })
+      // Get Guest by Phone
+      .addCase(getGuestByPhone.fulfilled, (state, action) => {
+        state.currentGuest = action.payload.data || null;
+      })
+      // Update Loyalty Tier
+      .addCase(updateLoyaltyTier.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateLoyaltyTier.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.guests.findIndex(
+            (g) => g.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.guests[index] = action.payload.data!;
+          }
+          if (state.currentGuest?.id === action.payload.data?.id) {
+            state.currentGuest = action.payload.data!;
+          }
+        }
+      })
+      .addCase(updateLoyaltyTier.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Upload Document
+      .addCase(uploadDocument.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(uploadDocument.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          state.guestDocuments.push(action.payload.data);
+        }
+      })
+      .addCase(uploadDocument.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Guest Documents
+      .addCase(fetchGuestDocuments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchGuestDocuments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.guestDocuments = action.payload.data || [];
+      })
+      .addCase(fetchGuestDocuments.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
@@ -306,11 +386,11 @@ const guestSlice = createSlice({
 });
 
 export const {
-  clearError,
-  setLoading,
-  setFilters,
-  clearFilters,
   setCurrentGuest,
+  clearCurrentGuest,
+  setLoading,
+  setError,
   setPagination,
 } = guestSlice.actions;
+
 export default guestSlice.reducer;

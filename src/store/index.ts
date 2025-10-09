@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import propertyReducer from './slices/propertySlice';
 import reservationReducer from './slices/reservationSlice';
+import guestReducer from './slices/guestSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     property: propertyReducer,
     reservation: reservationReducer,
+    guest: guestReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

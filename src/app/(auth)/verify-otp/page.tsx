@@ -177,7 +177,7 @@ function VerifyOTPForm() {
 
             <div className="mt-6 text-center space-y-2">
               <p className="text-sm text-gray-600">
-                Didn&apos;t receive the code?
+                Didn't receive the code?
               </p>
               {canResend ? (
                 <Button

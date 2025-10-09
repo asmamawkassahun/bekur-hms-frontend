@@ -46,7 +46,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (isAuthenticated && !user) {
       dispatch(getProfile());
-      dispatch(fetchProperties());
+      dispatch(fetchProperties({}));
     }
   }, [isAuthenticated, user, dispatch]);
 
@@ -85,7 +85,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Fixed Sidebar */}
         <Sidebar

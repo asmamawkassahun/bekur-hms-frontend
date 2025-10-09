@@ -48,12 +48,33 @@ class TokenManager {
     }
 
     try {
-      // Store access token in memory (Redux store)
+      // Store access token in sessionStorage (temporary solution)
       // Store refresh token encrypted in localStorage
+      sessionStorage.setItem('access_token', accessToken);
       const encryptedRefreshToken = this.encrypt(refreshToken);
       localStorage.setItem(this.REFRESH_TOKEN_KEY, encryptedRefreshToken);
     } catch (error) {
       console.error('Failed to store tokens:', error);
+    }
+  }
+
+  /**
+   * Get access token from memory (Redux store)
+   * This is a placeholder - in a real implementation, you'd get this from the store
+   */
+  static getAccessToken(): string | null {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    try {
+      // In a real implementation, this would get the token from Redux store
+      // For now, we'll get it from sessionStorage as a fallback
+      return sessionStorage.getItem('access_token');
+    } catch (error) {
+      console.error('Failed to get access token:', error);
+      return null;
     }
   }
 
@@ -130,6 +151,7 @@ class TokenManager {
     }
 
     try {
+      sessionStorage.removeItem('access_token');
       localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     } catch (error) {
       console.error('Failed to clear tokens:', error);

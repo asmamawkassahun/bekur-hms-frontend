@@ -19,6 +19,12 @@ import {
   Search,
   Plus,
   MoreHorizontal,
+  Bed,
+  Home,
+  BedDouble,
+  Building,
+  CreditCard,
+  UserCog,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -42,15 +48,18 @@ export function Sidebar({}: SidebarProps) {
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'Reservations', icon: Calendar, href: '/dashboard/reservations' },
     { label: 'Guests', icon: Users, href: '/dashboard/guests' },
-    { label: 'Rooms', icon: BarChart3, href: '/dashboard/rooms' },
-    { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
+    { label: 'Rooms', icon: Bed, href: '/dashboard/rooms' },
+    { label: 'Dormitories', icon: Home, href: '/dashboard/dormitories' },
+    { label: 'Beds', icon: BedDouble, href: '/dashboard/beds' },
+    { label: 'Properties', icon: Building, href: '/dashboard/properties' },
   ];
 
   // Hotel Management section
   const hotelItems = [
-    { label: 'Payments', icon: BarChart3, href: '/dashboard/payments' },
+    { label: 'Payments', icon: CreditCard, href: '/dashboard/payments' },
     { label: 'Invoices', icon: FileText, href: '/dashboard/invoices' },
-    { label: 'Staff', icon: Users, href: '/dashboard/staff' },
+    { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
+    { label: 'Staff', icon: UserCog, href: '/dashboard/staff' },
     { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
   ];
 
@@ -61,12 +70,12 @@ export function Sidebar({}: SidebarProps) {
   ];
 
   return (
-    <div className="flex h-screen flex-col bg-gray-900 text-white fixed left-0 top-0 w-64 z-10 overflow-y-auto">
+    <div className="flex h-screen flex-col bg-sidebar text-sidebar-foreground fixed left-0 top-0 w-64 z-10 overflow-y-auto">
       {/* Logo/Brand */}
       <div className="flex h-16 items-center px-4">
         <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
-            <div className="h-4 w-4 bg-gray-900 rounded-full"></div>
+          <div className="h-8 w-8 bg-sidebar-primary rounded-full flex items-center justify-center">
+            <div className="h-4 w-4 bg-sidebar-primary-foreground rounded-full"></div>
           </div>
           <div>
             <h1 className="text-lg font-semibold">Bekur HMS</h1>
@@ -76,7 +85,7 @@ export function Sidebar({}: SidebarProps) {
 
       {/* Quick Create Button */}
       <div className="px-4 pb-4">
-        <Button className="w-full bg-black text-white hover:bg-gray-800 flex items-center justify-center">
+        <Button className="w-full bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 flex items-center justify-center">
           <Plus className="mr-2 h-4 w-4" />
           New Reservation
           <Calendar className="ml-2 h-4 w-4" />
@@ -94,8 +103,8 @@ export function Sidebar({}: SidebarProps) {
               key={item.href}
               variant="ghost"
               className={cn(
-                'w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800',
-                active && 'bg-gray-800 text-white',
+                'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent',
+                active && 'bg-sidebar-accent text-sidebar-accent-foreground',
               )}
               asChild
             >
@@ -110,9 +119,9 @@ export function Sidebar({}: SidebarProps) {
 
       {/* Hotel Management Section */}
       <div className="px-2 pb-4">
-        <Separator className="bg-gray-700 mb-4" />
+        <Separator className="bg-sidebar-border mb-4" />
         <div className="px-2">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <h3 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-2">
             Management
           </h3>
           <nav className="space-y-1">
@@ -125,8 +134,9 @@ export function Sidebar({}: SidebarProps) {
                   key={item.href}
                   variant="ghost"
                   className={cn(
-                    'w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800',
-                    active && 'bg-gray-800 text-white',
+                    'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent',
+                    active &&
+                      'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   asChild
                 >
@@ -153,8 +163,8 @@ export function Sidebar({}: SidebarProps) {
                 key={item.href}
                 variant="ghost"
                 className={cn(
-                  'w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800',
-                  active && 'bg-gray-800 text-white',
+                  'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent',
+                  active && 'bg-sidebar-accent text-sidebar-accent-foreground',
                 )}
                 asChild
               >

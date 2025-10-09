@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { store } from '@/store';
-import { updateTokens, clearAuth } from '@/store/slices/authSlice';
 import { TokenManager } from '@/lib/auth/token-manager';
 
 // Create axios instance
@@ -15,8 +13,7 @@ export const apiClient = axios.create({
 // Request interceptor to attach auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const state = store.getState();
-    const accessToken = state.auth.accessToken;
+    const accessToken = TokenManager.getAccessToken();
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -61,10 +58,7 @@ apiClient.interceptors.response.use(
         const { accessToken, refreshToken: newRefreshToken } =
           response.data.data;
 
-        // Update tokens in store and storage
-        store.dispatch(
-          updateTokens({ accessToken, refreshToken: newRefreshToken }),
-        );
+        // Update tokens in storage
         TokenManager.setTokens(accessToken, newRefreshToken);
 
         // Retry original request with new token
@@ -73,7 +67,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, logout user
         console.error('Token refresh failed:', refreshError);
-        store.dispatch(clearAuth());
+        TokenManager.clearTokens();
 
         // Redirect to login page
         if (typeof window !== 'undefined') {

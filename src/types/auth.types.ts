@@ -31,17 +31,8 @@ export interface Permission {
   action: string;
 }
 
-export interface Property {
-  id: string;
-  name: string;
-  type: 'HOTEL' | 'HOSTEL' | 'MIXED';
-  address: string;
-  city: string;
-  country: string;
-  phone?: string;
-  email?: string;
-  isActive: boolean;
-}
+// Import Property from property types to avoid duplication
+import { Property } from './property.types';
 
 // Auth State Types
 export interface AuthState {

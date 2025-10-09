@@ -1,59 +1,38 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { ReservationStatus, DateRangeFilter } from '@/types';
-
-interface Reservation {
-  id: string;
-  guestId: string;
-  guestName: string;
-  roomId?: string;
-  roomNumber?: string;
-  bedId?: string;
-  bedNumber?: string;
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  children: number;
-  status: ReservationStatus;
-  totalAmount: number;
-  paidAmount: number;
-  specialRequests?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ReservationFilters {
-  status?: ReservationStatus;
-  dateRange?: DateRangeFilter;
-  guestName?: string;
-  roomNumber?: string;
-}
+import { reservationService } from '@/services/reservation.service';
+import {
+  Reservation,
+  CreateReservationData,
+  UpdateReservationData,
+  CheckInData,
+  CheckOutData,
+  ReservationFilters,
+} from '@/types';
 
 interface ReservationState {
   reservations: Reservation[];
   currentReservation: Reservation | null;
-  filters: ReservationFilters;
+  loading: boolean;
+  error: string | null;
   pagination: {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   };
-  loading: boolean;
-  error: string | null;
 }
 
 const initialState: ReservationState = {
   reservations: [],
   currentReservation: null,
-  filters: {},
+  loading: false,
+  error: null,
   pagination: {
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
   },
-  loading: false,
-  error: null,
 };
 
 // Async thunks
@@ -68,56 +47,8 @@ export const fetchReservations = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await reservationService.getAll(params);
-      // return response.data;
-
-      // Mock data for now
-      const mockReservations: Reservation[] = [
-        {
-          id: '1',
-          guestId: '1',
-          guestName: 'John Doe',
-          roomId: '1',
-          roomNumber: '101',
-          checkIn: '2024-01-15',
-          checkOut: '2024-01-17',
-          adults: 2,
-          children: 0,
-          status: 'CONFIRMED',
-          totalAmount: 200,
-          paidAmount: 100,
-          specialRequests: 'Late check-in requested',
-          createdAt: '2024-01-10T10:00:00Z',
-          updatedAt: '2024-01-10T10:00:00Z',
-        },
-        {
-          id: '2',
-          guestId: '2',
-          guestName: 'Jane Smith',
-          roomId: '2',
-          roomNumber: '102',
-          checkIn: '2024-01-16',
-          checkOut: '2024-01-18',
-          adults: 1,
-          children: 1,
-          status: 'CHECKED_IN',
-          totalAmount: 150,
-          paidAmount: 150,
-          createdAt: '2024-01-11T10:00:00Z',
-          updatedAt: '2024-01-11T10:00:00Z',
-        },
-      ];
-
-      return {
-        data: mockReservations,
-        pagination: {
-          page: params.page || 1,
-          limit: params.limit || 10,
-          total: mockReservations.length,
-          totalPages: Math.ceil(mockReservations.length / (params.limit || 10)),
-        },
-      };
+      const response = await reservationService.getAll(params);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch reservations';
@@ -128,22 +59,10 @@ export const fetchReservations = createAsyncThunk(
 
 export const createReservation = createAsyncThunk(
   'reservation/createReservation',
-  async (reservationData: Partial<Reservation>, { rejectWithValue }) => {
+  async (data: CreateReservationData, { rejectWithValue }) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await reservationService.create(reservationData);
-      // return response.data;
-
-      // Mock response
-      const newReservation: Reservation = {
-        id: Date.now().toString(),
-        ...reservationData,
-        status: 'PENDING',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as Reservation;
-
-      return newReservation;
+      const response = await reservationService.create(data);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create reservation';
@@ -155,22 +74,12 @@ export const createReservation = createAsyncThunk(
 export const updateReservation = createAsyncThunk(
   'reservation/updateReservation',
   async (
-    { id, data }: { id: string; data: Partial<Reservation> },
+    { id, data }: { id: string; data: UpdateReservationData },
     { rejectWithValue },
   ) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await reservationService.update(id, data);
-      // return response.data;
-
-      // Mock response
-      const updatedReservation: Reservation = {
-        ...data,
-        id,
-        updatedAt: new Date().toISOString(),
-      } as Reservation;
-
-      return updatedReservation;
+      const response = await reservationService.update(id, data);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update reservation';
@@ -179,41 +88,82 @@ export const updateReservation = createAsyncThunk(
   },
 );
 
-export const checkInReservation = createAsyncThunk(
-  'reservation/checkIn',
+export const deleteReservation = createAsyncThunk(
+  'reservation/deleteReservation',
   async (id: string, { rejectWithValue }) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await reservationService.checkIn(id);
-      // return response.data;
-
-      // Mock response
-      return { id, status: 'CHECKED_IN' as ReservationStatus };
+      await reservationService.delete(id);
+      return id;
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to check in reservation';
+        error instanceof Error ? error.message : 'Failed to delete reservation';
       return rejectWithValue(errorMessage);
     }
   },
 );
 
-export const checkOutReservation = createAsyncThunk(
-  'reservation/checkOut',
-  async (id: string, { rejectWithValue }) => {
+export const checkInGuest = createAsyncThunk(
+  'reservation/checkInGuest',
+  async (data: CheckInData, { rejectWithValue }) => {
     try {
-      // This would be replaced with actual API call
-      // const response = await reservationService.checkOut(id);
-      // return response.data;
-
-      // Mock response
-      return { id, status: 'CHECKED_OUT' as ReservationStatus };
+      const response = await reservationService.checkIn(data);
+      return response.data;
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to check out reservation';
+        error instanceof Error ? error.message : 'Failed to check in guest';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const checkOutGuest = createAsyncThunk(
+  'reservation/checkOutGuest',
+  async (data: CheckOutData, { rejectWithValue }) => {
+    try {
+      const response = await reservationService.checkOut(data);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to check out guest';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const cancelReservation = createAsyncThunk(
+  'reservation/cancelReservation',
+  async (
+    { id, reason }: { id: string; reason?: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await reservationService.cancel(id, reason);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to cancel reservation';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const getAvailability = createAsyncThunk(
+  'reservation/getAvailability',
+  async (
+    params: {
+      propertyId: string;
+      checkIn: string;
+      checkOut: string;
+      roomType?: string;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await reservationService.getAvailability(params);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to get availability';
       return rejectWithValue(errorMessage);
     }
   },
@@ -223,23 +173,17 @@ const reservationSlice = createSlice({
   name: 'reservation',
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null;
+    setCurrentReservation: (state, action: PayloadAction<Reservation>) => {
+      state.currentReservation = action.payload;
+    },
+    clearCurrentReservation: (state) => {
+      state.currentReservation = null;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    setFilters: (state, action: PayloadAction<ReservationFilters>) => {
-      state.filters = action.payload;
-    },
-    clearFilters: (state) => {
-      state.filters = {};
-    },
-    setCurrentReservation: (
-      state,
-      action: PayloadAction<Reservation | null>,
-    ) => {
-      state.currentReservation = action.payload;
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
     },
     setPagination: (
       state,
@@ -251,84 +195,159 @@ const reservationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch reservations
+      // Fetch Reservations
       .addCase(fetchReservations.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchReservations.fulfilled, (state, action) => {
         state.loading = false;
-        state.reservations = action.payload.data;
-        state.pagination = action.payload.pagination;
-        state.error = null;
+        state.reservations = action.payload.data || [];
+        if (action.payload.meta) {
+          state.pagination.page = action.payload.meta.page || 1;
+          state.pagination.limit = action.payload.meta.limit || 10;
+          state.pagination.total = action.payload.meta.total || 0;
+          state.pagination.totalPages = action.payload.meta.totalPages || 0;
+        }
       })
       .addCase(fetchReservations.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-
-      // Create reservation
+      // Create Reservation
       .addCase(createReservation.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(createReservation.fulfilled, (state, action) => {
         state.loading = false;
-        state.reservations.unshift(action.payload);
-        state.error = null;
+        if (action.payload.data) {
+          state.reservations.push(action.payload.data);
+        }
       })
       .addCase(createReservation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-
-      // Update reservation
+      // Update Reservation
+      .addCase(updateReservation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateReservation.fulfilled, (state, action) => {
-        const index = state.reservations.findIndex(
-          (r) => r.id === action.payload.id,
-        );
-        if (index !== -1) {
-          state.reservations[index] = action.payload;
-        }
-        if (state.currentReservation?.id === action.payload.id) {
-          state.currentReservation = action.payload;
-        }
-      })
-
-      // Check in
-      .addCase(checkInReservation.fulfilled, (state, action) => {
-        const index = state.reservations.findIndex(
-          (r) => r.id === action.payload.id,
-        );
-        if (index !== -1) {
-          state.reservations[index].status = action.payload.status;
-        }
-        if (state.currentReservation?.id === action.payload.id) {
-          state.currentReservation.status = action.payload.status;
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.reservations.findIndex(
+            (r) => r.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.reservations[index] = action.payload.data!;
+          }
+          if (state.currentReservation?.id === action.payload.data?.id) {
+            state.currentReservation = action.payload.data!;
+          }
         }
       })
-
-      // Check out
-      .addCase(checkOutReservation.fulfilled, (state, action) => {
-        const index = state.reservations.findIndex(
-          (r) => r.id === action.payload.id,
+      .addCase(updateReservation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Delete Reservation
+      .addCase(deleteReservation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteReservation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.reservations = state.reservations.filter(
+          (r) => r.id !== action.payload,
         );
-        if (index !== -1) {
-          state.reservations[index].status = action.payload.status;
+        if (state.currentReservation?.id === action.payload) {
+          state.currentReservation = null;
         }
-        if (state.currentReservation?.id === action.payload.id) {
-          state.currentReservation.status = action.payload.status;
+      })
+      .addCase(deleteReservation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Check In Guest
+      .addCase(checkInGuest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(checkInGuest.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.reservations.findIndex(
+            (r) => r.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.reservations[index] = action.payload.data!;
+          }
+          if (state.currentReservation?.id === action.payload.data?.id) {
+            state.currentReservation = action.payload.data!;
+          }
         }
+      })
+      .addCase(checkInGuest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Check Out Guest
+      .addCase(checkOutGuest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(checkOutGuest.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.reservations.findIndex(
+            (r) => r.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.reservations[index] = action.payload.data!;
+          }
+          if (state.currentReservation?.id === action.payload.data?.id) {
+            state.currentReservation = action.payload.data!;
+          }
+        }
+      })
+      .addCase(checkOutGuest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Cancel Reservation
+      .addCase(cancelReservation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(cancelReservation.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.reservations.findIndex(
+            (r) => r.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.reservations[index] = action.payload.data!;
+          }
+          if (state.currentReservation?.id === action.payload.data?.id) {
+            state.currentReservation = action.payload.data!;
+          }
+        }
+      })
+      .addCase(cancelReservation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });
 
 export const {
-  clearError,
-  setLoading,
-  setFilters,
-  clearFilters,
   setCurrentReservation,
+  clearCurrentReservation,
+  setLoading,
+  setError,
   setPagination,
 } = reservationSlice.actions;
+
 export default reservationSlice.reducer;

@@ -81,7 +81,7 @@ export default function ForgotPasswordPage() {
                     Email Sent!
                   </h2>
                   <p className="mt-2 text-sm text-gray-600">
-                    We&apos;ve sent a password reset link to{' '}
+                    We've sent a password reset link to{' '}
                     {form.getValues('email')}. Please check your email and
                     follow the instructions to reset your password.
                   </p>
@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
           <CardHeader>
             <CardTitle>Forgot Password</CardTitle>
             <CardDescription>
-              Enter your email address and we&apos;ll send you a link to reset
+              Enter your email address and we'll send you a link to reset
               your password.
             </CardDescription>
           </CardHeader>

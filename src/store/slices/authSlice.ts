@@ -86,26 +86,26 @@ const authService = {
     console.log('🔐 Mock authService returning:', mockResponse);
     return mockResponse;
   },
-  loginWithOTP: async (_credentials: LoginWithOTPCredentials) => {
+  loginWithOTP: async () => {
     return { data: { data: { message: 'OTP sent' } } };
   },
-  verifyOTP: async (_data: VerifyOTPData) => {
+  verifyOTP: async () => {
     return {
       data: {
         data: { accessToken: 'mock', refreshToken: 'mock', user: {} as User },
       },
     };
   },
-  resendOTP: async (_email: string) => {
+  resendOTP: async () => {
     return { data: { data: { message: 'OTP resent' } } };
   },
-  forgotPassword: async (_data: ForgotPasswordData) => {
+  forgotPassword: async () => {
     return { data: { data: { message: 'Reset email sent' } } };
   },
-  resetPassword: async (_data: ResetPasswordData) => {
+  resetPassword: async () => {
     return { data: { data: { message: 'Password reset' } } };
   },
-  refreshTokens: async (_refreshToken: string) => {
+  refreshTokens: async () => {
     return { data: { data: { accessToken: 'mock', refreshToken: 'mock' } } };
   },
   getProfile: async () => {
@@ -202,7 +202,7 @@ export const loginWithOTP = createAsyncThunk(
   'auth/loginWithOTP',
   async (credentials: LoginWithOTPCredentials, { rejectWithValue }) => {
     try {
-      const response = await authService.loginWithOTP(credentials);
+      const response = await authService.loginWithOTP();
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -216,7 +216,7 @@ export const verifyOTP = createAsyncThunk(
   'auth/verifyOTP',
   async (data: VerifyOTPData, { rejectWithValue }) => {
     try {
-      const response = await authService.verifyOTP(data);
+      const response = await authService.verifyOTP();
       const { accessToken, refreshToken, user } = response.data.data!;
 
       // Store tokens securely
@@ -235,7 +235,7 @@ export const resendOTP = createAsyncThunk(
   'auth/resendOTP',
   async (email: string, { rejectWithValue }) => {
     try {
-      const response = await authService.resendOTP(email);
+      const response = await authService.resendOTP();
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
@@ -249,7 +249,7 @@ export const forgotPassword = createAsyncThunk(
   'auth/forgotPassword',
   async (data: ForgotPasswordData, { rejectWithValue }) => {
     try {
-      const response = await authService.forgotPassword(data);
+      const response = await authService.forgotPassword();
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
@@ -263,7 +263,7 @@ export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async (data: ResetPasswordData, { rejectWithValue }) => {
     try {
-      const response = await authService.resetPassword(data);
+      const response = await authService.resetPassword();
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
@@ -282,7 +282,7 @@ export const refreshTokens = createAsyncThunk(
         throw new Error('No refresh token available');
       }
 
-      const response = await authService.refreshTokens(refreshToken);
+      const response = await authService.refreshTokens();
       const { accessToken, refreshToken: newRefreshToken } =
         response.data.data!;
 

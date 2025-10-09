@@ -30,6 +30,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -51,7 +52,7 @@ export function Header({ onToggle }: HeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between">
+    <header className="h-16 bg-background border-b border-border px-6 flex items-center justify-between">
       {/* Left side */}
       <div className="flex items-center space-x-4">
         <Button
@@ -74,13 +75,16 @@ export function Header({ onToggle }: HeaderProps) {
 
         {/* Search */}
         <div className="hidden md:block relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search..." className="pl-10 w-64" />
         </div>
       </div>
 
       {/* Right side */}
       <div className="flex items-center space-x-4">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>
@@ -98,17 +102,21 @@ export function Header({ onToggle }: HeaderProps) {
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Notifications</h4>
               <div className="space-y-2">
-                <div className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                <div className="p-2 rounded-lg bg-muted hover:bg-muted/80 cursor-pointer">
                   <p className="text-sm font-medium">New reservation</p>
-                  <p className="text-xs text-gray-500">John Doe checked in</p>
+                  <p className="text-xs text-muted-foreground">
+                    John Doe checked in
+                  </p>
                 </div>
-                <div className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                <div className="p-2 rounded-lg bg-muted hover:bg-muted/80 cursor-pointer">
                   <p className="text-sm font-medium">Payment received</p>
-                  <p className="text-xs text-gray-500">$500 from Room 101</p>
+                  <p className="text-xs text-muted-foreground">
+                    $500 from Room 101
+                  </p>
                 </div>
-                <div className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                <div className="p-2 rounded-lg bg-muted hover:bg-muted/80 cursor-pointer">
                   <p className="text-sm font-medium">Maintenance alert</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Room 203 needs cleaning
                   </p>
                 </div>
@@ -121,8 +129,8 @@ export function Header({ onToggle }: HeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-600">
+              <div className="h-8 w-8 bg-secondary rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-secondary-foreground">
                   {user?.firstName?.[0] || 'S'}
                 </span>
               </div>
@@ -130,7 +138,7 @@ export function Header({ onToggle }: HeaderProps) {
                 <p className="text-sm font-medium">
                   {user?.firstName || 'shadcn'}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {user?.email || 'm@example.com'}
                 </p>
               </div>
