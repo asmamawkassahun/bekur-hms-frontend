@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
-import { fetchReservations } from '@/store/slices/reservationSlice';
+import { fetchReservations, createReservation, getAvailability } from '@/store/slices/reservationSlice';
+import { fetchGuests } from '@/store/slices/guestSlice';
+import { fetchProperties } from '@/store/slices/propertySlice';
 import { ReservationStatus } from '@/types';
 import {
   Card,
@@ -42,15 +44,34 @@ import {
   Eye,
   Edit,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNotification } from '@/hooks/useNotification';
+import type { AxiosError } from 'axios';
+import { handleApiError } from '@/lib/api/error-handler';
+import type { Guest, Property } from '@/types';
 
 export default function ReservationsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { reservations, loading, pagination } = useSelector(
     (state: RootState) => state.reservation,
   );
+  const { guests } = useSelector((state: RootState) => state.guest);
+  const { properties } = useSelector((state: RootState) => state.property);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [openCreate, setOpenCreate] = useState(false);
+  const { success, error } = useNotification();
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [checkInDate, setCheckInDate] = useState<string>('');
+  const [checkOutDate, setCheckOutDate] = useState<string>('');
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [availableBeds, setAvailableBeds] = useState<any[]>([]);
 
   useEffect(() => {
     dispatch(
@@ -67,6 +88,96 @@ export default function ReservationsPage() {
       }),
     );
   }, [dispatch, searchTerm, statusFilter]);
+
+  // Preload dropdown data when opening modal
+  useEffect(() => {
+    if (openCreate) {
+      (dispatch as AppDispatch)(fetchProperties({ page: 1, limit: 100 })).catch(() => {});
+      (dispatch as AppDispatch)(fetchGuests({ page: 1, limit: 100 })).catch(() => {});
+    }
+  }, [openCreate, dispatch]);
+
+  // Load availability when property and dates are set
+  useEffect(() => {
+    const canLoad = selectedPropertyId && checkInDate && checkOutDate;
+    if (!canLoad) return;
+    (async () => {
+      try {
+        const payload = await (dispatch as AppDispatch)(getAvailability({
+          propertyId: selectedPropertyId,
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+        })).unwrap();
+        const data = payload?.data as any;
+        setAvailableRooms((data?.rooms as any[]) || []);
+        setAvailableBeds((data?.beds as any[]) || []);
+      } catch (_e) {
+        setAvailableRooms([]);
+        setAvailableBeds([]);
+      }
+    })();
+  }, [selectedPropertyId, checkInDate, checkOutDate, dispatch]);
+
+  const createSchema = z.object({
+    propertyId: z.string().uuid({ message: 'Property is required' }),
+    guestId: z.string().uuid({ message: 'Guest is required' }),
+    roomId: z.string().uuid().optional().or(z.literal('')),
+    bedId: z.string().uuid().optional().or(z.literal('')),
+    checkIn: z.string().min(1, 'Check-in is required'),
+    checkOut: z.string().min(1, 'Check-out is required'),
+    adults: z.coerce.number().int().min(1).default(1),
+    children: z.coerce.number().int().min(0).default(0),
+    specialRequests: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    groupId: z.string().optional(),
+  }).refine((vals) => Boolean(vals.roomId) || Boolean(vals.bedId), {
+    message: 'Select a room or a bed',
+    path: ['roomId'],
+  });
+
+  type CreateReservationForm = z.infer<typeof createSchema>;
+  const form = useForm<CreateReservationForm>({
+    resolver: zodResolver(createSchema) as any,
+    defaultValues: {
+      propertyId: '',
+      guestId: '',
+      roomId: '',
+      bedId: '',
+      checkIn: '',
+      checkOut: '',
+      adults: 1,
+      children: 0,
+      specialRequests: [],
+      notes: '',
+      groupId: '',
+    } as CreateReservationForm,
+  });
+
+  const onSubmit = async (values: CreateReservationForm) => {
+    // Normalize empty strings to undefined for optional fields
+    const payload = {
+      ...values,
+      roomId: values.roomId || undefined,
+      bedId: values.bedId || undefined,
+      groupId: values.groupId || undefined,
+    };
+    try {
+      await (dispatch as AppDispatch)(createReservation(payload)).unwrap();
+      success('Reservation created');
+      setOpenCreate(false);
+      form.reset();
+      setAvailableRooms([]);
+      setAvailableBeds([]);
+      setSelectedPropertyId('');
+      setCheckInDate('');
+      setCheckOutDate('');
+      // Refetch list first page
+      dispatch(fetchReservations({ page: 1, limit: 10 }));
+    } catch (e) {
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -115,10 +226,188 @@ export default function ReservationsPage() {
             Manage hotel reservations and bookings
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          New Reservation
-        </Button>
+        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="mr-2 h-4 w-4" />
+              New Reservation
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>New Reservation</DialogTitle>
+            </DialogHeader>
+            <Form {...(form as any)}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Property */}
+                <FormField control={form.control as any} name="propertyId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property</FormLabel>
+                    <Select value={field.value} onValueChange={(val) => { field.onChange(val); setSelectedPropertyId(val); }}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select property" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(properties || []).map((p: Property) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Guest */}
+                <FormField control={form.control as any} name="guestId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guest</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select guest" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(guests || []).map((g: Guest) => (
+                          <SelectItem key={g.id} value={g.id}>{g.firstName} {g.lastName} — {g.email}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Check-in/Check-out */}
+                <FormField control={form.control as any} name="checkIn" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Check-in</FormLabel>
+                    <FormControl>
+                      <Input type="date" value={field.value} onChange={(e) => { field.onChange(e.target.value); setCheckInDate(e.target.value); }} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control as any} name="checkOut" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Check-out</FormLabel>
+                    <FormControl>
+                      <Input type="date" value={field.value} onChange={(e) => { field.onChange(e.target.value); setCheckOutDate(e.target.value); }} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Room or Bed */}
+                <FormField control={form.control as any} name="roomId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room (optional)</FormLabel>
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={selectedPropertyId && checkInDate && checkOutDate ? 'Select room' : 'Select property & dates first'} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableRooms.map((r: any) => (
+                          <SelectItem key={r.id} value={r.id}>{r.number || r.id}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control as any} name="bedId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bed (optional)</FormLabel>
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={selectedPropertyId && checkInDate && checkOutDate ? 'Select bed' : 'Select property & dates first'} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableBeds.map((b: any) => (
+                          <SelectItem key={b.id} value={b.id}>{b.number || b.id}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Guests count */}
+                <FormField control={form.control as any} name="adults" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adults</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={Number(field.value ?? 1)}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control as any} name="children" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Children</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={Number(field.value ?? 0)}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Special Requests (comma separated) */}
+                <FormField control={form.control as any} name="specialRequests" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Special Requests</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Late check-in, Extra pillows" value={(field.value || []).join(', ')} onChange={(e) => field.onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Notes */}
+                <FormField control={form.control as any} name="notes" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Optional notes" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                {/* Group ID */}
+                <FormField control={form.control as any} name="groupId" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Group ID (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Group/agency identifier" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <div className="md:col-span-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setOpenCreate(false)}>Cancel</Button>
+                  <Button type="submit" className="bg-primary" disabled={loading}>Create</Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
