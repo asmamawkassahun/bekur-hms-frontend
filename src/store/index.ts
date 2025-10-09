@@ -4,6 +4,7 @@ import propertyReducer from './slices/propertySlice';
 import reservationReducer from './slices/reservationSlice';
 import paymentReducer from './slices/paymentSlice';
 import guestReducer from './slices/guestSlice';
+import reportReducer from './slices/reportSlice';
 import invoiceReducer from './slices/invoiceSlice';
 
 export const store = configureStore({
@@ -14,6 +15,7 @@ export const store = configureStore({
     guest: guestReducer,
     invoice: invoiceReducer,
     payment: paymentReducer,
+    reports: reportReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
