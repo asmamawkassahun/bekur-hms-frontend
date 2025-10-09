@@ -41,6 +41,7 @@ export interface CreateGuestData {
   specialRequests?: string[];
   notes?: string;
   tags?: string[];
+  isActive?: boolean;
 }
 
 export interface UpdateGuestData {
@@ -61,6 +62,7 @@ export interface UpdateGuestData {
   specialRequests?: string[];
   notes?: string;
   tags?: string[];
+  isActive?: boolean;
 }
 
 export interface UpdateLoyaltyTierData {

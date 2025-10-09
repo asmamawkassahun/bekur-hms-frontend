@@ -238,13 +238,32 @@ const guestSlice = createSlice({
       })
       .addCase(fetchGuests.fulfilled, (state, action) => {
         state.loading = false;
-        state.guests = action.payload.data || [];
-        if (action.payload.meta) {
-          state.pagination.page = action.payload.meta.page || 1;
-          state.pagination.limit = action.payload.meta.limit || 10;
-          state.pagination.total = action.payload.meta.total || 0;
-          state.pagination.totalPages = action.payload.meta.totalPages || 0;
+        // Backend may return { success, data: Guest[] } or { success, data: { guests: Guest[], total, page, limit } }
+        const payloadData = action.payload?.data as unknown;
+        let items: Guest[] = [];
+        let page: number | undefined;
+        let limit: number | undefined;
+        let total: number | undefined;
+        let totalPages: number | undefined;
+
+        if (Array.isArray(payloadData)) {
+          items = payloadData as Guest[];
+        } else if (payloadData && typeof payloadData === 'object') {
+          const dataObj = payloadData as { guests?: Guest[]; items?: Guest[]; data?: Guest[]; total?: number; page?: number; limit?: number; totalPages?: number };
+          items = (dataObj.guests || dataObj.items || dataObj.data || []) as Guest[];
+          page = dataObj.page;
+          limit = dataObj.limit;
+          total = dataObj.total;
+          totalPages = dataObj.totalPages;
         }
+
+        state.guests = items;
+
+        const metaFromTop = action.payload?.meta;
+        state.pagination.page = metaFromTop?.page ?? page ?? 1;
+        state.pagination.limit = metaFromTop?.limit ?? limit ?? 10;
+        state.pagination.total = metaFromTop?.total ?? total ?? items.length;
+        state.pagination.totalPages = metaFromTop?.totalPages ?? totalPages ?? Math.ceil((state.pagination.total || 0) / (state.pagination.limit || 10));
       })
       .addCase(fetchGuests.rejected, (state, action) => {
         state.loading = false;
