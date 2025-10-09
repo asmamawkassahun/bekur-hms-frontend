@@ -27,6 +27,13 @@ export interface CreateRoomData {
   amenities: string[];
   basePrice: number;
   floor: number;
+  status:
+    | 'AVAILABLE'
+    | 'OCCUPIED'
+    | 'CLEANING'
+    | 'MAINTENANCE'
+    | 'OUT_OF_ORDER';
+  isActive: boolean;
 }
 
 export interface UpdateRoomData {
@@ -35,6 +42,7 @@ export interface UpdateRoomData {
   amenities?: string[];
   basePrice?: number;
   floor?: number;
+  isActive?: boolean;
 }
 
 export interface UpdateRoomStatusData {

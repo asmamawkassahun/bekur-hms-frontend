@@ -1,6 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useSelector as useReduxSelector, useDispatch as useReduxDispatch } from 'react-redux';
 import {
   Card,
   CardContent,
@@ -26,6 +30,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Select as ShadSelect, SelectTrigger as ShadSelectTrigger, SelectValue as ShadSelectValue, SelectContent as ShadSelectContent, SelectItem as ShadSelectItem } from '@/components/ui/select';
+import { roomService } from '@/services/room.service';
+import { useNotification } from '@/hooks/useNotification';
+import { RootState, AppDispatch } from '@/store';
+import { fetchProperties } from '@/store/slices/propertySlice';
+import { handleApiError } from '@/lib/api/error-handler';
+import type { AxiosError } from 'axios';
+import type { Room } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Bed,
   Search,
@@ -42,81 +63,189 @@ import {
   Wind,
 } from 'lucide-react';
 
-// Mock data for rooms
-const mockRooms = [
-  {
-    id: '1',
-    number: '101',
-    type: 'Single',
-    capacity: 1,
-    amenities: ['WiFi', 'TV', 'Air Conditioning'],
-    basePrice: 50,
-    floor: 1,
-    status: 'AVAILABLE',
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '2',
-    number: '102',
-    type: 'Double',
-    capacity: 2,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Mini Bar'],
-    basePrice: 80,
-    floor: 1,
-    status: 'OCCUPIED',
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '3',
-    number: '201',
-    type: 'Suite',
-    capacity: 4,
-    amenities: [
-      'WiFi',
-      'TV',
-      'Air Conditioning',
-      'Mini Bar',
-      'Balcony',
-      'Jacuzzi',
-    ],
-    basePrice: 150,
-    floor: 2,
-    status: 'CLEANING',
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '4',
-    number: '202',
-    type: 'Family',
-    capacity: 6,
-    amenities: ['WiFi', 'TV', 'Air Conditioning', 'Kitchenette', 'Balcony'],
-    basePrice: 120,
-    floor: 2,
-    status: 'MAINTENANCE',
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-];
+// Rooms are now loaded from backend
 
 export default function RoomsPage() {
-  const [rooms] = useState(mockRooms);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [propertyFilter, setPropertyFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [listLoading, setListLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [viewingRoom, setViewingRoom] = useState<Room | null>(null);
+  const [deletingRoom, setDeletingRoom] = useState<Room | null>(null);
+  const [totalRoomsAll, setTotalRoomsAll] = useState(0);
+  const [availableRoomsAll, setAvailableRoomsAll] = useState(0);
+  const [occupiedRoomsAll, setOccupiedRoomsAll] = useState(0);
+  const { success, error } = useNotification();
+  const { properties } = useReduxSelector((state: RootState) => state.property);
+  const dispatch = useReduxDispatch<AppDispatch>();
+
+  useEffect(() => {
+    if (!properties || properties.length === 0) {
+      dispatch(fetchProperties({ page: 1, limit: 100 }));
+    }
+  }, [dispatch, properties]);
+
+  // Load rooms from backend when filters/search change
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setListLoading(true);
+        const params: Record<string, unknown> = {
+          page,
+          limit,
+        };
+        if (searchTerm) params.search = searchTerm;
+        if (statusFilter !== 'all') params.status = statusFilter;
+        if (typeFilter !== 'all') params.type = typeFilter;
+        if (propertyFilter !== 'all') params.propertyId = propertyFilter;
+        const res = await roomService.getAll(params);
+        setRooms(res.data.data || []);
+        if (res.data.meta) {
+          setTotal(res.data.meta.total || 0);
+          setTotalPages(res.data.meta.totalPages || 0);
+        }
+      } catch (e) {
+        const apiErr = handleApiError(e as AxiosError);
+        error(apiErr.message);
+      } finally {
+        setListLoading(false);
+      }
+    };
+    load();
+  }, [searchTerm, statusFilter, typeFilter, propertyFilter, page, limit, error]);
+
+  // Load global stats (not limited by current pagination)
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const baseParams: Record<string, unknown> = { page: 1, limit: 1 };
+        if (propertyFilter !== 'all') baseParams.propertyId = propertyFilter;
+
+        const [totalRes, availableRes, occupiedRes] = await Promise.all([
+          roomService.getAll({ ...baseParams }),
+          roomService.getAll({ ...baseParams, status: 'AVAILABLE' }),
+          roomService.getAll({ ...baseParams, status: 'OCCUPIED' }),
+        ]);
+
+        const totalAll = totalRes.data.meta?.total || 0;
+        const availableAll = availableRes.data.meta?.total || 0;
+        const occupiedAll = occupiedRes.data.meta?.total || 0;
+
+        setTotalRoomsAll(totalAll);
+        setAvailableRoomsAll(availableAll);
+        setOccupiedRoomsAll(occupiedAll);
+      } catch (e) {
+        const apiErr = handleApiError(e as AxiosError);
+        error(apiErr.message);
+      }
+    };
+    loadStats();
+  }, [propertyFilter, error]);
+
+  const createSchema = z.object({
+    propertyId: z.string().min(1, 'Property is required'),
+    number: z.string().min(1, 'Room number is required'),
+    type: z.enum(['Single', 'Double', 'Twin', 'Suite', 'Family']),
+    capacity: z
+      .string()
+      .min(1, 'Capacity is required')
+      .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Capacity must be a positive number'),
+    amenities: z.string().optional(),
+    basePrice: z
+      .string()
+      .min(1, 'Base price is required')
+      .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, 'Base price must be a number'),
+    status: z.enum(['AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'OUT_OF_ORDER']),
+    floor: z
+      .string()
+      .min(1, 'Floor is required')
+      .refine((v) => !isNaN(Number(v)), 'Floor must be a number'),
+    isActive: z.boolean(),
+  });
+
+  type CreateFormValues = z.infer<typeof createSchema>;
+
+  const form = useForm<CreateFormValues>({
+    resolver: zodResolver(createSchema),
+    defaultValues: {
+      propertyId: properties[0]?.id || '',
+      number: '',
+      type: 'Double',
+      capacity: '2',
+      amenities: 'WiFi,TV,Air Conditioning,Mini Bar',
+      basePrice: '80',
+      status: 'AVAILABLE',
+      floor: '1',
+      isActive: true,
+    },
+  });
+
+  const editSchema = z.object({
+    number: z.string().min(1, 'Room number is required'),
+    type: z.enum(['Single', 'Double', 'Twin', 'Suite', 'Family']),
+    capacity: z
+      .string()
+      .min(1, 'Capacity is required')
+      .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Capacity must be a positive number'),
+    amenities: z.string().optional(),
+    basePrice: z
+      .string()
+      .min(1, 'Base price is required')
+      .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, 'Base price must be a number'),
+    status: z.enum(['AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'OUT_OF_ORDER']),
+    floor: z
+      .string()
+      .min(1, 'Floor is required')
+      .refine((v) => !isNaN(Number(v)), 'Floor must be a number'),
+    isActive: z.boolean(),
+  });
+
+  type EditFormValues = z.infer<typeof editSchema>;
+
+  const editForm = useForm<EditFormValues>({
+    resolver: zodResolver(editSchema),
+    defaultValues: {
+      number: '',
+      type: 'Double',
+      capacity: '2',
+      amenities: '',
+      basePrice: '80',
+      status: 'AVAILABLE',
+      floor: '1',
+      isActive: true,
+    },
+  });
 
   const filteredRooms = rooms.filter((room) => {
-    const matchesSearch =
-      room.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.type.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || room.status === statusFilter;
+    const term = searchTerm.trim().toLowerCase();
+    const propertyName = properties.find((p) => p.id === room.propertyId)?.name || '';
+    const searchable = [
+      room.number,
+      room.type,
+      String(room.capacity),
+      room.status,
+      String(room.floor),
+      String(room.basePrice),
+      room.propertyId,
+      propertyName,
+      ...room.amenities,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    const matchesSearch = term === '' || searchable.includes(term);
+    const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
     const matchesType = typeFilter === 'all' || room.type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
@@ -191,11 +320,401 @@ export default function RoomsPage() {
             Manage hotel rooms and availability
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => setOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Room
         </Button>
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Room</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={form.handleSubmit(async (values) => {
+              try {
+                const payload = {
+                  propertyId: values.propertyId,
+                  number: values.number,
+                  type: values.type,
+                  capacity: Number(values.capacity),
+                  amenities: (values.amenities || '').split(',').map((a) => a.trim()).filter(Boolean),
+                  basePrice: Number(values.basePrice),
+                  status: values.status,
+                  floor: Number(values.floor),
+                  isActive: values.isActive,
+                };
+                console.log('🧪 Creating room with payload:', payload);
+                const response = await roomService.create(payload);
+                const created = response.data.data as Room;
+                setRooms((prev) => [created, ...prev]);
+                success('Room created');
+                setOpen(false);
+                form.reset();
+              } catch (e: unknown) {
+                const apiErr = handleApiError(e as AxiosError);
+                console.error('❌ Room creation failed:', e);
+                error(apiErr.message);
+              }
+            })}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="propertyId">Property</Label>
+                <ShadSelect
+                  value={form.watch('propertyId')}
+                  onValueChange={(v) => form.setValue('propertyId', v)}
+                >
+                  <ShadSelectTrigger>
+                    <ShadSelectValue placeholder="Select property" />
+                  </ShadSelectTrigger>
+                  <ShadSelectContent>
+                    {properties.map((p) => (
+                      <ShadSelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </ShadSelectItem>
+                    ))}
+                  </ShadSelectContent>
+                </ShadSelect>
+                {form.formState.errors.propertyId && (
+                  <p className="text-sm text-red-600">{form.formState.errors.propertyId.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="number">Room Number</Label>
+                <Input id="number" {...form.register('number')} />
+                {form.formState.errors.number && (
+                  <p className="text-sm text-red-600">{form.formState.errors.number.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <ShadSelect
+                  value={form.watch('type')}
+                  onValueChange={(v) => form.setValue('type', v as any)}
+                >
+                  <ShadSelectTrigger>
+                    <ShadSelectValue placeholder="Select type" />
+                  </ShadSelectTrigger>
+                  <ShadSelectContent>
+                    <ShadSelectItem value="Single">Single</ShadSelectItem>
+                    <ShadSelectItem value="Double">Double</ShadSelectItem>
+                    <ShadSelectItem value="Twin">Twin</ShadSelectItem>
+                    <ShadSelectItem value="Suite">Suite</ShadSelectItem>
+                    <ShadSelectItem value="Family">Family</ShadSelectItem>
+                  </ShadSelectContent>
+                </ShadSelect>
+                {form.formState.errors.type && (
+                  <p className="text-sm text-red-600">{form.formState.errors.type.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity</Label>
+                <Input id="capacity" type="number" {...form.register('capacity')} />
+                {form.formState.errors.capacity && (
+                  <p className="text-sm text-red-600">{form.formState.errors.capacity.message}</p>
+                )}
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="amenities">Amenities (comma separated)</Label>
+                <Input id="amenities" {...form.register('amenities')} />
+                {form.formState.errors.amenities && (
+                  <p className="text-sm text-red-600">{form.formState.errors.amenities.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="basePrice">Base Price</Label>
+                <Input id="basePrice" type="number" step="0.01" {...form.register('basePrice')} />
+                {form.formState.errors.basePrice && (
+                  <p className="text-sm text-red-600">{form.formState.errors.basePrice.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <ShadSelect
+                  value={form.watch('status')}
+                  onValueChange={(v) => form.setValue('status', v as any)}
+                >
+                  <ShadSelectTrigger>
+                    <ShadSelectValue placeholder="Select status" />
+                  </ShadSelectTrigger>
+                  <ShadSelectContent>
+                    <ShadSelectItem value="AVAILABLE">Available</ShadSelectItem>
+                    <ShadSelectItem value="OCCUPIED">Occupied</ShadSelectItem>
+                    <ShadSelectItem value="CLEANING">Cleaning</ShadSelectItem>
+                    <ShadSelectItem value="MAINTENANCE">Maintenance</ShadSelectItem>
+                    <ShadSelectItem value="OUT_OF_ORDER">Out of Order</ShadSelectItem>
+                  </ShadSelectContent>
+                </ShadSelect>
+                {form.formState.errors.status && (
+                  <p className="text-sm text-red-600">{form.formState.errors.status.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="floor">Floor</Label>
+                <Input id="floor" type="number" {...form.register('floor')} />
+                {form.formState.errors.floor && (
+                  <p className="text-sm text-red-600">{form.formState.errors.floor.message}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-primary">
+                Create Room
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Room Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Room Details</DialogTitle>
+          </DialogHeader>
+          {viewingRoom ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Room Number</p>
+                  <p className="font-medium">{viewingRoom.number}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <p className="font-medium">{viewingRoom.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Capacity</p>
+                  <p className="font-medium">{viewingRoom.capacity}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Base Price</p>
+                  <p className="font-medium">{formatCurrency(viewingRoom.basePrice)}/night</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <div className="mt-1">{getStatusBadge(viewingRoom.status)}</div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Floor</p>
+                  <p className="font-medium">{viewingRoom.floor}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Active</p>
+                  <p className="font-medium">{viewingRoom.isActive ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Property</p>
+                  <p className="font-medium">{properties.find(p => p.id === viewingRoom.propertyId)?.name || viewingRoom.propertyId}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Amenities</p>
+                {viewingRoom.amenities.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {viewingRoom.amenities.map((a, idx) => (
+                      <Badge key={idx} variant="outline">{a}</Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No amenities</p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="font-medium">{new Date(viewingRoom.createdAt).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Updated</p>
+                  <p className="font-medium">{new Date(viewingRoom.updatedAt).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Room Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Room</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={editForm.handleSubmit(async (values) => {
+              if (!editingRoom) return;
+              try {
+                const updatePayload = {
+                  type: values.type,
+                  capacity: Number(values.capacity),
+                  amenities: (values.amenities || '').split(',').map((a) => a.trim()).filter(Boolean),
+                  basePrice: Number(values.basePrice),
+                  floor: Number(values.floor),
+                  isActive: values.isActive,
+                };
+                await roomService.update(editingRoom.id, updatePayload);
+                if (values.status !== editingRoom.status) {
+                  await roomService.updateStatus(editingRoom.id, { status: values.status });
+                }
+                setRooms((prev) => prev.map((r) => r.id === editingRoom.id ? {
+                  ...r,
+                  ...updatePayload,
+                  status: values.status,
+                  number: values.number, // allow number change locally
+                } : r));
+                success('Room updated');
+                setEditOpen(false);
+                setEditingRoom(null);
+              } catch (e: unknown) {
+                const apiErr = handleApiError(e as AxiosError);
+                error(apiErr.message);
+              }
+            })}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-number">Room Number</Label>
+                <Input id="edit-number" {...editForm.register('number')} />
+                {editForm.formState.errors.number && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.number.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-type">Type</Label>
+                <ShadSelect
+                  value={editForm.watch('type')}
+                  onValueChange={(v) => editForm.setValue('type', v as any)}
+                >
+                  <ShadSelectTrigger>
+                    <ShadSelectValue placeholder="Select type" />
+                  </ShadSelectTrigger>
+                  <ShadSelectContent>
+                    <ShadSelectItem value="Single">Single</ShadSelectItem>
+                    <ShadSelectItem value="Double">Double</ShadSelectItem>
+                    <ShadSelectItem value="Twin">Twin</ShadSelectItem>
+                    <ShadSelectItem value="Suite">Suite</ShadSelectItem>
+                    <ShadSelectItem value="Family">Family</ShadSelectItem>
+                  </ShadSelectContent>
+                </ShadSelect>
+                {editForm.formState.errors.type && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.type.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-capacity">Capacity</Label>
+                <Input id="edit-capacity" type="number" {...editForm.register('capacity')} />
+                {editForm.formState.errors.capacity && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.capacity.message}</p>
+                )}
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="edit-amenities">Amenities (comma separated)</Label>
+                <Input id="edit-amenities" {...editForm.register('amenities')} />
+                {editForm.formState.errors.amenities && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.amenities.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-basePrice">Base Price</Label>
+                <Input id="edit-basePrice" type="number" step="0.01" {...editForm.register('basePrice')} />
+                {editForm.formState.errors.basePrice && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.basePrice.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <ShadSelect
+                  value={editForm.watch('status')}
+                  onValueChange={(v) => editForm.setValue('status', v as any)}
+                >
+                  <ShadSelectTrigger>
+                    <ShadSelectValue placeholder="Select status" />
+                  </ShadSelectTrigger>
+                  <ShadSelectContent>
+                    <ShadSelectItem value="AVAILABLE">Available</ShadSelectItem>
+                    <ShadSelectItem value="OCCUPIED">Occupied</ShadSelectItem>
+                    <ShadSelectItem value="CLEANING">Cleaning</ShadSelectItem>
+                    <ShadSelectItem value="MAINTENANCE">Maintenance</ShadSelectItem>
+                    <ShadSelectItem value="OUT_OF_ORDER">Out of Order</ShadSelectItem>
+                  </ShadSelectContent>
+                </ShadSelect>
+                {editForm.formState.errors.status && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.status.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-floor">Floor</Label>
+                <Input id="edit-floor" type="number" {...editForm.register('floor')} />
+                {editForm.formState.errors.floor && (
+                  <p className="text-sm text-red-600">{editForm.formState.errors.floor.message}</p>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="edit-isActive" checked={editForm.watch('isActive')} onCheckedChange={(v) => editForm.setValue('isActive', Boolean(v))} />
+                <Label htmlFor="edit-isActive">Active</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-primary">
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Modal */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Room</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete this room? This action cannot be undone.</p>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deletingRoom) return;
+                try {
+                  await roomService.delete(deletingRoom.id);
+                  setRooms((prev) => prev.filter((r) => r.id !== deletingRoom.id));
+                  success('Room deleted');
+                  setDeleteOpen(false);
+                  setDeletingRoom(null);
+                } catch (e: unknown) {
+                  const apiErr = handleApiError(e as AxiosError);
+                  error(apiErr.message);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -208,7 +727,7 @@ export default function RoomsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              {rooms.length}
+              {totalRoomsAll}
             </div>
             <p className="text-xs text-muted-foreground">All room types</p>
           </CardContent>
@@ -223,7 +742,7 @@ export default function RoomsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              {rooms.filter((r) => r.status === 'AVAILABLE').length}
+              {availableRoomsAll}
             </div>
             <p className="text-xs text-muted-foreground">Ready for guests</p>
           </CardContent>
@@ -238,7 +757,7 @@ export default function RoomsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              {rooms.filter((r) => r.status === 'OCCUPIED').length}
+              {occupiedRoomsAll}
             </div>
             <p className="text-xs text-muted-foreground">Currently in use</p>
           </CardContent>
@@ -253,12 +772,7 @@ export default function RoomsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              {Math.round(
-                (rooms.filter((r) => r.status === 'OCCUPIED').length /
-                  rooms.length) *
-                  100,
-              )}
-              %
+              {totalRoomsAll > 0 ? Math.round((occupiedRoomsAll / totalRoomsAll) * 100) : 0}%
             </div>
             <p className="text-xs text-muted-foreground">Current occupancy</p>
           </CardContent>
@@ -266,7 +780,7 @@ export default function RoomsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-card border-0 shadow-sm">
+        <Card className="bg-card border-0 shadow-sm">
         <CardHeader>
           <CardTitle>Filters</CardTitle>
         </CardHeader>
@@ -276,13 +790,26 @@ export default function RoomsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search by room number or type..."
+                  placeholder="Search rooms by any field (number, type, status, price, amenities, property)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
+              <Select value={propertyFilter} onValueChange={setPropertyFilter}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Property" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Properties</SelectItem>
+                  {properties.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Status" />
@@ -338,7 +865,16 @@ export default function RoomsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRooms.length === 0 ? (
+                {listLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                        <span className="ml-2">Loading rooms...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRooms.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -394,13 +930,29 @@ export default function RoomsPage() {
                       <TableCell>{getStatusBadge(room.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => { setViewingRoom(room); setViewOpen(true); }}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setEditOpen(true);
+                            setEditingRoom(room);
+                            editForm.reset({
+                              number: room.number,
+                              type: room.type,
+                              capacity: String(room.capacity),
+                              amenities: room.amenities.join(', '),
+                              basePrice: String(room.basePrice),
+                              status: room.status,
+                              floor: String(room.floor),
+                              isActive: room.isActive,
+                            });
+                          }}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setDeleteOpen(true);
+                            setDeletingRoom(room);
+                          }}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </div>
@@ -410,6 +962,27 @@ export default function RoomsPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              Page {totalPages ? page : 0} of {totalPages}
+              {total ? ` • ${total} total` : ''}
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
+                <SelectTrigger className="w-[110px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 / page</SelectItem>
+                  <SelectItem value="20">20 / page</SelectItem>
+                  <SelectItem value="50">50 / page</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+              <Button variant="outline" disabled={totalPages && page >= totalPages ? true : false} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            </div>
           </div>
         </CardContent>
       </Card>
