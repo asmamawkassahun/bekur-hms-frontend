@@ -75,14 +75,17 @@ export interface CreateDormitoryData {
   capacity: number;
   basePrice: number;
   amenities: string[];
+  isActive: boolean;
 }
 
 export interface UpdateDormitoryData {
+  propertyId?: string;
   name?: string;
   type?: "Men's" | "Women's" | 'Mixed';
   capacity?: number;
   basePrice?: number;
   amenities?: string[];
+  isActive?: boolean;
 }
 
 // Bed Types
@@ -106,10 +109,20 @@ export interface CreateBedData {
   dormitoryId: string;
   number: string;
   basePrice: number;
+  status:
+    | 'AVAILABLE'
+    | 'OCCUPIED'
+    | 'CLEANING'
+    | 'MAINTENANCE'
+    | 'OUT_OF_ORDER';
+  isActive: boolean;
 }
 
 export interface UpdateBedData {
+  dormitoryId?: string;
+  number?: string;
   basePrice?: number;
+  isActive?: boolean;
 }
 
 export interface UpdateBedStatusData {
