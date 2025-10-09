@@ -238,12 +238,23 @@ const guestSlice = createSlice({
       })
       .addCase(fetchGuests.fulfilled, (state, action) => {
         state.loading = false;
-        state.guests = action.payload.data || [];
-        if (action.payload.meta) {
-          state.pagination.page = action.payload.meta.page || 1;
-          state.pagination.limit = action.payload.meta.limit || 10;
-          state.pagination.total = action.payload.meta.total || 0;
-          state.pagination.totalPages = action.payload.meta.totalPages || 0;
+        const apiData = action.payload?.data as
+          | Guest[]
+          | { items?: Guest[]; data?: Guest[]; meta?: { page?: number; limit?: number; total?: number; totalPages?: number } }
+          | undefined;
+
+        const items = Array.isArray(apiData)
+          ? apiData
+          : apiData?.items || apiData?.data || [];
+
+        state.guests = items;
+
+        const meta = action.payload?.meta || (!Array.isArray(apiData) ? (apiData as any)?.meta : undefined);
+        if (meta) {
+          state.pagination.page = meta.page || 1;
+          state.pagination.limit = meta.limit || 10;
+          state.pagination.total = meta.total || 0;
+          state.pagination.totalPages = meta.totalPages || 0;
         }
       })
       .addCase(fetchGuests.rejected, (state, action) => {

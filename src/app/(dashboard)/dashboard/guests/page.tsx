@@ -140,7 +140,7 @@ export default function GuestsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              {guests.filter((g) => g.loyaltyTier === 'PLATINUM').length}
+              {(guests || []).filter((g) => g.loyaltyTier === 'PLATINUM').length}
             </div>
             <p className="text-xs text-muted-foreground">Platinum members</p>
           </CardContent>
@@ -156,7 +156,7 @@ export default function GuestsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
               {
-                guests.filter((g) => {
+                (guests || []).filter((g) => {
                   const created = new Date(g.createdAt);
                   const now = new Date();
                   return (
@@ -179,7 +179,7 @@ export default function GuestsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              {guests.filter((g) => g.isActive).length}
+              {(guests || []).filter((g) => g.isActive).length}
             </div>
             <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
@@ -254,7 +254,7 @@ export default function GuestsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : guests.length === 0 ? (
+                ) : (guests || []).length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -264,7 +264,7 @@ export default function GuestsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  guests.map((guest) => (
+                  (guests || []).map((guest) => (
                     <TableRow key={guest.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
