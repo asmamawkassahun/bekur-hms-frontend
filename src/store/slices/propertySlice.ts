@@ -43,7 +43,9 @@ export const fetchProperties = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
+      console.log('📦 fetchProperties params:', params);
       const response = await propertyService.getAll(params);
+      console.log('📦 fetchProperties response.data:', response.data);
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -57,7 +59,10 @@ export const createProperty = createAsyncThunk(
   'property/createProperty',
   async (data: CreatePropertyData, { rejectWithValue }) => {
     try {
+      console.log('🏗️ createProperty request payload:', data);
       const response = await propertyService.create(data);
+      console.log('🏗️ Here is the createProperty response: ', response);
+      console.log('🏗️ createProperty response.data:', response.data);
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -147,12 +152,38 @@ const propertySlice = createSlice({
       })
       .addCase(fetchProperties.fulfilled, (state, action) => {
         state.loading = false;
-        state.properties = action.payload.data || [];
-        if (action.payload.meta) {
-          state.pagination.page = action.payload.meta.page || 1;
-          state.pagination.limit = action.payload.meta.limit || 10;
-          state.pagination.total = action.payload.meta.total || 0;
-          state.pagination.totalPages = action.payload.meta.totalPages || 0;
+        console.log('📦 fetchProperties.fulfilled payload:', action.payload);
+        const apiData = action.payload?.data as
+          | Property[]
+          | { items?: Property[]; meta?: { page?: number; limit?: number; total?: number; totalPages?: number } }
+          | undefined;
+
+        const items = Array.isArray(apiData)
+          ? apiData
+          : apiData?.items || [];
+
+        // Merge fetched items with any optimistic items already in state
+        if (state.properties.length > 0) {
+          const seen = new Set(items.map((p) => p.id));
+          const optimistic = state.properties.filter((p) => !seen.has(p.id));
+          state.properties = [...items, ...optimistic];
+        } else {
+          state.properties = items;
+        }
+
+        const meta = action.payload?.meta || (!Array.isArray(apiData) ? apiData?.meta : undefined);
+        console.log('📦 Parsed items length:', items.length, 'meta:', meta);
+        if (meta) {
+          state.pagination.page = meta.page || 1;
+          state.pagination.limit = meta.limit || 10;
+          state.pagination.total = meta.total || 0;
+          state.pagination.totalPages = meta.totalPages || 0;
+        } else {
+          // Fallback defaults when meta is missing
+          state.pagination.page = 1;
+          state.pagination.limit = items.length;
+          state.pagination.total = items.length;
+          state.pagination.totalPages = 1;
         }
       })
       .addCase(fetchProperties.rejected, (state, action) => {
@@ -166,6 +197,7 @@ const propertySlice = createSlice({
       })
       .addCase(createProperty.fulfilled, (state, action) => {
         state.loading = false;
+        console.log('🏗️ createProperty.fulfilled payload:', action.payload);
         if (action.payload.data) {
           state.properties.push(action.payload.data);
         }
