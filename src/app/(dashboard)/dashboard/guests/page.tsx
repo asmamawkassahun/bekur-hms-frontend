@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
-import { fetchGuests } from '@/store/slices/guestSlice';
+import { fetchGuests, createGuest } from '@/store/slices/guestSlice';
 import {
   Card,
   CardContent,
@@ -43,6 +43,14 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNotification } from '@/hooks/useNotification';
+import type { AxiosError } from 'axios';
+import { handleApiError } from '@/lib/api/error-handler';
 
 export default function GuestsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,6 +60,8 @@ export default function GuestsPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [loyaltyFilter, setLoyaltyFilter] = useState('all');
+  const [openCreate, setOpenCreate] = useState(false);
+  const { success, error } = useNotification();
 
   useEffect(() => {
     dispatch(
@@ -96,6 +106,62 @@ export default function GuestsPage() {
     });
   };
 
+  const createSchema = z.object({
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email('Invalid email'),
+    phone: z.string().min(1, 'Phone is required'),
+    nationality: z.string().optional(),
+    dateOfBirth: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    country: z.string().optional(),
+    postalCode: z.string().optional(),
+    loyaltyTier: z.enum(['BRONZE','SILVER','GOLD','PLATINUM']).optional(),
+    preferences: z.array(z.string()).optional(),
+    specialRequests: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    isActive: z.boolean().optional().default(true),
+  });
+
+  type CreateGuestForm = z.input<typeof createSchema>;
+  const form = useForm<CreateGuestForm>({
+    resolver: zodResolver(createSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      nationality: '',
+      dateOfBirth: '',
+      address: '',
+      city: '',
+      country: '',
+      postalCode: '',
+      loyaltyTier: undefined,
+      preferences: [],
+      specialRequests: [],
+      notes: '',
+      tags: [],
+      isActive: true,
+    } as any,
+  });
+
+  const onSubmit = async (values: CreateGuestForm) => {
+    try {
+      await (dispatch as AppDispatch)(createGuest(values)).unwrap();
+      success('Guest created');
+      setOpenCreate(false);
+      form.reset({ isActive: true });
+      // refetch first page to see new guest and reset filters
+      dispatch(fetchGuests({ page: 1, limit: 10 }));
+    } catch (e) {
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -106,10 +172,156 @@ export default function GuestsPage() {
             Manage guest profiles and information
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <Plus className="mr-2 h-4 w-4" />
-          New Guest
-        </Button>
+        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="mr-2 h-4 w-4" />
+              New Guest
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>New Guest</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="firstName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="lastName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="john@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="phone" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+251912345678" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="nationality" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nationality</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ethiopian" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date of Birth</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="address" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Street, Area" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="city" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Addis Ababa" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="country" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ethiopia" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="postalCode" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Postal Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="1000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="loyaltyTier" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loyalty Tier</FormLabel>
+                    <FormControl>
+                      <Input placeholder="BRONZE | SILVER | GOLD | PLATINUM" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="tags" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags (comma separated)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="VIP, Frequent" value={(field.value || []).join(', ')} onChange={(e) => field.onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="preferences" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Preferences (comma separated)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Quiet room, High floor" value={(field.value || []).join(', ')} onChange={(e) => field.onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="specialRequests" render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Special Requests (comma separated)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Late check-in" value={(field.value || []).join(', ')} onChange={(e) => field.onChange(e.target.value.split(',').map((s) => s.trim()).filter(Boolean))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="md:col-span-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setOpenCreate(false)}>Cancel</Button>
+                  <Button type="submit" className="bg-primary" disabled={loading}>Create</Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
