@@ -238,24 +238,32 @@ const guestSlice = createSlice({
       })
       .addCase(fetchGuests.fulfilled, (state, action) => {
         state.loading = false;
-        const apiData = action.payload?.data as
-          | Guest[]
-          | { items?: Guest[]; data?: Guest[]; meta?: { page?: number; limit?: number; total?: number; totalPages?: number } }
-          | undefined;
+        // Backend may return { success, data: Guest[] } or { success, data: { guests: Guest[], total, page, limit } }
+        const payloadData = action.payload?.data as unknown;
+        let items: Guest[] = [];
+        let page: number | undefined;
+        let limit: number | undefined;
+        let total: number | undefined;
+        let totalPages: number | undefined;
 
-        const items = Array.isArray(apiData)
-          ? apiData
-          : apiData?.items || apiData?.data || [];
+        if (Array.isArray(payloadData)) {
+          items = payloadData as Guest[];
+        } else if (payloadData && typeof payloadData === 'object') {
+          const dataObj = payloadData as { guests?: Guest[]; items?: Guest[]; data?: Guest[]; total?: number; page?: number; limit?: number; totalPages?: number };
+          items = (dataObj.guests || dataObj.items || dataObj.data || []) as Guest[];
+          page = dataObj.page;
+          limit = dataObj.limit;
+          total = dataObj.total;
+          totalPages = dataObj.totalPages;
+        }
 
         state.guests = items;
 
-        const meta = action.payload?.meta || (!Array.isArray(apiData) ? (apiData as any)?.meta : undefined);
-        if (meta) {
-          state.pagination.page = meta.page || 1;
-          state.pagination.limit = meta.limit || 10;
-          state.pagination.total = meta.total || 0;
-          state.pagination.totalPages = meta.totalPages || 0;
-        }
+        const metaFromTop = action.payload?.meta;
+        state.pagination.page = metaFromTop?.page ?? page ?? 1;
+        state.pagination.limit = metaFromTop?.limit ?? limit ?? 10;
+        state.pagination.total = metaFromTop?.total ?? total ?? items.length;
+        state.pagination.totalPages = metaFromTop?.totalPages ?? totalPages ?? Math.ceil((state.pagination.total || 0) / (state.pagination.limit || 10));
       })
       .addCase(fetchGuests.rejected, (state, action) => {
         state.loading = false;
