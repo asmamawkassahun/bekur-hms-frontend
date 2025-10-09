@@ -34,6 +34,7 @@ export interface CreatePropertyData {
   timezone: string;
   currency: string;
   taxRate: number;
+  isActive: boolean;
 }
 
 export interface UpdatePropertyData {
@@ -44,4 +45,5 @@ export interface UpdatePropertyData {
   timezone?: string;
   currency?: string;
   taxRate?: number;
+  isActive?: boolean;
 }

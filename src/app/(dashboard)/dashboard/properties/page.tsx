@@ -6,6 +6,7 @@ import { AppDispatch, RootState } from '@/store';
 import {
   fetchProperties,
   fetchPropertyStats,
+  createProperty,
 } from '@/store/slices/propertySlice';
 import {
   Card,
@@ -17,6 +18,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNotification } from '@/hooks/useNotification';
 import {
   Table,
   TableBody,
@@ -46,6 +60,38 @@ export default function PropertiesPage() {
   );
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [open, setOpen] = useState(false);
+  const { success, error } = useNotification();
+
+  const createSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    address: z.string().min(1, 'Address is required'),
+    city: z.string().min(1, 'City is required'),
+    country: z.string().min(1, 'Country is required'),
+    timezone: z.string().min(1, 'Timezone is required'),
+    currency: z.string().min(1, 'Currency is required'),
+    taxRate: z
+      .string()
+      .min(1, 'Tax rate is required')
+      .refine((v) => !isNaN(Number(v)), 'Tax rate must be a number'),
+    isActive: z.boolean(),
+  });
+
+  type CreateFormValues = z.infer<typeof createSchema>;
+
+  const form = useForm<CreateFormValues>({
+    resolver: zodResolver(createSchema),
+    defaultValues: {
+      name: '',
+      address: '',
+      city: '',
+      country: '',
+      timezone: 'Africa/Addis_Ababa',
+      currency: 'ETB',
+      taxRate: '15',
+      isActive: true,
+    },
+  });
 
   useEffect(() => {
     dispatch(
@@ -82,11 +128,113 @@ export default function PropertiesPage() {
             Manage hotel properties and locations
           </p>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => setOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           New Property
         </Button>
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Property</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={form.handleSubmit(async (values) => {
+              try {
+                const payload = {
+                  name: values.name,
+                  address: values.address,
+                  city: values.city,
+                  country: values.country,
+                  timezone: values.timezone,
+                  currency: values.currency,
+                  taxRate: Number(values.taxRate),
+                  isActive: values.isActive,
+                };
+                await dispatch(createProperty(payload)).unwrap();
+                success('Property created');
+                setOpen(false);
+                form.reset();
+                dispatch(
+                  fetchProperties({ page: 1, limit: 10, search: searchTerm || undefined }),
+                );
+              } catch (e: unknown) {
+                const message = e instanceof Error ? e.message : 'Failed to create property';
+                error(message);
+              }
+            })}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" {...form.register('name')} />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" {...form.register('address')} />
+                {form.formState.errors.address && (
+                  <p className="text-sm text-red-600">{form.formState.errors.address.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" {...form.register('city')} />
+                {form.formState.errors.city && (
+                  <p className="text-sm text-red-600">{form.formState.errors.city.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" {...form.register('country')} />
+                {form.formState.errors.country && (
+                  <p className="text-sm text-red-600">{form.formState.errors.country.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Input id="timezone" placeholder="Africa/Addis_Ababa" {...form.register('timezone')} />
+                {form.formState.errors.timezone && (
+                  <p className="text-sm text-red-600">{form.formState.errors.timezone.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Input id="currency" placeholder="ETB" {...form.register('currency')} />
+                {form.formState.errors.currency && (
+                  <p className="text-sm text-red-600">{form.formState.errors.currency.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                <Input id="taxRate" type="number" step="0.01" {...form.register('taxRate')} />
+                {form.formState.errors.taxRate && (
+                  <p className="text-sm text-red-600">{form.formState.errors.taxRate.message}</p>
+                )}
+              </div>
+              <div className="flex items-center space-x-2 mt-6">
+                <Checkbox id="isActive" checked={form.watch('isActive')} onCheckedChange={(v) => form.setValue('isActive', Boolean(v))} />
+                <Label htmlFor="isActive">Active</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-primary" disabled={loading}>
+                Create Property
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

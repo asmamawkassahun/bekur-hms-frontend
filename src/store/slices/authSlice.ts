@@ -1,4 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { authService } from '@/services/auth.service';
+import { TokenManager } from '@/lib/auth/token-manager';
 
 // Temporary types to avoid circular dependency
 interface User {
@@ -52,106 +54,7 @@ interface ResetPasswordData {
   newPassword: string;
 }
 
-// Mock services to avoid circular dependency
-const authService = {
-  login: async (credentials: LoginCredentials) => {
-    console.log('🔐 Mock authService.login called with:', credentials);
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const mockResponse = {
-      data: {
-        data: {
-          accessToken: 'mock-access-token-' + Date.now(),
-          refreshToken: 'mock-refresh-token-' + Date.now(),
-          user: {
-            id: '1',
-            email: credentials.email,
-            firstName: 'Test',
-            lastName: 'User',
-            phone: '+1234567890',
-            isActive: true,
-            emailVerified: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            roles: [{ id: '1', name: 'FRONT_DESK' }],
-            permissions: ['reservation:read', 'guest:read'],
-            properties: [],
-          } as User,
-        },
-      },
-    };
-
-    console.log('🔐 Mock authService returning:', mockResponse);
-    return mockResponse;
-  },
-  loginWithOTP: async () => {
-    return { data: { data: { message: 'OTP sent' } } };
-  },
-  verifyOTP: async () => {
-    return {
-      data: {
-        data: { accessToken: 'mock', refreshToken: 'mock', user: {} as User },
-      },
-    };
-  },
-  resendOTP: async () => {
-    return { data: { data: { message: 'OTP resent' } } };
-  },
-  forgotPassword: async () => {
-    return { data: { data: { message: 'Reset email sent' } } };
-  },
-  resetPassword: async () => {
-    return { data: { data: { message: 'Password reset' } } };
-  },
-  refreshTokens: async () => {
-    return { data: { data: { accessToken: 'mock', refreshToken: 'mock' } } };
-  },
-  getProfile: async () => {
-    return { data: { data: {} as User } };
-  },
-  logout: async () => {
-    return { data: { data: { message: 'Logged out' } } };
-  },
-};
-
-const TokenManager = {
-  setTokens: (accessToken: string, refreshToken: string) => {
-    console.log('🔐 TokenManager: Setting tokens');
-
-    // Store refresh token in localStorage (encrypted in real implementation)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('refresh_token', refreshToken);
-      console.log('🔐 TokenManager: Refresh token stored in localStorage');
-
-      // Set access token in cookie for middleware
-      document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
-      console.log(
-        '🔐 TokenManager: Access token stored in cookie for middleware',
-      );
-    }
-  },
-  clearTokens: () => {
-    console.log('🔐 TokenManager: Clearing tokens');
-
-    if (typeof window !== 'undefined') {
-      // Clear refresh token from localStorage
-      localStorage.removeItem('refresh_token');
-
-      // Clear access token cookie
-      document.cookie =
-        'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      console.log('🔐 TokenManager: All tokens cleared');
-    }
-  },
-  getRefreshToken: () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('refresh_token') || 'mock';
-    }
-    return 'mock';
-  },
-};
+// Use real authService and TokenManager
 
 const initialState: AuthState = {
   user: null,
@@ -185,6 +88,9 @@ export const login = createAsyncThunk(
       // Store tokens securely
       console.log('🔐 Storing tokens...');
       TokenManager.setTokens(accessToken, refreshToken);
+      if (typeof document !== 'undefined') {
+        document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
+      }
       console.log('🔐 Tokens stored successfully');
 
       return { accessToken, refreshToken, user };
@@ -202,7 +108,7 @@ export const loginWithOTP = createAsyncThunk(
   'auth/loginWithOTP',
   async (credentials: LoginWithOTPCredentials, { rejectWithValue }) => {
     try {
-      const response = await authService.loginWithOTP();
+      const response = await authService.loginWithOTP(credentials);
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -216,11 +122,14 @@ export const verifyOTP = createAsyncThunk(
   'auth/verifyOTP',
   async (data: VerifyOTPData, { rejectWithValue }) => {
     try {
-      const response = await authService.verifyOTP();
+      const response = await authService.verifyOTP(data);
       const { accessToken, refreshToken, user } = response.data.data!;
 
       // Store tokens securely
       TokenManager.setTokens(accessToken, refreshToken);
+      if (typeof document !== 'undefined') {
+        document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
+      }
 
       return { accessToken, refreshToken, user };
     } catch (error: unknown) {
@@ -235,7 +144,7 @@ export const resendOTP = createAsyncThunk(
   'auth/resendOTP',
   async (email: string, { rejectWithValue }) => {
     try {
-      const response = await authService.resendOTP();
+      const response = await authService.resendOTP(email);
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
@@ -249,7 +158,7 @@ export const forgotPassword = createAsyncThunk(
   'auth/forgotPassword',
   async (data: ForgotPasswordData, { rejectWithValue }) => {
     try {
-      const response = await authService.forgotPassword();
+      const response = await authService.forgotPassword(data);
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
@@ -263,7 +172,7 @@ export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async (data: ResetPasswordData, { rejectWithValue }) => {
     try {
-      const response = await authService.resetPassword();
+      const response = await authService.resetPassword(data);
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(
@@ -282,17 +191,23 @@ export const refreshTokens = createAsyncThunk(
         throw new Error('No refresh token available');
       }
 
-      const response = await authService.refreshTokens();
+      const response = await authService.refreshTokens(refreshToken);
       const { accessToken, refreshToken: newRefreshToken } =
         response.data.data!;
 
       // Update stored tokens
       TokenManager.setTokens(accessToken, newRefreshToken);
+      if (typeof document !== 'undefined') {
+        document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
+      }
 
       return { accessToken, refreshToken: newRefreshToken };
     } catch (error: unknown) {
       // Clear tokens on refresh failure
       TokenManager.clearTokens();
+      if (typeof document !== 'undefined') {
+        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
       return rejectWithValue(
         error instanceof Error ? error.message : 'Token refresh failed',
       );
@@ -323,6 +238,9 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   } finally {
     // Always clear local tokens
     TokenManager.clearTokens();
+    if (typeof document !== 'undefined') {
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
   }
 });
 
