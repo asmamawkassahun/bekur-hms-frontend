@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { fetchReservations } from '@/store/slices/reservationSlice';
@@ -28,6 +28,10 @@ import {
   BarChart3,
   Activity,
   Building,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+  Printer,
 } from 'lucide-react';
 
 // Import extracted components
@@ -115,6 +119,151 @@ export default function DashboardPage() {
 
   const recentReservations = reservations?.slice(0, 5) || [];
   const recentGuests = guests?.slice(0, 5) || [];
+
+  // Refs for export/print
+  const reservationsTableRef = useRef<HTMLDivElement | null>(null);
+  const guestsTableRef = useRef<HTMLDivElement | null>(null);
+
+  // Helpers copied/adapted from shared DataTable
+  const getVisibleText = (el: Element): string => {
+    const text = (el as HTMLElement).innerText ?? '';
+    return text.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+  };
+
+  const collectTableData = (containerRef: React.RefObject<HTMLDivElement>) => {
+    const tableElement = containerRef.current?.querySelector('table');
+    if (!tableElement) return { headers: [] as string[], rows: [] as string[][] };
+    const headerCells = Array.from(tableElement.querySelectorAll('thead th'));
+    const headers = headerCells.map((th) => getVisibleText(th));
+    const bodyRows = Array.from(tableElement.querySelectorAll('tbody tr'));
+    const rows = bodyRows.map((tr) =>
+      Array.from(tr.querySelectorAll('td')).map((td) => getVisibleText(td)),
+    );
+    return { headers, rows };
+  };
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const buildHTMLTable = (headers: string[], rows: string[][]) => {
+    const thead = `<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+    const tbody = `<tbody>${rows
+      .map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`)
+      .join('')}</tbody>`;
+    return `<table>${thead}${tbody}</table>`;
+  };
+
+  const downloadBlob = (content: BlobPart, mime: string, filename: string) => {
+    const blob = new Blob([content], { type: `${mime};charset=utf-8;` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = (containerRef: React.RefObject<HTMLDivElement>, basename: string) => {
+    const { headers, rows } = collectTableData(containerRef);
+    if (!headers.length) return;
+    const escapeCsvField = (val: string) => {
+      const needsQuotes = /[",\n]/.test(val);
+      const escaped = val.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+    const csvLines = [headers, ...rows]
+      .map((row) => row.map(escapeCsvField).join(','))
+      .join('\r\n');
+    downloadBlob(csvLines, 'text/csv', `${basename}.csv`);
+  };
+
+  const handleExportExcel = (containerRef: React.RefObject<HTMLDivElement>, basename: string) => {
+    const { headers, rows } = collectTableData(containerRef);
+    if (!headers.length) return;
+    const tableHtml = buildHTMLTable(headers, rows);
+    const styles = `
+      <style>
+        body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+        thead th { background: #f4f4f5; font-weight: 600; }
+      </style>
+    `;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>${styles}</head><body>${tableHtml}</body></html>`;
+    downloadBlob(html, 'application/vnd.ms-excel', `${basename}.xls`);
+  };
+
+  const handleExportPDF = async (containerRef: React.RefObject<HTMLDivElement>, basename: string, titleText: string) => {
+    const { headers, rows } = collectTableData(containerRef);
+    if (!headers.length) return;
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
+    const orientation = headers.length > 6 ? 'landscape' : 'portrait';
+    const doc = new jsPDF({ orientation });
+    doc.setFontSize(14);
+    doc.text(String(titleText), 14, 16);
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 22,
+      styles: { fontSize: 10, cellPadding: 3, overflow: 'linebreak' },
+      headStyles: { fillColor: [244, 244, 245], textColor: 0 },
+      tableWidth: 'auto',
+      theme: 'striped',
+    });
+    doc.save(`${basename}.pdf`);
+  };
+
+  const ensurePrintStyles = () => {
+    if (document.getElementById('dashboard-print-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'dashboard-print-styles';
+    style.textContent = `
+@media screen { #dashboard-print-container { display: none; } }
+@media print {
+  body * { visibility: hidden; }
+  #dashboard-print-container, #dashboard-print-container * { visibility: visible; }
+  #dashboard-print-container { position: absolute; left: 0; top: 0; width: 100%; padding: 24px; }
+}
+#dashboard-print-container h1 { font-size: 20px; margin-bottom: 12px; }
+#dashboard-print-container table { border-collapse: collapse; width: 100%; }
+#dashboard-print-container th, #dashboard-print-container td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
+#dashboard-print-container thead th { background: #f4f4f5; font-weight: 600; }
+`;
+    document.head.appendChild(style);
+  };
+
+  const handlePrint = (containerRef: React.RefObject<HTMLDivElement>, titleText: string) => {
+    const { headers, rows } = collectTableData(containerRef);
+    if (!headers.length) return;
+    ensurePrintStyles();
+    const container = document.createElement('div');
+    container.id = 'dashboard-print-container';
+    container.innerHTML = `
+      <h1>${escapeHtml(titleText)}</h1>
+      ${buildHTMLTable(headers, rows)}
+    `;
+    document.body.appendChild(container);
+    const cleanup = () => {
+      container.remove();
+      window.removeEventListener('afterprint', cleanup);
+      document.title = originalTitle;
+    };
+    const originalTitle = document.title;
+    document.title = '';
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    setTimeout(cleanup, 1500);
+  };
 
   // Show skeleton during loading
   if (isLoading) {
@@ -284,11 +433,49 @@ export default function DashboardPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Recent Reservations</h3>
-                <Button variant="outline" size="sm" className="cursor-pointer">
-                  View All
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportCSV(reservationsTableRef, 'recent-reservations')}
+                    aria-label="Export CSV"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">CSV</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportExcel(reservationsTableRef, 'recent-reservations')}
+                    aria-label="Export Excel"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">Excel</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportPDF(reservationsTableRef, 'recent-reservations', 'Recent Reservations')}
+                    aria-label="Export PDF"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">PDF</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePrint(reservationsTableRef, 'Recent Reservations')}
+                    aria-label="Print"
+                  >
+                    <Printer className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">Print</span>
+                  </Button>
+                </div>
+                  <Button variant="outline" size="sm" className="cursor-pointer">
+                    View All
+                  </Button>
               </div>
-              <div className="rounded-md border">
+              <div className="rounded-md border" ref={reservationsTableRef}>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -344,11 +531,50 @@ export default function DashboardPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Recent Guests</h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportCSV(guestsTableRef, 'recent-guests')}
+                    aria-label="Export CSV"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">CSV</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportExcel(guestsTableRef, 'recent-guests')}
+                    aria-label="Export Excel"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">Excel</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExportPDF(guestsTableRef, 'recent-guests', 'Recent Guests')}
+                    aria-label="Export PDF"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">PDF</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePrint(guestsTableRef, 'Recent Guests')}
+                    aria-label="Print"
+                  >
+                    <Printer className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">Print</span>
+                  </Button>
+                  
+                </div>
                 <Button variant="outline" size="sm" className="cursor-pointer">
-                  View All
-                </Button>
+                    View All
+                  </Button>
               </div>
-              <div className="rounded-md border">
+              <div className="rounded-md border" ref={guestsTableRef}>
                 <Table>
                   <TableHeader>
                     <TableRow>
