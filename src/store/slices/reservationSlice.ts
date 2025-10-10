@@ -10,6 +10,7 @@ import {
   BookingType,
   BookingSource,
   PaymentDetailsData,
+  CalculatePriceData,
 } from '@/types';
 
 interface ReservationState {
@@ -250,6 +251,20 @@ export const addPaymentDetails = createAsyncThunk(
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to add payment details';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const calculatePrice = createAsyncThunk(
+  'reservation/calculatePrice',
+  async (data: CalculatePriceData, { rejectWithValue }) => {
+    try {
+      const res = await reservationService.calculate(data);
+      return res.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to calculate price';
       return rejectWithValue(errorMessage);
     }
   },

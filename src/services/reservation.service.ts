@@ -11,6 +11,7 @@ import {
   BookingSource,
   ApiResponse,
   QueryParams,
+  CalculatePriceData,
 } from '@/types';
 
 export const reservationService = {
@@ -107,4 +108,7 @@ export const reservationService = {
    */
   getBookingSourceById: (id: string) =>
     apiClient.get<ApiResponse<BookingSource>>(`/booking-sources/${id}`),
+
+  calculate: (data: CalculatePriceData) =>
+    apiClient.post<ApiResponse<CalculatePriceData>>(`/bookings/calculate-price`, data),
 };

@@ -5,6 +5,7 @@ export * from './property.types';
 export * from './room.types';
 export * from './guest.types';
 export * from './reservation.types';
+export * from './payment.types';
 
 // Common Types
 export interface BaseEntity {
@@ -21,13 +22,6 @@ export type ReservationStatus =
   | 'CHECKED_OUT'
   | 'CANCELLED'
   | 'NO_SHOW';
-
-export type PaymentStatus =
-  | 'PENDING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'REFUNDED'
-  | 'PARTIALLY_REFUNDED';
 
 export type RoomStatus =
   | 'AVAILABLE'

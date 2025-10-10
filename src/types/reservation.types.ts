@@ -240,3 +240,13 @@ export interface BookingSource {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CalculatePriceData {
+  propertyId: string;
+  accommodationType: string;
+  accommodationId: string;
+  checkIn?: string;
+  checkOut?: string;
+  guestId: string; // Single guest ID (UUID string), not array
+  bookingSourceId?: string;
+}
