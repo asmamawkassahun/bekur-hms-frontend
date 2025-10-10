@@ -10,6 +10,7 @@ import {
   setLastSearchTerm,
 } from '@/store/slices/roomSlice';
 import { Button } from '@/components/ui/button';
+import { openModal } from '@/store/slices/uiSlice';
 import {
   Select,
   SelectContent,
@@ -17,13 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+// removed duplicate import
 import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
@@ -38,6 +33,12 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { RoomStatsCards } from '@/components/features/rooms/RoomStatsCards';
 import { RoomTableRow } from '@/components/features/rooms/RoomTableRow';
 import { RoomForm } from '@/components/features/rooms/RoomForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function RoomsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -86,7 +87,7 @@ export default function RoomsPage() {
         const allRooms = response.data || [];
 
         setStatsData({
-          totalRooms: response.pagination?.total || 0,
+          totalRooms: allRooms.length,
           availableRooms: allRooms.filter((r) => r.status === 'AVAILABLE')
             .length,
           occupiedRooms: allRooms.filter((r) => r.status === 'OCCUPIED').length,
@@ -248,24 +249,13 @@ export default function RoomsPage() {
         title="Rooms"
         description="Manage hotel rooms and availability"
       >
-        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              New Room
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="!w-[90vw] !max-w-[1000px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>New Room</DialogTitle>
-            </DialogHeader>
-            <RoomForm
-              onSubmit={handleCreateRoom}
-              onCancel={() => setOpenCreate(false)}
-              loading={loading}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+          onClick={() => dispatch(openModal('addRoom'))}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Room
+        </Button>
       </PageHeader>
 
       {/* Stats Cards */}
