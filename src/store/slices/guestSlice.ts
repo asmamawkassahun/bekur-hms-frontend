@@ -213,6 +213,37 @@ export const fetchGuestDocuments = createAsyncThunk(
   },
 );
 
+export const updateGuestDocument = createAsyncThunk(
+  'guest/updateDocument',
+  async (
+    { documentId, data }: { documentId: string; data: { file?: File; fileType?: FileType; description?: string } },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await guestService.updateDocument(documentId, data);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update document';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const deleteGuestDocument = createAsyncThunk(
+  'guest/deleteDocument',
+  async (documentId: string, { rejectWithValue }) => {
+    try {
+      await guestService.deleteDocument(documentId);
+      return documentId;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete document';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 const guestSlice = createSlice({
   name: 'guest',
   initialState,

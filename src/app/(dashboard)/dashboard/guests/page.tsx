@@ -9,6 +9,8 @@ import {
   updateGuest,
   deleteGuest,
   uploadDocument,
+  deleteGuestDocument,
+  fetchGuestDocuments,
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/guestSlice';
@@ -236,8 +238,23 @@ export default function GuestsPage() {
   const handleDeleteGuest = async () => {
     if (!selectedGuest) return;
     try {
+      // First, get guest documents to delete them
+      try {
+        const documentsResponse = await dispatch(fetchGuestDocuments(selectedGuest.id)).unwrap();
+        // Delete all documents
+        if (Array.isArray(documentsResponse)) {
+          for (const doc of documentsResponse) {
+            await dispatch(deleteGuestDocument(doc.id)).unwrap();
+          }
+        }
+      } catch (docError) {
+        // Log error but continue with guest deletion
+        console.error('Failed to delete some documents:', docError);
+      }
+
+      // Then delete the guest
       await dispatch(deleteGuest(selectedGuest.id)).unwrap();
-      success('Guest deleted');
+      success('Guest and associated documents deleted');
       setOpenDelete(false);
       setSelectedGuest(null);
       // refetch with current search term
