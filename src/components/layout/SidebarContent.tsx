@@ -75,6 +75,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     { label: 'Invoices', icon: FileText, href: '/dashboard/invoices' },
     { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
     { label: 'Staff', icon: UserCog, href: '/dashboard/staff' },
+    { label: 'Rate Management', icon: Settings, href: '/dashboard/rate-management' },
     { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
   ];
 

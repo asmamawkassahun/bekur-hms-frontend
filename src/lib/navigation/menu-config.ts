@@ -156,9 +156,9 @@ export const menuItems: Record<UserRole, MenuItem[]> = {
       permission: 'staff:manage',
     },
     {
-      label: 'Pricing',
+      label: 'Rate Management',
       icon: DollarSign,
-      href: '/dashboard/pricing',
+      href: '/dashboard/rate-management',
       permission: 'pricing:manage',
     },
   ],

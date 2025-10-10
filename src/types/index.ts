@@ -5,6 +5,7 @@ export * from './property.types';
 export * from './room.types';
 export * from './guest.types';
 export * from './reservation.types';
+export * from './rate-management.types';
 
 // Common Types
 export interface BaseEntity {
