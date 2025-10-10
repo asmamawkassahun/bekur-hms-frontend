@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -70,6 +69,16 @@ import {
   CreateBedTypeData,
   UpdateBedTypeData,
 } from '@/types';
+
+// Import extracted components
+import { PageHeader } from '@/components/shared/PageHeader';
+import { SearchBar } from '@/components/shared/SearchBar';
+import { DataTable } from '@/components/shared/DataTable';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { RoomTypeStatsCards } from '@/components/features/room-types/RoomTypeStatsCards';
+import { RoomTypeTableRow } from '@/components/features/room-types/RoomTypeTableRow';
+import { RoomTypeForm } from '@/components/features/room-types/RoomTypeForm';
+import { RoomTypeDetailsDialog } from '@/components/features/room-types/RoomTypeDetailsDialog';
 
 // Form schemas
 const createRoomTypeSchema = z.object({
@@ -131,7 +140,7 @@ export default function RoomTypesPage() {
   );
   const [selectedBedType, setSelectedBedType] = useState<BedType | null>(null);
 
-  // Stats data (separate from filtered results)
+  // Stats data
   const [statsData, setStatsData] = useState({
     totalRoomTypes: 0,
     activeRoomTypes: 0,
@@ -331,127 +340,114 @@ export default function RoomTypesPage() {
     }
   };
 
-  // Helper functions
+  // Handlers
+  const handleCreateRoomType = () => {
+    createForm.reset();
+    setCreateOpen(true);
+  };
+
+  const handleEditRoomType = (roomType: RoomType) => {
+    setSelectedRoomType(roomType);
+    editForm.reset({
+      name: roomType.name,
+      description: roomType.description,
+      roomSize: roomType.roomSize,
+      sizeUnit: roomType.sizeUnit,
+      adultCapacity: roomType.adultCapacity,
+      childCapacity: roomType.childCapacity,
+      basePrice: roomType.basePrice,
+      amenities: roomType.amenities,
+      images: roomType.images,
+      reserveCondition: roomType.reserveCondition,
+      beds:
+        roomType.beds?.map((bed) => ({
+          bedTypeId: bed.bedTypeId,
+          quantity: bed.quantity,
+        })) || [],
+    });
+    setEditOpen(true);
+  };
+
+  const handleViewRoomType = (roomType: RoomType) => {
+    setSelectedRoomType(roomType);
+    setViewOpen(true);
+  };
+
+  const handleDeleteRoomType = (roomType: RoomType) => {
+    setSelectedRoomType(roomType);
+    setDeleteOpen(true);
+  };
+
+  const handleCreateBedType = () => {
+    bedTypeCreateForm.reset();
+    setBedTypeCreateOpen(true);
+  };
+
+  const handleEditBedType = (bedType: BedType) => {
+    setSelectedBedType(bedType);
+    bedTypeEditForm.reset({
+      name: bedType.name,
+      description: bedType.description,
+    });
+    setBedTypeEditOpen(true);
+  };
+
+  const handleDeleteBedType = (bedType: BedType) => {
+    setSelectedBedType(bedType);
+    setBedTypeDeleteOpen(true);
+  };
+
   const getPropertyName = (propertyId: string) => {
     const property = properties.find((p) => p.id === propertyId);
     return property?.name || 'Unknown Property';
   };
 
-  const getBedTypeName = (bedTypeId: string) => {
-    const bedType = bedTypes.find((bt) => bt.id === bedTypeId);
-    return bedType?.name || 'Unknown Bed Type';
-  };
+  const columns = [
+    { key: 'name', label: 'Name', width: 'w-[200px]' },
+    { key: 'property', label: 'Property', width: 'w-[150px]' },
+    { key: 'capacity', label: 'Capacity', width: 'w-[120px]' },
+    { key: 'price', label: 'Price', width: 'w-[100px]' },
+    { key: 'status', label: 'Status', width: 'w-[100px]' },
+    { key: 'actions', label: 'Actions', width: 'w-[120px]' },
+  ];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const renderRoomTypeRow = (roomType: RoomType) => (
+    <RoomTypeTableRow
+      key={roomType.id}
+      roomType={roomType}
+      onView={handleViewRoomType}
+      onEdit={handleEditRoomType}
+      onDelete={handleDeleteRoomType}
+    />
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Room Types</h1>
-          <p className="text-muted-foreground">
-            Manage room types and bed configurations
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
-          <Plus className="mr-2 h-4 w-4" />
+    <div className="p-6 space-y-6">
+      <PageHeader
+        title="Room Types"
+        description="Manage room types and bed configurations"
+      >
+        <Button onClick={handleCreateRoomType}>
+          <Plus className="h-4 w-4 mr-2" />
           Add Room Type
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Room Types
-            </CardTitle>
-            <BedDouble className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {statsData.totalRoomTypes}
-            </div>
-            <p className="text-xs text-muted-foreground">All room types</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Types
-            </CardTitle>
-            <BedDouble className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {statsData.activeRoomTypes}
-            </div>
-            <p className="text-xs text-muted-foreground">Currently active</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Average Price
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {formatCurrency(statsData.averagePrice)}
-            </div>
-            <p className="text-xs text-muted-foreground">Per night</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Rooms
-            </CardTitle>
-            <Home className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {statsData.totalRooms}
-            </div>
-            <p className="text-xs text-muted-foreground">All properties</p>
-          </CardContent>
-        </Card>
-      </div>
+      <RoomTypeStatsCards stats={statsData} />
 
       {/* Search and Filters */}
-      <Card className="bg-card border-0 shadow-sm">
+      <Card>
         <CardHeader>
           <CardTitle>Search Room Types</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by name or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            <SearchBar
+              placeholder="Search by name or description..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
             <Select
               value={selectedProperty}
               onValueChange={setSelectedProperty}
@@ -473,7 +469,7 @@ export default function RoomTypesPage() {
       </Card>
 
       {/* Bed Types Section */}
-      <Card className="bg-card border-0 shadow-sm">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Bed Types</CardTitle>
@@ -482,7 +478,6 @@ export default function RoomTypesPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setBedTypesExpanded(!bedTypesExpanded)}
-                className="cursor-pointer"
               >
                 {bedTypesExpanded ? (
                   <ChevronUp className="h-4 w-4 mr-2" />
@@ -491,11 +486,7 @@ export default function RoomTypesPage() {
                 )}
                 {bedTypesExpanded ? 'Collapse' : 'Expand'}
               </Button>
-              <Button
-                size="sm"
-                onClick={() => setBedTypeCreateOpen(true)}
-                className="cursor-pointer"
-              >
+              <Button size="sm" onClick={handleCreateBedType}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Bed Type
               </Button>
@@ -536,26 +527,15 @@ export default function RoomTypesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setSelectedBedType(bedType);
-                            bedTypeEditForm.reset({
-                              name: bedType.name,
-                              description: bedType.description,
-                            });
-                            setBedTypeEditOpen(true);
-                          }}
-                          className="cursor-pointer"
+                          onClick={() => handleEditBedType(bedType)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            setSelectedBedType(bedType);
-                            setBedTypeDeleteOpen(true);
-                          }}
-                          className="text-destructive hover:text-destructive cursor-pointer"
+                          onClick={() => handleDeleteBedType(bedType)}
+                          className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -570,747 +550,66 @@ export default function RoomTypesPage() {
       </Card>
 
       {/* Room Types Table */}
-      <Card className="bg-card border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle>Room Types</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table className="table-fixed w-full">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[200px]">Name</TableHead>
-                <TableHead className="w-[150px]">Property</TableHead>
-                <TableHead className="w-[120px]">Capacity</TableHead>
-                <TableHead className="w-[100px]">Price</TableHead>
-                <TableHead className="w-[200px]">Beds</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[120px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRoomTypes.map((roomType) => (
-                <TableRow key={roomType.id}>
-                  <TableCell className="truncate">
-                    <div>
-                      <div className="font-medium">{roomType.name}</div>
-                      {roomType.description && (
-                        <div className="text-sm text-muted-foreground truncate">
-                          {roomType.description}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="truncate">
-                    {getPropertyName(roomType.propertyId)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {roomType.adultCapacity} adults
-                      </div>
-                      {roomType.childCapacity > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          {roomType.childCapacity} children
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="truncate">
-                    {formatCurrency(roomType.basePrice)}
-                  </TableCell>
-                  <TableCell className="truncate">
-                    <div className="flex flex-wrap gap-1">
-                      {roomType.beds.map((bed, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {bed.quantity}x {getBedTypeName(bed.bedTypeId)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={roomType.isActive ? 'default' : 'secondary'}
-                    >
-                      {roomType.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRoomType(roomType);
-                          setViewOpen(true);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRoomType(roomType);
-                          editForm.reset({
-                            name: roomType.name,
-                            description: roomType.description,
-                            roomSize: roomType.roomSize,
-                            sizeUnit: roomType.sizeUnit,
-                            adultCapacity: roomType.adultCapacity,
-                            childCapacity: roomType.childCapacity,
-                            basePrice: roomType.basePrice,
-                            amenities: roomType.amenities,
-                            images: roomType.images || [],
-                            reserveCondition: roomType.reserveCondition,
-                          });
-                          setEditOpen(true);
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRoomType(roomType);
-                          setDeleteOpen(true);
-                        }}
-                        className="text-destructive hover:text-destructive cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DataTable
+        title="Room Types"
+        columns={columns}
+        data={filteredRoomTypes}
+        loading={loading}
+        renderRow={renderRoomTypeRow}
+      />
 
       {/* Create Room Type Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="!w-[90vw] !max-w-[1000px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Room Type</DialogTitle>
           </DialogHeader>
-          <Form {...createForm}>
-            <form
-              onSubmit={createForm.handleSubmit(onCreateSubmit)}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={createForm.control}
-                  name="propertyId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Property</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select property" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {properties.map((property) => (
-                            <SelectItem key={property.id} value={property.id}>
-                              {property.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Room type name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="roomSize"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Room Size</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Room size"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="sizeUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Size Unit</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="SQ_FT">Square Feet</SelectItem>
-                          <SelectItem value="SQ_M">Square Meters</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="adultCapacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Adult Capacity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Adult capacity"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="childCapacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Child Capacity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Child capacity"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="basePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Base Price</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Base price"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={createForm.control}
-                  name="reserveCondition"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Reserve Condition</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Reserve condition" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={createForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Room type description"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={createForm.control}
-                name="amenities"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amenities</FormLabel>
-                    <FormControl>
-                      <TagInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Add amenities (press comma to add)"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={createForm.control}
-                name="images"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Images</FormLabel>
-                    <FormControl>
-                      <ImageUpload
-                        value={field.value}
-                        onChange={field.onChange}
-                        maxImages={5}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreateOpen(false)}
-                  className="cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="cursor-pointer">
-                  Create Room Type
-                </Button>
-              </div>
-            </form>
-          </Form>
+          <RoomTypeForm
+            mode="create"
+            properties={properties}
+            bedTypes={bedTypes}
+            onSubmit={onCreateSubmit}
+            onCancel={() => setCreateOpen(false)}
+            loading={loading}
+          />
         </DialogContent>
       </Dialog>
 
       {/* Edit Room Type Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="!w-[90vw] !max-w-[1000px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Room Type</DialogTitle>
           </DialogHeader>
-          <Form {...editForm}>
-            <form
-              onSubmit={editForm.handleSubmit(onEditSubmit)}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Room type name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="roomSize"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Room Size</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Room size"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="sizeUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Size Unit</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="SQ_FT">Square Feet</SelectItem>
-                          <SelectItem value="SQ_M">Square Meters</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="adultCapacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Adult Capacity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Adult capacity"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="childCapacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Child Capacity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Child capacity"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="basePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Base Price</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Base price"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="reserveCondition"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Reserve Condition</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Reserve condition" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={editForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Room type description"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="amenities"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amenities</FormLabel>
-                    <FormControl>
-                      <TagInput
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        placeholder="Add amenities (press comma to add)"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="images"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Images</FormLabel>
-                    <FormControl>
-                      <ImageUpload
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        maxImages={5}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditOpen(false)}
-                  className="cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="cursor-pointer">
-                  Update Room Type
-                </Button>
-              </div>
-            </form>
-          </Form>
+          <RoomTypeForm
+            mode="edit"
+            roomType={selectedRoomType || undefined}
+            properties={properties}
+            bedTypes={bedTypes}
+            onSubmit={onEditSubmit}
+            onCancel={() => setEditOpen(false)}
+            loading={loading}
+          />
         </DialogContent>
       </Dialog>
 
       {/* View Room Type Dialog */}
-      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="!w-[90vw] !max-w-[1000px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Room Type Details</DialogTitle>
-          </DialogHeader>
-          {selectedRoomType && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {selectedRoomType.name}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {getPropertyName(selectedRoomType.propertyId)}
-                  </p>
-                  {selectedRoomType.description && (
-                    <p className="mt-2 text-sm">
-                      {selectedRoomType.description}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(selectedRoomType.basePrice)}
-                  </div>
-                  <p className="text-sm text-muted-foreground">per night</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <h4 className="font-medium">Capacity</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedRoomType.adultCapacity} adults,{' '}
-                    {selectedRoomType.childCapacity} children
-                  </p>
-                </div>
-                {selectedRoomType.roomSize && (
-                  <div>
-                    <h4 className="font-medium">Size</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedRoomType.roomSize} {selectedRoomType.sizeUnit}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <h4 className="font-medium">Status</h4>
-                  <Badge
-                    variant={
-                      selectedRoomType.isActive ? 'default' : 'secondary'
-                    }
-                  >
-                    {selectedRoomType.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-              </div>
-
-              {selectedRoomType.amenities.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Amenities</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedRoomType.amenities.map((amenity, index) => (
-                      <Badge key={index} variant="outline">
-                        {amenity}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedRoomType.beds.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Bed Configuration</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedRoomType.beds.map((bed, index) => (
-                      <Badge key={index} variant="outline">
-                        {bed.quantity}x {getBedTypeName(bed.bedTypeId)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedRoomType.images &&
-                selectedRoomType.images.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Images</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedRoomType.images.map((image, index) => (
-                        <img
-                          key={index}
-                          src={image}
-                          alt={`Room type image ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-md border"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {selectedRoomType.reserveCondition && (
-                <div>
-                  <h4 className="font-medium mb-2">Reserve Condition</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedRoomType.reserveCondition}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <RoomTypeDetailsDialog
+        roomType={selectedRoomType}
+        properties={properties}
+        bedTypes={bedTypes}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+      />
 
       {/* Delete Room Type Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Room Type</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>
-              Are you sure you want to delete "{selectedRoomType?.name}"? This
-              action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteOpen(false)}
-                className="cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={onDeleteConfirm}
-                className="cursor-pointer"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Room Type"
+        description={`Are you sure you want to delete "${selectedRoomType?.name}"? This action cannot be undone.`}
+        onConfirm={onDeleteConfirm}
+      />
 
       {/* Create Bed Type Dialog */}
       <Dialog open={bedTypeCreateOpen} onOpenChange={setBedTypeCreateOpen}>
@@ -1336,7 +635,6 @@ export default function RoomTypesPage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={bedTypeCreateForm.control}
                 name="description"
@@ -1350,19 +648,15 @@ export default function RoomTypesPage() {
                   </FormItem>
                 )}
               />
-
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setBedTypeCreateOpen(false)}
-                  className="cursor-pointer"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="cursor-pointer">
-                  Create Bed Type
-                </Button>
+                <Button type="submit">Create Bed Type</Button>
               </div>
             </form>
           </Form>
@@ -1393,7 +687,6 @@ export default function RoomTypesPage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={bedTypeEditForm.control}
                 name="description"
@@ -1407,19 +700,15 @@ export default function RoomTypesPage() {
                   </FormItem>
                 )}
               />
-
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setBedTypeEditOpen(false)}
-                  className="cursor-pointer"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="cursor-pointer">
-                  Update Bed Type
-                </Button>
+                <Button type="submit">Update Bed Type</Button>
               </div>
             </form>
           </Form>
@@ -1427,35 +716,13 @@ export default function RoomTypesPage() {
       </Dialog>
 
       {/* Delete Bed Type Dialog */}
-      <Dialog open={bedTypeDeleteOpen} onOpenChange={setBedTypeDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Bed Type</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>
-              Are you sure you want to delete "{selectedBedType?.name}"? This
-              action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setBedTypeDeleteOpen(false)}
-                className="cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={onBedTypeDeleteConfirm}
-                className="cursor-pointer"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={bedTypeDeleteOpen}
+        onOpenChange={setBedTypeDeleteOpen}
+        title="Delete Bed Type"
+        description={`Are you sure you want to delete "${selectedBedType?.name}"? This action cannot be undone.`}
+        onConfirm={onBedTypeDeleteConfirm}
+      />
     </div>
   );
 }

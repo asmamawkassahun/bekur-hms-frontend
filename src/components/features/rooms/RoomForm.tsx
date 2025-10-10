@@ -229,7 +229,7 @@ export function RoomForm({
                   <SelectContent>
                     {ROOM_STATUSES.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {status.replace('_', ' ')}
+                        {status?.replace('_', ' ') || 'Unknown'}
                       </SelectItem>
                     ))}
                   </SelectContent>

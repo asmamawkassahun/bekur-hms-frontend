@@ -34,7 +34,7 @@ export function DormitoryTableRow({
     return (
       <Badge className={`${config.color} flex items-center gap-1`}>
         <Icon className="h-3 w-3" />
-        {status.replace('_', ' ')}
+        {status?.replace('_', ' ') || 'Unknown'}
       </Badge>
     );
   };
