@@ -14,6 +14,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Calendar,
   Building,
   User,
@@ -30,6 +36,8 @@ import {
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
+  UserPlus,
+  Search,
 } from 'lucide-react';
 import { fetchBookingTypes, fetchBookingSources, createReservation, calculatePrice } from '@/store/slices/reservationSlice';
 import { createPayment } from '@/store/slices/paymentSlice';
@@ -39,6 +47,7 @@ import { fetchGuests } from '@/store/slices/guestSlice';
 import { fetchProperties } from '@/store/slices/propertySlice';
 import { fetchBeds } from '@/store/slices/bedSlice';
 import { GuestSelectionDialog } from '@/components/features/reservations/GuestSelectionDialog';
+import { CreateGuestDialog } from '@/components/features/reservations/CreateGuestDialog';
 import { useNotification } from '@/hooks/useNotification';
 import type { RootState, AppDispatch } from '@/store';
 import type { Guest } from '@/types';
@@ -131,6 +140,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
+  const [createGuestDialogOpen, setCreateGuestDialogOpen] = useState(false);
   const [selectedGuests, setSelectedGuests] = useState<Guest[]>([]);
   const [guestSearchLoading, setGuestSearchLoading] = useState(false);
   const [lastGuestSearch, setLastGuestSearch] = useState('');
@@ -306,13 +316,22 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
     }
   };
 
-  const addGuest = () => {
+  const addOldGuest = () => {
     setGuestDialogOpen(true);
     if (guests.length === 0 && lastGuestSearch === '') {
       setGuestSearchLoading(true);
       setLastGuestSearch('');
       dispatch(fetchGuests({ page: 1, limit: 50, search: undefined }));
     }
+  };
+
+  const addNewGuest = () => {
+    setCreateGuestDialogOpen(true);
+  };
+
+  const handleGuestCreated = (guest: Guest) => {
+    // Add newly created guest to selected guests
+    setSelectedGuests([...selectedGuests, guest]);
   };
 
   const removeGuest = (id: string) => {
@@ -838,16 +857,36 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="font-semibold text-gray-900">Selected Guests</h3>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addGuest}
-                      className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Guest
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Guest
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem
+                          onClick={addOldGuest}
+                          className="cursor-pointer"
+                        >
+                          <Search className="mr-2 h-4 w-4" />
+                          Select Existing Guest
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={addNewGuest}
+                          className="cursor-pointer"
+                        >
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Create New Guest
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   {selectedGuests.length === 0 ? (
@@ -1084,6 +1123,13 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
         onSearch={handleGuestSearch}
         onSelect={handleGuestSelect}
         selectedGuestIds={selectedGuests.map(g => g.id)}
+      />
+
+      {/* Create Guest Dialog */}
+      <CreateGuestDialog
+        open={createGuestDialogOpen}
+        onOpenChange={setCreateGuestDialogOpen}
+        onGuestCreated={handleGuestCreated}
       />
     </div>
   );
