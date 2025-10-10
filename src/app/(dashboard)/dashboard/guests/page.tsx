@@ -89,21 +89,21 @@ export default function GuestsPage() {
           }),
         ).unwrap();
 
-        const allGuests = response.data || [];
+        const allGuests = Array.isArray((response as any)?.data?.guests) ? (response as any).data.guests : [];
         const now = new Date();
 
         setStatsData({
           totalGuests: allGuests.length,
-          vipGuests: allGuests.filter((g) => g.loyaltyTier === 'PLATINUM')
+          vipGuests: allGuests.filter((g: any) => g.loyaltyTier === 'PLATINUM')
             .length,
-          newThisMonth: allGuests.filter((g) => {
+          newThisMonth: allGuests.filter((g: any) => {
             const created = new Date(g.createdAt);
             return (
               created.getMonth() === now.getMonth() &&
               created.getFullYear() === now.getFullYear()
             );
           }).length,
-          activeGuests: allGuests.filter((g) => g.isActive).length,
+          activeGuests: allGuests.filter((g: any) => g.isActive).length,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
