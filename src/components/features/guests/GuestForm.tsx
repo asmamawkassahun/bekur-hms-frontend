@@ -141,9 +141,10 @@ export function GuestForm({
 
     const payload = {
       ...values,
-      preferences: values.preferences?.join(', '),
-      specialRequests: values.specialRequests?.join(', '),
-      tags: values.tags?.join(', '),
+      // Keep arrays as arrays for backend
+      preferences: values.preferences || [],
+      specialRequests: values.specialRequests || [],
+      tags: values.tags || [],
     };
     onSubmit(payload as GuestFormData);
   };
