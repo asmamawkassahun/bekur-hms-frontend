@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authService } from '@/services/auth.service';
 import { TokenManager } from '@/lib/auth/token-manager';
+import Cookies from 'js-cookie';
 
 // Temporary types to avoid circular dependency
 interface User {
@@ -88,9 +89,6 @@ export const login = createAsyncThunk(
       // Store tokens securely
       console.log('🔐 Storing tokens...');
       TokenManager.setTokens(accessToken, refreshToken);
-      if (typeof document !== 'undefined') {
-        document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
-      }
       console.log('🔐 Tokens stored successfully');
 
       return { accessToken, refreshToken, user };
@@ -127,9 +125,7 @@ export const verifyOTP = createAsyncThunk(
 
       // Store tokens securely
       TokenManager.setTokens(accessToken, refreshToken);
-      if (typeof document !== 'undefined') {
-        document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
-      }
+
 
       return { accessToken, refreshToken, user };
     } catch (error: unknown) {
@@ -184,7 +180,7 @@ export const resetPassword = createAsyncThunk(
 
 export const refreshTokens = createAsyncThunk(
   'auth/refreshTokens',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       const refreshToken = TokenManager.getRefreshToken();
       if (!refreshToken) {
@@ -197,18 +193,14 @@ export const refreshTokens = createAsyncThunk(
 
       // Update stored tokens
       TokenManager.setTokens(accessToken, newRefreshToken);
-      if (typeof document !== 'undefined') {
-        document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
-      }
+
 
       return { accessToken, refreshToken: newRefreshToken };
     } catch (error: unknown) {
       // Clear tokens on refresh failure
       TokenManager.clearTokens();
-      if (typeof document !== 'undefined') {
-        document.cookie =
-          'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
+
+
       return rejectWithValue(
         error instanceof Error ? error.message : 'Token refresh failed',
       );
@@ -237,12 +229,9 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     // Continue with logout even if API call fails
     console.error('Logout API call failed:', error);
   } finally {
+
     // Always clear local tokens
     TokenManager.clearTokens();
-    if (typeof document !== 'undefined') {
-      document.cookie =
-        'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    }
   }
 });
 
@@ -292,14 +281,10 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
 
+
       // Clear tokens from storage
       TokenManager.clearTokens();
 
-      // Clear auth cookie
-      if (typeof document !== 'undefined') {
-        document.cookie =
-          'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
     },
   },
   extraReducers: (builder) => {
@@ -440,14 +425,10 @@ export const initializeAuth = createAsyncThunk(
       return null;
     }
 
-    // Check if we have a token in cookies
-    const cookies = document.cookie.split(';');
-    const authTokenCookie = cookies.find((cookie) =>
-      cookie.trim().startsWith('auth-token='),
-    );
+    // Check if we have a token in cookies using js-cookie
+    const token = Cookies.get('auth-token');
 
-    if (authTokenCookie) {
-      const token = authTokenCookie.split('=')[1];
+    if (token) {
       console.log(
         '🔐 Found auth token in cookie:',
         token ? 'present' : 'missing',
@@ -467,11 +448,6 @@ export const initializeAuth = createAsyncThunk(
         console.error('🔐 Failed to load user profile:', error);
         // Clear invalid token and set error state
         TokenManager.clearTokens();
-        // Clear auth cookie as well
-        if (typeof document !== 'undefined') {
-          document.cookie =
-            'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        }
         dispatch(setError('Failed to load user profile. Please login again.'));
         return null;
       }
