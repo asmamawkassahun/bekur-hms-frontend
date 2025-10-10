@@ -2,15 +2,13 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Edit, ThumbsUp, Eye, Printer, X, CheckCircle, AlertCircle, Clock, User, Phone } from 'lucide-react';
+import { Edit, LogOut, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
 interface CheckInTableRowProps {
     reservation: any;
     index: number;
     onEdit: (reservation: any) => void;
-    onView: (reservation: any) => void;
-    onPrint: (reservation: any) => void;
-    onDelete: (reservation: any) => void;
+    onCheckOut: (reservation: any) => void;
     getPaymentStatus: (bookingId: string) => { status: string; paid: number; total: number };
 }
 
@@ -18,9 +16,7 @@ export function CheckInTableRow({
     reservation,
     index,
     onEdit,
-    onView,
-    onPrint,
-    onDelete,
+    onCheckOut,
     getPaymentStatus,
 }: CheckInTableRowProps) {
     const paymentStatus = getPaymentStatus(reservation.id);
@@ -120,45 +116,24 @@ export function CheckInTableRow({
                 {getPaymentStatusBadge(paymentStatus.status)}
             </TableCell>
             <TableCell>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 bg-yellow-100 hover:bg-yellow-200"
+                        className="h-8 px-3 bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
                         onClick={() => onEdit(reservation)}
+                        title="Edit Reservation"
                     >
-                        <Edit className="h-3 w-3 text-yellow-700" />
+                        <Edit className="h-4 w-4 text-yellow-700" />
                     </Button>
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
+                        className="h-8 px-3 bg-red-100 hover:bg-red-200 cursor-pointer"
+                        onClick={() => onCheckOut(reservation)}
+                        title="Check Out Guest"
                     >
-                        <ThumbsUp className="h-3 w-3 text-gray-700" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 bg-blue-100 hover:bg-blue-200"
-                        onClick={() => onView(reservation)}
-                    >
-                        <Eye className="h-3 w-3 text-blue-700" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 bg-blue-100 hover:bg-blue-200"
-                        onClick={() => onPrint(reservation)}
-                    >
-                        <Printer className="h-3 w-3 text-blue-700" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200"
-                        onClick={() => onDelete(reservation)}
-                    >
-                        <X className="h-3 w-3 text-red-700" />
+                        <LogOut className="h-4 w-4 text-red-700" />
                     </Button>
                 </div>
             </TableCell>

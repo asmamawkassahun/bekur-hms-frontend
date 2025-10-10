@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Edit, Calendar, User, Building, DollarSign, Users, MapPin, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, User, Building, DollarSign, FileText } from 'lucide-react';
 import { reservationService } from '@/services/reservation.service';
 import type { Reservation } from '@/types';
 import { LoadingState } from '@/components/shared/LoadingState';
@@ -17,7 +15,6 @@ import { useNotification } from '@/hooks/useNotification';
 export default function ReservationDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const dispatch = useDispatch<AppDispatch>();
     const { error: showError } = useNotification();
     const [reservation, setReservation] = useState<Reservation | null>(null);
     const [loading, setLoading] = useState(true);
@@ -101,14 +98,6 @@ export default function ReservationDetailPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.push('/dashboard/reservations')}
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back
-                    </Button>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Reservation Details</h1>
                         <p className="text-gray-600">Booking ID: {reservation.id.slice(0, 8)}</p>
@@ -117,7 +106,7 @@ export default function ReservationDetailPage() {
                 <div className="flex items-center gap-2">
                     {getStatusBadge(reservation.status)}
                     <Button
-                        onClick={() => router.push(`/dashboard/reservations/${reservation.id}/edit`)}
+                        onClick={() => router.push(`/dashboard/reservations/edit/${reservation.id}`)}
                     >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit

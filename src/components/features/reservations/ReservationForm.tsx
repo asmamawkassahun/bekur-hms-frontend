@@ -252,12 +252,9 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
         calculatePriceData.bookingSourceId = bookingReference;
       }
 
-      console.log('Calculating price with data:', calculatePriceData);
-
       dispatch(calculatePrice(calculatePriceData))
         .unwrap()
         .then((response) => {
-          console.log('Price calculation response:', response);
           // Store the complete pricing data
           if (response.data) {
             setPricingData(response.data);
@@ -276,8 +273,6 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
               setCommissionRate(commission.commissionRate || 0);
               setCommissionAmount(commission.commissionAmount || 0);
             }
-
-            console.log('Form populated with pricing data:', response.data);
           }
         })
         .catch((err) => {
@@ -712,7 +707,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                               ) : (
                                 roomTypes.map((type) => (
                                   <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                                ))
+                                  ))
                               )}
                             </SelectContent>
                           </Select>
@@ -1003,47 +998,47 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
               <div className="space-y-4">
                 <h4 className="font-semibold text-gray-900">Advance Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMode" className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      Payment Mode{mode === 'direct-checkin' && '*'}
-                    </Label>
-                    <Select value={paymentMode} onValueChange={setPaymentMode}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose Payment Mode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="card">Credit/Debit Card</SelectItem>
-                        <SelectItem value="bank">Bank Transfer</SelectItem>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMode" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Payment Mode{mode === 'direct-checkin' && '*'}
+                  </Label>
+                  <Select value={paymentMode} onValueChange={setPaymentMode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose Payment Mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Credit/Debit Card</SelectItem>
+                      <SelectItem value="bank">Bank Transfer</SelectItem>
                         <SelectItem value="upi">Mobile Money</SelectItem>
                         <SelectItem value="crypto">Crypto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                     <Label htmlFor="totalAmount" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
+                    <DollarSign className="h-4 w-4" />
                       Total Amount
-                    </Label>
-                    <Input
+                  </Label>
+                  <Input
                       id="totalAmount"
-                      type="number"
+                    type="number"
                       value={pricingData?.pricing?.finalPrice || 0}
                       placeholder="Total amount"
                       readOnly
                       className="bg-gray-50"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="advanceRemarks" className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="advanceRemarks" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
                       Advance Remarks
-                    </Label>
-                    <Input
-                      id="advanceRemarks"
-                      value={advanceRemarks}
-                      onChange={(e) => setAdvanceRemarks(e.target.value)}
+                  </Label>
+                  <Input
+                    id="advanceRemarks"
+                    value={advanceRemarks}
+                    onChange={(e) => setAdvanceRemarks(e.target.value)}
                       placeholder="Advance Remarks"
                     />
                   </div>

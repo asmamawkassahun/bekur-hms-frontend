@@ -3,18 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
-import { fetchReservations, checkInGuest } from '@/store/slices/reservationSlice';
+import { fetchReservations, checkInGuest, checkOutGuest } from '@/store/slices/reservationSlice';
 import { fetchPayments } from '@/store/slices/paymentSlice';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { CheckInTableRow } from '@/components/features/reservations/CheckInTableRow';
+import { PaymentDialog } from '@/components/features/reservations/PaymentDialog';
 import type { Payment } from '@/types/payment.types';
 
 export default function CheckInPage() {
     const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter();
     const { reservations, loading } = useSelector((state: RootState) => state.reservation);
     const { payments } = useSelector((state: RootState) => state.payment);
     const { success, error: showError } = useNotification();
@@ -26,6 +29,9 @@ export default function CheckInPage() {
     const [apiResponse, setApiResponse] = useState<any>(null);
     const [apiError, setApiError] = useState<any>(null);
     const [checkedInReservations, setCheckedInReservations] = useState<any[]>([]);
+    const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [selectedReservationForPayment, setSelectedReservationForPayment] = useState<any>(null);
+    const [unpaidAmount, setUnpaidAmount] = useState(0);
 
     // Fetch pending/confirmed reservations and checked-in reservations on mount
     useEffect(() => {
@@ -153,6 +159,68 @@ export default function CheckInPage() {
         };
     };
 
+    // Handle checkout
+    const handleCheckOut = async (reservation: any) => {
+        try {
+            const checkOutData = {
+                reservationId: reservation.id,
+                actualCheckOut: new Date().toISOString(),
+                notes: 'Checked out via dashboard',
+            };
+
+            await dispatch(checkOutGuest(checkOutData)).unwrap();
+            success('Guest checked out successfully!');
+
+            // Refresh the checked-in reservations list
+            dispatch(
+                fetchReservations({
+                    page: 1,
+                    limit: 100,
+                    filters: { status: 'CHECKED_IN' },
+                }),
+            ).then((result: any) => {
+                if (result.payload?.data) {
+                    setCheckedInReservations(result.payload.data);
+                }
+            });
+        } catch (err: any) {
+            // When using .unwrap(), the error is the value from rejectWithValue (a string in our case)
+            const errorMessage = typeof err === 'string' ? err : (err?.message || 'Failed to check out guest');
+
+            console.error('Check-out Error:', errorMessage);
+
+            // Check if error is due to unpaid balance
+            if (errorMessage && (errorMessage.includes('unpaid balance') || errorMessage.includes('Remaining amount'))) {
+                // Extract unpaid amount from error message
+                const amountMatch = errorMessage.match(/Remaining amount: ([\d.]+)/);
+                const remainingAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+
+                console.log('💳 Payment required - Opening payment dialog:', {
+                    remainingAmount,
+                    reservation: reservation.id,
+                    guest: `${reservation.primaryGuest?.firstName} ${reservation.primaryGuest?.lastName}`,
+                });
+
+                // Show payment dialog
+                setUnpaidAmount(remainingAmount);
+                setSelectedReservationForPayment(reservation);
+                setShowPaymentDialog(true);
+
+                showError('Payment required before checkout');
+            } else {
+                showError(errorMessage);
+            }
+        }
+    };
+
+    // Handle payment success and retry checkout
+    const handlePaymentSuccess = () => {
+        // After payment, try checkout again
+        if (selectedReservationForPayment) {
+            handleCheckOut(selectedReservationForPayment);
+        }
+    };
+
     return (
         <div className="p-6 space-y-6">
             <PageHeader
@@ -192,14 +260,31 @@ export default function CheckInPage() {
                         key={reservation.id}
                         reservation={reservation}
                         index={index}
-                        onEdit={(reservation) => console.log('Edit:', reservation)}
-                        onView={(reservation) => console.log('View:', reservation)}
-                        onPrint={(reservation) => console.log('Print:', reservation)}
-                        onDelete={(reservation) => console.log('Delete:', reservation)}
+                        onEdit={(r) => {
+                            router.push(`/dashboard/reservations/edit/${r.id}`);
+                        }}
+                        onCheckOut={(r) => {
+                            handleCheckOut(r);
+                        }}
                         getPaymentStatus={getPaymentStatus}
                     />
                 )}
             />
+
+            {/* Payment Dialog */}
+            {selectedReservationForPayment && (
+                <PaymentDialog
+                    open={showPaymentDialog}
+                    onClose={() => {
+                        setShowPaymentDialog(false);
+                        setSelectedReservationForPayment(null);
+                        setUnpaidAmount(0);
+                    }}
+                    reservation={selectedReservationForPayment}
+                    unpaidAmount={unpaidAmount}
+                    onPaymentSuccess={handlePaymentSuccess}
+                />
+            )}
         </div>
     );
 }
