@@ -50,6 +50,7 @@ export const fetchRoomTypes = createAsyncThunk(
   ) => {
     try {
       const response = await roomTypeService.getAll(params);
+      console.log("response from fetching room types: ", response);
       return response.data;
     } catch (error: unknown) {
       const errorMessage =

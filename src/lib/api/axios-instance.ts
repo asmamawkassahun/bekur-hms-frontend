@@ -82,22 +82,53 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = TokenManager.getRefreshToken();
         if (!refreshToken) {
+          console.error('❌ No refresh token available in storage');
           throw new Error('No refresh token available');
         }
 
-        console.log('🔄 Attempting to refresh access token...');
+        const refreshEndpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/auth/refresh`;
 
-        // Attempt to refresh tokens
+        console.log('🔄 Attempting to refresh access token...');
+        console.log('📤 Refresh Token Request:', {
+          endpoint: refreshEndpoint,
+          method: 'POST',
+          hasRefreshToken: !!refreshToken,
+          refreshTokenLength: refreshToken.length,
+          requestBody: { refreshToken: '***' }, // Hidden for security
+        });
+
+        // Attempt to refresh tokens - send refreshToken in body
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/auth/refresh`,
-          {},
+          refreshEndpoint,
+          {
+            refreshToken: refreshToken,
+          },
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${refreshToken}`,
             },
           },
         );
+
+        console.log('📥 Refresh Token Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          hasData: !!response.data,
+          success: response.data?.success,
+          hasAccessToken: !!response.data?.data?.accessToken,
+          hasRefreshToken: !!response.data?.data?.refreshToken,
+        });
+
+        // Validate response structure
+        if (
+          response.status !== 200 ||
+          !response.data.success ||
+          !response.data.data?.accessToken ||
+          !response.data.data?.refreshToken
+        ) {
+          console.error('❌ Invalid refresh token response structure');
+          throw new Error('Invalid refresh token response');
+        }
 
         const { accessToken, refreshToken: newRefreshToken } =
           response.data.data;
@@ -134,50 +165,81 @@ apiClient.interceptors.response.use(
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
-      } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError);
+      } catch (refreshError: unknown) {
+        console.error('❌ Token refresh failed');
 
-        // Process queued requests with error
-        processQueue(refreshError, null);
+        // Provide more specific error messages based on the failure type
+        const error = refreshError as Error & { response?: { status: number; statusText: string; data: unknown }; code?: string; isAxiosError?: boolean };
 
-        // Only logout if refresh token is also invalid/expired
-        // Don't logout just because access token expired
-        const refreshToken = TokenManager.getRefreshToken();
-        if (!refreshToken || TokenManager.isRefreshTokenExpired()) {
-          console.log('🔄 Refresh token expired, logging out user');
-
-          // Clear tokens and redirect to login
-          TokenManager.clearTokens();
-
-          // Clear auth cookie
-          if (typeof window !== 'undefined') {
-            Cookies.remove('auth-token', { path: '/' });
-          }
-
-          // Clear Redux store if available
-          if (typeof window !== 'undefined' && window.__REDUX_STORE__) {
-            try {
-              const { clearAuth } = await import('@/store/slices/authSlice');
-              window.__REDUX_STORE__?.dispatch(clearAuth());
-            } catch (storeError) {
-              console.warn('Failed to clear Redux store:', storeError);
-            }
-          }
-
-          // Redirect to login page
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
+        if (error.message === 'Refresh token expired') {
+          console.error('🔄 Refresh token has expired - user needs to login again');
+        } else if (error.message === 'No refresh token available') {
+          console.error('🔑 No refresh token found - user needs to login again');
+        } else if (error.response?.status === 401) {
+          console.error('🚫 Server rejected refresh token - may be invalid or revoked');
+        } else if (error.response?.status === 403) {
+          console.error('🚫 Access forbidden - refresh token may be blacklisted');
+        } else if (error.response?.status >= 500) {
+          console.error('🔧 Server error during refresh - please try again later');
+        } else if (error.code === 'NETWORK_ERROR') {
+          console.error('🌐 Network error - please check connection');
         } else {
-          console.log('🔄 Access token expired but refresh token is valid, will retry on next request');
+          console.error('❓ Unknown error during refresh');
         }
 
-        return Promise.reject(refreshError);
+        console.error('📥 Refresh Token Error Details:', {
+          message: error?.message,
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          responseData: error?.response?.data,
+          code: error?.code,
+          isAxiosError: error?.isAxiosError,
+        });
+
+        // Process queued requests with error
+        processQueue(error, null);
+
+        // If refresh request fails for ANY reason, clear everything and redirect to login
+        console.log('🚪 Refresh request failed, logging out user and clearing all data');
+
+        // Clear tokens from storage
+        TokenManager.clearTokens();
+
+        // Clear all localStorage items (optional: remove if you want to keep other data)
+        if (typeof window !== 'undefined') {
+          try {
+            // Only clear auth-related items or clear everything based on your needs
+            sessionStorage.clear();
+            // localStorage.clear(); // Uncomment if you want to clear all localStorage
+          } catch (error) {
+            console.error('Failed to clear storage:', error);
+          }
+        }
+
+        // Clear auth cookie
+        if (typeof window !== 'undefined') {
+          Cookies.remove('auth-token', { path: '/' });
+        }
+
+        // Clear Redux store if available
+        if (typeof window !== 'undefined' && window.__REDUX_STORE__) {
+          try {
+            const { clearAuth } = await import('@/store/slices/authSlice');
+            window.__REDUX_STORE__?.dispatch(clearAuth());
+          } catch (storeError) {
+            console.warn('Failed to clear Redux store:', storeError);
+          }
+        }
+
+        // Redirect to login page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+
+        return Promise.reject(error);
       } finally {
         isRefreshing = false;
       }
     }
-
-    return Promise.reject(error);
   },
 );

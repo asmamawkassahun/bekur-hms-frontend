@@ -8,6 +8,7 @@ import {
   createDormitory,
   updateSearchCache,
   setLastSearchTerm,
+  deleteDormitory,
 } from '@/store/slices/dormitorySlice';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +38,9 @@ import { DataTable } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { DormitoryStatsCards } from '@/components/features/dormitories/DormitoryStatsCards';
 import { DormitoryTableRow } from '@/components/features/dormitories/DormitoryTableRow';
-import { DormitoryForm } from '@/components/features/dormitories/DormitoryForm';
+import { DormitoryWizardFormCompact } from '@/components/features/dormitories/DormitoryWizardFormCompact';
+import { DormitoryEditForm } from '@/components/features/dormitories/DormitoryEditForm';
+import { DormitoryDetailsDialog } from '@/components/features/dormitories/DormitoryDetailsDialog';
 
 export default function DormitoriesPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,9 +55,11 @@ export default function DormitoriesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // Status is not part of Dormitory type; using active filter instead
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedDormitory, setSelectedDormitory] = useState<Dormitory | null>(
@@ -80,7 +85,6 @@ export default function DormitoriesPage() {
             page: 1,
             limit: 1000, // Get all dormitories for stats calculation
             search: undefined,
-            status: undefined,
             type: undefined,
           }),
         ).unwrap();
@@ -88,16 +92,10 @@ export default function DormitoriesPage() {
         const allDormitories = response.data || [];
 
         setStatsData({
-          totalDormitories: response.pagination?.total || 0,
-          availableDormitories: allDormitories.filter(
-            (d) => d.status === 'AVAILABLE',
-          ).length,
-          occupiedDormitories: allDormitories.filter(
-            (d) => d.status === 'OCCUPIED',
-          ).length,
-          maintenanceDormitories: allDormitories.filter(
-            (d) => d.status === 'MAINTENANCE',
-          ).length,
+          totalDormitories: allDormitories.length,
+          availableDormitories: allDormitories.filter((d) => d.isActive).length,
+          occupiedDormitories: 0,
+          maintenanceDormitories: 0,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
@@ -138,7 +136,6 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -146,7 +143,7 @@ export default function DormitoriesPage() {
   }, [
     dispatch,
     debouncedSearch,
-    statusFilter,
+    activeFilter,
     typeFilter,
     searchCache,
     lastSearchTerm,
@@ -163,7 +160,25 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
+          type: typeFilter === 'all' ? undefined : typeFilter,
+        }),
+      );
+    } catch (e) {
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message);
+    }
+  };
+
+  const handleWizardSubmit = async (dormitory: Dormitory, beds: any[]) => {
+    try {
+      success(`Dormitory and ${beds.length} beds created successfully!`);
+      setOpenCreate(false);
+      // refetch with current search term
+      dispatch(
+        fetchDormitories({
+          page: 1,
+          limit: 10,
+          search: debouncedSearch || undefined,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -186,7 +201,6 @@ export default function DormitoriesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -199,7 +213,7 @@ export default function DormitoriesPage() {
   const handleDeleteDormitory = async () => {
     if (!selectedDormitory) return;
     try {
-      // await dispatch(deleteDormitory(selectedDormitory.id)).unwrap();
+      await dispatch(deleteDormitory(selectedDormitory.id)).unwrap();
       success('Dormitory deleted');
       setOpenDelete(false);
       setSelectedDormitory(null);
@@ -209,7 +223,6 @@ export default function DormitoriesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -234,7 +247,7 @@ export default function DormitoriesPage() {
       dormitory={dormitory}
       onView={(d) => {
         setSelectedDormitory(d);
-        // setOpenView(true);
+        setOpenView(true);
       }}
       onEdit={(d) => {
         setSelectedDormitory(d);
@@ -265,8 +278,8 @@ export default function DormitoriesPage() {
             <DialogHeader>
               <DialogTitle>New Dormitory</DialogTitle>
             </DialogHeader>
-            <DormitoryForm
-              onSubmit={handleCreateDormitory}
+            <DormitoryWizardFormCompact
+              onSubmit={handleWizardSubmit}
               onCancel={() => setOpenCreate(false)}
               loading={loading}
             />
@@ -295,16 +308,14 @@ export default function DormitoriesPage() {
         }
         filters={
           <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as 'all' | 'active' | 'inactive')}>
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Active" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="AVAILABLE">Available</SelectItem>
-                <SelectItem value="OCCUPIED">Occupied</SelectItem>
-                <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                <SelectItem value="OUT_OF_ORDER">Out of Order</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -340,7 +351,7 @@ export default function DormitoriesPage() {
             <DialogTitle>Edit Dormitory</DialogTitle>
           </DialogHeader>
           {selectedDormitory && (
-            <DormitoryForm
+            <DormitoryEditForm
               dormitory={selectedDormitory}
               onSubmit={handleEditDormitory}
               onCancel={() => setOpenEdit(false)}
@@ -350,6 +361,16 @@ export default function DormitoriesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* View Dormitory Details Dialog */}
+      <DormitoryDetailsDialog
+        open={openView}
+        onOpenChange={(open) => {
+          setOpenView(open);
+          if (!open) setSelectedDormitory(null);
+        }}
+        dormitory={selectedDormitory}
+      />
+
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={openDelete}
@@ -358,9 +379,8 @@ export default function DormitoriesPage() {
           if (!open) setSelectedDormitory(null);
         }}
         title="Delete Dormitory"
-        description={`Are you sure you want to delete ${
-          selectedDormitory ? selectedDormitory.name : 'this dormitory'
-        }? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${selectedDormitory ? selectedDormitory.name : 'this dormitory'
+          }? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
         onConfirm={handleDeleteDormitory}

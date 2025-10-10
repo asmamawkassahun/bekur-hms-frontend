@@ -17,13 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import type { AxiosError } from 'axios';
@@ -37,10 +30,12 @@ import { DataTable } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ReservationStatsCards } from '@/components/features/reservations/ReservationStatsCards';
 import { ReservationTableRow } from '@/components/features/reservations/ReservationTableRow';
-import { ReservationForm } from '@/components/features/reservations/ReservationForm';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ReservationsPage() {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const {
     reservations,
     loading,
@@ -53,8 +48,6 @@ export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [openCreate, setOpenCreate] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
@@ -78,15 +71,14 @@ export default function ReservationsPage() {
           fetchReservations({
             page: 1,
             limit: 1000, // Get all reservations for stats calculation
-            search: undefined,
-            status: undefined,
           }),
         ).unwrap();
 
         const allReservations = response.data || [];
+        const total = response.meta?.total || allReservations.length;
 
         setStatsData({
-          totalReservations: response.pagination?.total || 0,
+          totalReservations: total,
           confirmedReservations: allReservations.filter(
             (r) => r.status === 'CONFIRMED',
           ).length,
@@ -97,7 +89,7 @@ export default function ReservationsPage() {
             (r) => r.status === 'PENDING',
           ).length,
           totalRevenue: allReservations.reduce(
-            (sum, r) => sum + r.totalPrice,
+            (sum, r) => sum + Number(r.totalPrice || r.finalPrice || 0),
             0,
           ),
         });
@@ -151,58 +143,6 @@ export default function ReservationsPage() {
     }
   }, [dispatch, debouncedSearch, statusFilter, searchCache, lastSearchTerm]);
 
-  const handleCreateReservation = async (data: any) => {
-    try {
-      await dispatch(createReservation(data)).unwrap();
-      success('Reservation created');
-      setOpenCreate(false);
-      // Refetch with current search term
-      dispatch(
-        fetchReservations({
-          page: 1,
-          limit: 10,
-          filters: {
-            status:
-              statusFilter === 'all'
-                ? undefined
-                : (statusFilter as ReservationStatus),
-            guestName: debouncedSearch || undefined,
-          },
-        }),
-      );
-    } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
-    }
-  };
-
-  const handleEditReservation = async (data: any) => {
-    if (!selectedReservation) return;
-    try {
-      // await dispatch(updateReservation({ id: selectedReservation.id, data })).unwrap();
-      success('Reservation updated');
-      setOpenEdit(false);
-      setSelectedReservation(null);
-      // Refetch with current search term
-      dispatch(
-        fetchReservations({
-          page: pagination.page,
-          limit: pagination.limit,
-          filters: {
-            status:
-              statusFilter === 'all'
-                ? undefined
-                : (statusFilter as ReservationStatus),
-            guestName: debouncedSearch || undefined,
-          },
-        }),
-      );
-    } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
-    }
-  };
-
   const handleDeleteReservation = async () => {
     if (!selectedReservation) return;
     try {
@@ -245,12 +185,10 @@ export default function ReservationsPage() {
       key={reservation.id}
       reservation={reservation}
       onView={(r) => {
-        setSelectedReservation(r);
-        // setOpenView(true);
+        router.push(`/dashboard/reservations/list/${r.id}`);
       }}
       onEdit={(r) => {
-        setSelectedReservation(r);
-        setOpenEdit(true);
+        router.push(`/dashboard/reservations/list/${r.id}/edit`);
       }}
       onDelete={(r) => {
         setSelectedReservation(r);
@@ -266,24 +204,10 @@ export default function ReservationsPage() {
         title="Reservations"
         description="Manage hotel reservations and bookings"
       >
-        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              New Reservation
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="!w-[85vw] !max-w-[800px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>New Reservation</DialogTitle>
-            </DialogHeader>
-            <ReservationForm
-              onSubmit={handleCreateReservation}
-              onCancel={() => setOpenCreate(false)}
-              loading={loading}
-            />
-          </DialogContent>
-        </Dialog>
+        <Link href="/dashboard/reservations/new-booking" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
+          <Plus className="mr-2 h-4 w-4" />
+          New Reservation
+        </Link>
       </PageHeader>
 
       {/* Stats Cards */}
@@ -332,29 +256,6 @@ export default function ReservationsPage() {
         }
         renderRow={renderReservationRow}
       />
-
-      {/* Edit Reservation Dialog */}
-      <Dialog
-        open={openEdit}
-        onOpenChange={(open) => {
-          setOpenEdit(open);
-          if (!open) setSelectedReservation(null);
-        }}
-      >
-        <DialogContent className="!w-[85vw] !max-w-[800px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Reservation</DialogTitle>
-          </DialogHeader>
-          {selectedReservation && (
-            <ReservationForm
-              reservation={selectedReservation}
-              onSubmit={handleEditReservation}
-              onCancel={() => setOpenEdit(false)}
-              loading={loading}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
