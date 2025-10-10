@@ -38,6 +38,7 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { DashboardSkeleton } from '@/components/skeletons';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -277,10 +278,10 @@ export default function DashboardPage() {
         title="Dashboard"
         description={`Welcome back, ${user?.firstName || 'User'}! Here's what's happening at your properties.`}
       >
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+        <Link href="/dashboard/reservations/new-booking" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
           <Plus className="mr-2 h-4 w-4" />
           New Reservation
-        </Button>
+        </Link>
       </PageHeader>
 
       {/* Stats Cards */}

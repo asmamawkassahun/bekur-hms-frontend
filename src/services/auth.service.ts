@@ -71,8 +71,10 @@ export const authService = {
   /**
    * Refresh access token
    */
-  refreshTokens: () =>
-    apiClient.post<ApiResponse<TokenResponse>>('/auth/refresh'),
+  refreshTokens: (refreshToken: string) =>
+    apiClient.post<ApiResponse<TokenResponse>>('/auth/refresh', {
+      refreshToken,
+    }),
 
   /**
    * Logout

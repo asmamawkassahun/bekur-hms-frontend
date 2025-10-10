@@ -70,7 +70,7 @@ class TokenManager {
   }
 
   /**
-   * Get access token from Redux store or sessionStorage fallback
+   * Get access token from Redux store, sessionStorage, or cookie fallback
    */
   static getAccessToken(): string | null {
     // Check if we're in a browser environment
@@ -88,7 +88,18 @@ class TokenManager {
       }
 
       // Fallback to sessionStorage
-      return sessionStorage.getItem('access_token');
+      let token = sessionStorage.getItem('access_token');
+
+      // Last resort: check cookie if sessionStorage is empty
+      if (!token) {
+        token = CookieUtils.getAuthCookie() || null;
+        // If found in cookie, restore to sessionStorage
+        if (token) {
+          sessionStorage.setItem('access_token', token);
+        }
+      }
+
+      return token;
     } catch (error) {
       console.error('Failed to get access token:', error);
       return null;

@@ -55,25 +55,35 @@ export function ReservationTableRow({
     }).format(amount);
   };
 
+  // Get guest information from primaryGuest or bookingGuests
+  const primaryGuest = reservation.primaryGuest || reservation.guest;
+  const allGuests = reservation.bookingGuests || [];
+  const guestCount = allGuests.length;
+
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell>
         <div>
           <div className="font-medium">
-            {reservation.guest?.firstName} {reservation.guest?.lastName}
+            {primaryGuest?.firstName} {primaryGuest?.lastName}
+            {guestCount > 1 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                +{guestCount - 1} guest{guestCount - 1 > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
           <div className="text-sm text-muted-foreground">
-            {reservation.guest?.email}
+            {primaryGuest?.email}
           </div>
         </div>
       </TableCell>
       <TableCell>
         <div>
           <div className="font-medium">
-            {reservation.room?.number || reservation.bed?.number}
+            {reservation.room?.number || reservation.bed?.number || 'N/A'}
           </div>
           <div className="text-sm text-muted-foreground">
-            {reservation.room?.type || 'Bed'}
+            {reservation.room?.roomType?.name || reservation.room?.type || 'Bed'}
           </div>
         </div>
       </TableCell>
@@ -81,7 +91,7 @@ export function ReservationTableRow({
       <TableCell>{formatDate(reservation.checkOut)}</TableCell>
       <TableCell>{getStatusBadge(reservation.status)}</TableCell>
       <TableCell className="font-medium">
-        {formatCurrency(reservation.totalPrice, reservation.currency)}
+        {formatCurrency(Number(reservation.totalPrice || reservation.finalPrice), reservation.property?.currency || reservation.currency || 'ETB')}
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">

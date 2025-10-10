@@ -100,14 +100,11 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
       {/* Quick Create Button */}
       <div className="px-4 pb-4">
-        <Button
-          className="w-full bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 flex items-center justify-center cursor-pointer"
-          onClick={handleNavigation}
-        >
+        <Link href="/dashboard/reservations/new-booking" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
           <Plus className="mr-2 h-4 w-4" />
           New Reservation
           <Calendar className="ml-2 h-4 w-4" />
-        </Button>
+        </Link>
       </div>
 
       {/* Main Navigation */}
@@ -212,7 +209,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   className={cn(
                     'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                     active &&
-                      'bg-sidebar-accent text-sidebar-accent-foreground',
+                    'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   asChild
                 >
