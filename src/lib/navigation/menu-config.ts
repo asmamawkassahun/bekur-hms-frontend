@@ -16,6 +16,7 @@ import {
   Wrench,
   Calculator,
   DollarSign,
+  Globe,
 } from 'lucide-react';
 import { MenuItem, UserRole } from '@/types';
 
@@ -32,6 +33,12 @@ export const menuItems: Record<UserRole, MenuItem[]> = {
       icon: Building,
       href: '/dashboard/properties',
       permission: 'property:read',
+    },
+    {
+      label: 'Channel Manager',
+      icon: Globe,
+      href: '/dashboard/aiosell',
+      permission: 'aiosell:view-logs',
     },
     {
       label: 'Reservations',
@@ -100,6 +107,12 @@ export const menuItems: Record<UserRole, MenuItem[]> = {
       icon: LayoutDashboard,
       href: '/dashboard',
       permission: undefined,
+    },
+    {
+      label: 'Channel Manager',
+      icon: Globe,
+      href: '/dashboard/aiosell',
+      permission: 'aiosell:view-logs',
     },
     {
       label: 'Reservations',
