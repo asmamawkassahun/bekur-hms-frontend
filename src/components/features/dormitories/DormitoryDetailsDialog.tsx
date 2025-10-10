@@ -271,7 +271,7 @@ export function DormitoryDetailsDialog({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline">Standard</Badge>
+                                                    <Badge variant="outline">{(bed as any)?.bedType?.name || (bed as any)?.type?.name || 'Standard'}</Badge>
                                                 </TableCell>
                                                 <TableCell>
                                                     {formatCurrency(bed.basePrice)}

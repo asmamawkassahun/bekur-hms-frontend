@@ -71,9 +71,9 @@ export function BedForm({
       ? {
           number: bed.number,
           dormitoryId: bed.dormitoryId,
-          typeId: bed.typeId,
-          price: bed.price,
-          currency: bed.currency,
+          typeId: (bed as any).bedTypeId || (bed as any).typeId || '',
+          price: (bed as any).basePrice ?? (bed as any).price ?? 0,
+          currency: (bed as any).currency || 'USD',
           status: bed.status,
           amenities: bed.amenities || [],
           description: bed.description,
@@ -100,10 +100,16 @@ export function BedForm({
 
   const handleSubmit = (values: BedFormData) => {
     const payload = {
-      ...values,
+      number: values.number,
+      dormitoryId: values.dormitoryId,
+      bedTypeId: values.typeId,
+      basePrice: values.price,
+      status: values.status,
+      isActive: values.isActive,
+      description: values.description,
       amenities: values.amenities?.join(', '),
     };
-    onSubmit(payload as BedFormData);
+    onSubmit(payload as unknown as BedFormData);
   };
 
   return (
