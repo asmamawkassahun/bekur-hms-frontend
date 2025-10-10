@@ -5,6 +5,7 @@ export * from './property.types';
 export * from './room.types';
 export * from './guest.types';
 export * from './reservation.types';
+export * from './aiosell.types';
 
 // Common Types
 export interface BaseEntity {
@@ -48,13 +49,13 @@ export interface FormFieldProps {
   name: string;
   label: string;
   type?:
-  | 'text'
-  | 'email'
-  | 'password'
-  | 'number'
-  | 'date'
-  | 'select'
-  | 'textarea';
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'date'
+    | 'select'
+    | 'textarea';
   placeholder?: string;
   options?: { value: string; label: string }[];
   required?: boolean;
