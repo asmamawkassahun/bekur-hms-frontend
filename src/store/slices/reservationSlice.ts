@@ -7,6 +7,9 @@ import {
   CheckInData,
   CheckOutData,
   ReservationFilters,
+  BookingType,
+  BookingSource,
+  PaymentDetailsData,
 } from '@/types';
 
 interface ReservationState {
@@ -24,6 +27,14 @@ interface ReservationState {
   searchCache: Record<string, Reservation[]>;
   lastSearchTerm: string;
   isSearching: boolean;
+  // Booking Types
+  bookingTypes: BookingType[];
+  bookingTypesLoading: boolean;
+  bookingTypesError: string | null;
+  // Booking Sources
+  bookingSources: BookingSource[];
+  bookingSourcesLoading: boolean;
+  bookingSourcesError: string | null;
 }
 
 const initialState: ReservationState = {
@@ -41,6 +52,14 @@ const initialState: ReservationState = {
   searchCache: {},
   lastSearchTerm: '',
   isSearching: false,
+  // Booking Types
+  bookingTypes: [],
+  bookingTypesLoading: false,
+  bookingTypesError: null,
+  // Booking Sources
+  bookingSources: [],
+  bookingSourcesLoading: false,
+  bookingSourcesError: null,
 };
 
 // Async thunks
@@ -177,6 +196,65 @@ export const getAvailability = createAsyncThunk(
   },
 );
 
+export const fetchBookingTypes = createAsyncThunk(
+  'reservation/fetchBookingTypes',
+  async (
+    params: {
+      page?: number;
+      limit?: number;
+      isActive?: boolean;
+      name?: string;
+    } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await reservationService.getAllBookingTypes(params);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch booking types';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchBookingSources = createAsyncThunk(
+  'reservation/fetchBookingSources',
+  async (
+    params: {
+      page?: number;
+      limit?: number;
+      sourceType?: string;
+      isActive?: boolean;
+      name?: string;
+    } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await reservationService.getAllBookingSources(params);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch booking sources';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const addPaymentDetails = createAsyncThunk(
+  'reservation/addPaymentDetails',
+  async (data: PaymentDetailsData, { rejectWithValue }) => {
+    try {
+      const response = await reservationService.addPaymentDetails(data);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to add payment details';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 const reservationSlice = createSlice({
   name: 'reservation',
   initialState,
@@ -228,7 +306,7 @@ const reservationSlice = createSlice({
         state.reservations = action.payload.data || [];
 
         // Cache search results for future use
-        const searchTerm = action.meta.arg.filters?.search || '';
+        const searchTerm = action.meta.arg.filters?.guestName || '';
         if (searchTerm) {
           state.searchCache[searchTerm] = action.payload.data || [];
           state.lastSearchTerm = searchTerm;
@@ -368,6 +446,55 @@ const reservationSlice = createSlice({
         }
       })
       .addCase(cancelReservation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch Booking Types
+      .addCase(fetchBookingTypes.pending, (state) => {
+        state.bookingTypesLoading = true;
+        state.bookingTypesError = null;
+      })
+      .addCase(fetchBookingTypes.fulfilled, (state, action) => {
+        state.bookingTypesLoading = false;
+        state.bookingTypes = action.payload.data || [];
+      })
+      .addCase(fetchBookingTypes.rejected, (state, action) => {
+        state.bookingTypesLoading = false;
+        state.bookingTypesError = action.payload as string;
+      })
+      // Fetch Booking Sources
+      .addCase(fetchBookingSources.pending, (state) => {
+        state.bookingSourcesLoading = true;
+        state.bookingSourcesError = null;
+      })
+      .addCase(fetchBookingSources.fulfilled, (state, action) => {
+        state.bookingSourcesLoading = false;
+        state.bookingSources = action.payload.data || [];
+      })
+      .addCase(fetchBookingSources.rejected, (state, action) => {
+        state.bookingSourcesLoading = false;
+        state.bookingSourcesError = action.payload as string;
+      })
+      // Add Payment Details
+      .addCase(addPaymentDetails.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addPaymentDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.reservations.findIndex(
+            (r) => r.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.reservations[index] = action.payload.data!;
+          }
+          if (state.currentReservation?.id === action.payload.data?.id) {
+            state.currentReservation = action.payload.data!;
+          }
+        }
+      })
+      .addCase(addPaymentDetails.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

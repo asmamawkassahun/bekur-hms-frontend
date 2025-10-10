@@ -11,14 +11,18 @@ export class CookieUtils {
     static setAuthCookie(token: string): void {
         if (typeof window === 'undefined') return;
 
+        // Use secure cookies only in production, httpOnly in development for compatibility
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        const isSecure = !isDevelopment && window.location.protocol === 'https:';
+
         Cookies.set('auth-token', token, {
             expires: 1, // 1 day
             path: '/',
-            secure: true,
+            secure: isSecure,
             sameSite: 'strict'
         });
 
-        console.log('🍪 CookieUtils: Auth cookie set');
+        console.log('🍪 CookieUtils: Auth cookie set', { isDevelopment, isSecure });
     }
 
     /**

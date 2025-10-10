@@ -6,6 +6,9 @@ import {
   CheckInData,
   CheckOutData,
   ReservationFilters,
+  PaymentDetailsData,
+  BookingType,
+  BookingSource,
   ApiResponse,
   QueryParams,
 } from '@/types';
@@ -15,31 +18,31 @@ export const reservationService = {
    * Create a new reservation
    */
   create: (data: CreateReservationData) =>
-    apiClient.post<ApiResponse<Reservation>>('/reservations', data),
+    apiClient.post<ApiResponse<Reservation>>('/bookings', data),
 
   /**
    * Get all reservations with pagination and filters
    */
   getAll: (params?: QueryParams & ReservationFilters) =>
-    apiClient.get<ApiResponse<Reservation[]>>('/reservations', { params }),
+    apiClient.get<ApiResponse<Reservation[]>>('/bookings', { params }),
 
   /**
    * Get reservation by ID
    */
   getById: (id: string) =>
-    apiClient.get<ApiResponse<Reservation>>(`/reservations/${id}`),
+    apiClient.get<ApiResponse<Reservation>>(`/bookings/${id}`),
 
   /**
    * Update reservation
    */
   update: (id: string, data: UpdateReservationData) =>
-    apiClient.patch<ApiResponse<Reservation>>(`/reservations/${id}`, data),
+    apiClient.patch<ApiResponse<Reservation>>(`/bookings/${id}`, data),
 
   /**
    * Delete reservation
    */
   delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(`/reservations/${id}`),
+    apiClient.delete<ApiResponse<null>>(`/bookings/${id}`),
 
   /**
    * Check-in guest
@@ -74,4 +77,34 @@ export const reservationService = {
       '/reservations/availability',
       { params },
     ),
+
+  /**
+   * Add payment details to reservation
+   */
+  addPaymentDetails: (data: PaymentDetailsData) =>
+    apiClient.post<ApiResponse<Reservation>>('/bookings/payment-details', data),
+
+  /**
+   * Get all booking types with pagination and filters
+   */
+  getAllBookingTypes: (params?: QueryParams & { isActive?: boolean; name?: string }) =>
+    apiClient.get<ApiResponse<BookingType[]>>('/booking-types', { params }),
+
+  /**
+   * Get booking type by ID
+   */
+  getBookingTypeById: (id: string) =>
+    apiClient.get<ApiResponse<BookingType>>(`/booking-types/${id}`),
+
+  /**
+   * Get all booking sources with pagination and filters
+   */
+  getAllBookingSources: (params?: QueryParams & { sourceType?: string; isActive?: boolean; name?: string }) =>
+    apiClient.get<ApiResponse<BookingSource[]>>('/booking-sources', { params }),
+
+  /**
+   * Get booking source by ID
+   */
+  getBookingSourceById: (id: string) =>
+    apiClient.get<ApiResponse<BookingSource>>(`/booking-sources/${id}`),
 };

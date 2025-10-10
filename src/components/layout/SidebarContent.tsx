@@ -38,6 +38,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const [roomsExpanded, setRoomsExpanded] = useState(false);
+  const [reservationsExpanded, setReservationsExpanded] = useState(false);
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -55,7 +56,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   // Main navigation items
   const mainNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-    { label: 'Reservations', icon: Calendar, href: '/dashboard/reservations' },
     { label: 'Guests', icon: Users, href: '/dashboard/guests' },
     { label: 'Dormitories', icon: Home, href: '/dashboard/dormitories' },
     { label: 'Beds', icon: BedDouble, href: '/dashboard/beds' },
@@ -67,6 +67,14 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     { label: 'Room Types', icon: BedDouble, href: '/dashboard/rooms/types' },
     { label: 'Rooms List', icon: Bed, href: '/dashboard/rooms/list' },
     { label: 'Add Room', icon: Plus, href: undefined },
+  ];
+
+  //Reservation submenu items
+  const reservationSubmenu = [
+    { label: 'Reservation List', icon: Calendar, href: '/dashboard/reservations/list' },
+    { label: 'New Booking', icon: Plus, href: '/dashboard/reservations/new-booking' },
+    { label: 'Check in', icon: Calendar, href: '/dashboard/reservations/check-in' },
+    { label: 'Check out', icon: Calendar, href: '/dashboard/reservations/check-out' },
   ];
 
   // Hotel Management section
@@ -99,16 +107,13 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       </div>
 
       {/* Quick Create Button */}
-      <div className="px-4 pb-4">
-        <Button
-          className="w-full bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 flex items-center justify-center cursor-pointer"
-          onClick={handleNavigation}
-        >
+      {/* <div className="px-4 pb-4">
+        <Link href="/dashboard/reservations/new-booking" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
           <Plus className="mr-2 h-4 w-4" />
           New Reservation
           <Calendar className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+        </Link>
+      </div> */}
 
       {/* Main Navigation */}
       <nav className="flex-1 px-2 space-y-1">
@@ -191,6 +196,53 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
             })}
           </div>
         )}
+
+        {/* Expandable Reservations Section */}
+        <button
+          onClick={() => setReservationsExpanded(!reservationsExpanded)}
+          className={cn(
+            'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+            pathname.startsWith('/dashboard/reservations')
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          )}
+        >
+          <div className="flex items-center">
+            <Calendar className="mr-3 h-4 w-4" />
+            <span>Reservations</span>
+          </div>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform',
+              reservationsExpanded && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {reservationsExpanded && (
+          <div className="ml-4 mt-1 space-y-1">
+            {reservationSubmenu.map((item) => {
+              const Icon = item.icon;
+              const active = item.href ? isActive(item.href) : false;
+
+              return item.href ? (
+                <Link key={item.label} href={item.href} onClick={handleNavigation}>
+                  <div
+                    className={cn(
+                      'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
+                      active
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                        : 'hover:bg-sidebar-accent/50',
+                    )}
+                  >
+                    <Icon className="mr-3 h-4 w-4" />
+                    <span>{item.label}</span>
+                  </div>
+                </Link>
+              ) : null;
+            })}
+          </div>
+        )}
       </nav>
 
       {/* Hotel Management Section */}
@@ -212,7 +264,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   className={cn(
                     'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                     active &&
-                      'bg-sidebar-accent text-sidebar-accent-foreground',
+                    'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   asChild
                 >

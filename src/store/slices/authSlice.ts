@@ -187,19 +187,36 @@ export const refreshTokens = createAsyncThunk(
         throw new Error('No refresh token available');
       }
 
-      const response = await authService.refreshTokens();
+      const response = await authService.refreshTokens(refreshToken);
+
+      // Validate response status and structure
+      if (
+        response.status !== 200 ||
+        !response.data.success ||
+        !response.data.data?.accessToken ||
+        !response.data.data?.refreshToken
+      ) {
+        console.error('Invalid refresh token response:', {
+          status: response.status,
+          success: response.data.success,
+          hasAccessToken: !!response.data.data?.accessToken,
+          hasRefreshToken: !!response.data.data?.refreshToken,
+        });
+        throw new Error('Invalid refresh token response');
+      }
+
       const { accessToken, refreshToken: newRefreshToken } =
-        response.data.data!;
+        response.data.data;
 
       // Update stored tokens
       TokenManager.setTokens(accessToken, newRefreshToken);
 
-
       return { accessToken, refreshToken: newRefreshToken };
     } catch (error: unknown) {
+      console.error('Refresh tokens thunk failed:', error);
+
       // Clear tokens on refresh failure
       TokenManager.clearTokens();
-
 
       return rejectWithValue(
         error instanceof Error ? error.message : 'Token refresh failed',
@@ -415,27 +432,35 @@ const authSlice = createSlice({
   },
 });
 
-// Initialize auth state from cookies (for SSR/hydration)
+// Initialize auth state from storage (cookies, sessionStorage, localStorage)
 export const initializeAuth = createAsyncThunk(
   'auth/initializeAuth',
   async (_, { dispatch }) => {
-    console.log('🔐 Initializing auth state from cookies...');
+    console.log('🔐 Initializing auth state from storage...');
 
     if (typeof window === 'undefined') {
       return null;
     }
 
-    // Check if we have a token in cookies using js-cookie
-    const token = Cookies.get('auth-token');
+    // Check tokens in order: sessionStorage > cookies > localStorage
+    let accessToken = TokenManager.getAccessToken();
+    const refreshToken = TokenManager.getRefreshToken();
 
-    if (token) {
-      console.log(
-        '🔐 Found auth token in cookie:',
-        token ? 'present' : 'missing',
-      );
+    // Fallback to cookie if sessionStorage is empty
+    if (!accessToken) {
+      accessToken = Cookies.get('auth-token') || null;
+    }
 
-      // Set the token in Redux state
-      dispatch(setTokens({ accessToken: token, refreshToken: 'mock' }));
+    console.log('🔐 Token check:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+    });
+
+    if (accessToken && refreshToken) {
+      console.log('🔐 Found tokens in storage');
+
+      // Set tokens in Redux state
+      dispatch(setTokens({ accessToken, refreshToken }));
 
       // Try to get user profile
       try {
@@ -443,17 +468,17 @@ export const initializeAuth = createAsyncThunk(
         const user = response.data.data!;
         console.log('🔐 User profile loaded:', user);
         dispatch(setUser(user));
-        return { accessToken: token, refreshToken: 'mock', user };
+        return { accessToken, refreshToken, user };
       } catch (error) {
         console.error('🔐 Failed to load user profile:', error);
-        // Clear invalid token and set error state
+        // Clear invalid tokens and set error state
         TokenManager.clearTokens();
-        dispatch(setError('Failed to load user profile. Please login again.'));
+        dispatch(setError('Session expired. Please login again.'));
         return null;
       }
     }
 
-    console.log('🔐 No auth token found in cookies');
+    console.log('🔐 No valid tokens found in storage');
     return null;
   },
 );

@@ -31,14 +31,14 @@ export interface Payment {
 }
 
 export interface CreatePaymentData {
-  propertyId?: string;
-  reservationId?: string;
-  guestId?: string;
+  bookingId: string; // Required by API
+  guestId: string; // Required by API
   reference?: string;
   description?: string;
   method: PaymentMethod;
   currency: string;
   amount: number;
+  notes?: string;
 }
 
 export interface UpdatePaymentData {
