@@ -1,3 +1,11 @@
+// File Type Enum (matching backend)
+export enum FileType {
+  PASSPORT = 'PASSPORT',
+  ID_CARD = 'ID_CARD',
+  DRIVER_LICENSE = 'DRIVER_LICENSE',
+  OTHER = 'OTHER',
+}
+
 // Guest Types
 export interface Guest {
   id: string;
@@ -75,12 +83,19 @@ export interface GuestDocument {
   guestId: string;
   fileName: string;
   fileUrl: string;
-  fileType: string;
+  fileType: FileType;
   description: string;
   createdAt: string;
 }
 
 export interface UploadDocumentData {
   file: File;
-  description: string;
+  fileType: FileType;
+  description?: string;
+}
+
+export interface UploadGuestDocumentData {
+  file: File;
+  fileType: FileType;
+  description?: string;
 }

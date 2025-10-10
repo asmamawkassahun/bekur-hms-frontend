@@ -71,9 +71,10 @@ export const guestService = {
   uploadDocument: (id: string, data: UploadDocumentData) => {
     const formData = new FormData();
     formData.append('file', data.file);
-    formData.append('description', data.description);
+    formData.append('fileType', data.fileType);
+    formData.append('description', data.description || '');
     return apiClient.post<ApiResponse<GuestDocument>>(
-      `/guests/${id}/documents`,
+      `/guests/${id}/documents/upload`,
       formData,
       {
         headers: {
