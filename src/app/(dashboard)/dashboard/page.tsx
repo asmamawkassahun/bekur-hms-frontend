@@ -10,14 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Calendar,
   Users,
   DollarSign,
@@ -120,6 +112,86 @@ export default function DashboardPage() {
 
   const recentReservations = reservations?.slice(0, 5) || [];
   const recentGuests = guests?.slice(0, 5) || [];
+
+  const reservationColumns = [
+    {
+      key: 'guest',
+      label: 'Guest',
+      render: (r: any) => (
+        <div>
+          <div className="font-medium">
+            {r.guest?.firstName} {r.guest?.lastName}
+          </div>
+          <div className="text-sm text-muted-foreground">{r.guest?.email}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'roomOrBed',
+      label: 'Room/Bed',
+      render: (r: any) => r.room?.number || r.bed?.number || '',
+    },
+    {
+      key: 'checkIn',
+      label: 'Check-in',
+      render: (r: any) => formatDate(r.checkIn),
+    },
+    {
+      key: 'checkOut',
+      label: 'Check-out',
+      render: (r: any) => formatDate(r.checkOut),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (r: any) => getStatusBadge(r.status),
+    },
+    {
+      key: 'totalPrice',
+      label: 'Total',
+      render: (r: any) => (
+        <span className="font-medium">
+          {formatCurrency(r.totalPrice, r.currency)}
+        </span>
+      ),
+    },
+  ];
+
+  const guestColumns = [
+    {
+      key: 'name',
+      label: 'Guest',
+      render: (g: any) => (
+        <div className="font-medium">{g.firstName} {g.lastName}</div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      render: (g: any) => g.email,
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      render: (g: any) => g.phone,
+    },
+    {
+      key: 'loyaltyTier',
+      label: 'Loyalty Tier',
+      render: (g: any) => (
+        <Badge variant="outline">{g.loyaltyTier || 'No Tier'}</Badge>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (g: any) => (
+        <Badge variant={g.isActive ? 'default' : 'secondary'}>
+          {g.isActive ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -282,59 +354,18 @@ export default function DashboardPage() {
         <TabsContent value="reservations" className="space-y-4">
           <div className="bg-card border-0 shadow-sm rounded-lg">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Recent Reservations</h3>
-                <Button variant="outline" size="sm" className="cursor-pointer">
-                  View All
-                </Button>
-              </div>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Guest</TableHead>
-                      <TableHead>Room/Bed</TableHead>
-                      <TableHead>Check-in</TableHead>
-                      <TableHead>Check-out</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentReservations.map((reservation) => (
-                      <TableRow key={reservation.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {reservation.guest?.firstName}{' '}
-                              {reservation.guest?.lastName}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {reservation.guest?.email}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {reservation.room?.number || reservation.bed?.number}
-                        </TableCell>
-                        <TableCell>{formatDate(reservation.checkIn)}</TableCell>
-                        <TableCell>
-                          {formatDate(reservation.checkOut)}
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(reservation.status)}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(
-                            reservation.totalPrice,
-                            reservation.currency,
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <DataTable
+                title="Recent Reservations"
+                description="Last 5 reservations"
+                columns={reservationColumns as any}
+                data={recentReservations as any}
+                actions={
+                  <Button variant="outline" size="sm" className="cursor-pointer">
+                    View All
+                  </Button>
+                }
+                className="border-0"
+              />
             </div>
           </div>
         </TabsContent>
@@ -342,50 +373,18 @@ export default function DashboardPage() {
         <TabsContent value="guests" className="space-y-4">
           <div className="bg-card border-0 shadow-sm rounded-lg">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Recent Guests</h3>
-                <Button variant="outline" size="sm" className="cursor-pointer">
-                  View All
-                </Button>
-              </div>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Guest</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Loyalty Tier</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentGuests.map((guest) => (
-                      <TableRow key={guest.id}>
-                        <TableCell>
-                          <div className="font-medium">
-                            {guest.firstName} {guest.lastName}
-                          </div>
-                        </TableCell>
-                        <TableCell>{guest.email}</TableCell>
-                        <TableCell>{guest.phone}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {guest.loyaltyTier || 'No Tier'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={guest.isActive ? 'default' : 'secondary'}
-                          >
-                            {guest.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <DataTable
+                title="Recent Guests"
+                description="Last 5 guests"
+                columns={guestColumns as any}
+                data={recentGuests as any}
+                actions={
+                  <Button variant="outline" size="sm" className="cursor-pointer">
+                    View All
+                  </Button>
+                }
+                className="border-0"
+              />
             </div>
           </div>
         </TabsContent>
