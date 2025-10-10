@@ -39,11 +39,12 @@ export function DormitoryTableRow({
     );
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number | string, currency?: string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
-    }).format(amount);
+    }).format(numAmount);
   };
 
   return (
@@ -66,23 +67,18 @@ export function DormitoryTableRow({
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-3 w-3 text-muted-foreground" />
             <span>{dormitory.capacity} beds</span>
-          </div>
-          {dormitory.floor && (
-            <div className="text-sm text-muted-foreground">
-              Floor {dormitory.floor}
-            </div>
-          )}
+          </div>          
         </div>
       </TableCell>
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(dormitory.pricePerBed, dormitory.currency)}
+            {formatCurrency(dormitory.basePrice)}
           </div>
           <div className="text-sm text-muted-foreground">per bed per night</div>
         </div>
       </TableCell>
-      <TableCell>{getStatusBadge(dormitory.status)}</TableCell>
+      <TableCell>{getStatusBadge(dormitory.isActive ? 'AVAILABLE' : 'OUT_OF_ORDER')}</TableCell>
       <TableCell>
         <div className="space-y-1">
           {dormitory.amenities && dormitory.amenities.length > 0 && (

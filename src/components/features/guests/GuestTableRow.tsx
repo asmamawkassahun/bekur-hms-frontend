@@ -65,9 +65,7 @@ export function GuestTableRow({
             <div className="font-medium truncate">
               {guest.firstName} {guest.lastName}
             </div>
-            <div className="text-sm text-muted-foreground">
-              ID: {guest.id.slice(0, 8)}...
-            </div>
+           
           </div>
         </div>
       </TableCell>
