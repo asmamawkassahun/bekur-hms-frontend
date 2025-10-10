@@ -227,7 +227,7 @@ export function DormitoryForm({
                   <SelectContent>
                     {DORMITORY_STATUSES.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {status.replace('_', ' ')}
+                        {status?.replace('_', ' ') || 'Unknown'}
                       </SelectItem>
                     ))}
                   </SelectContent>
