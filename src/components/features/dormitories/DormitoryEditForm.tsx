@@ -335,10 +335,10 @@ export function DormitoryEditForm({
     };
 
     // Existing beds editing helpers
-    const [editRows, setEditRows] = useState<Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean }>>({});
+    const [editRows, setEditRows] = useState<Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean; bedTypeId: string }>>({});
 
     useEffect(() => {
-        const init: Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean }> = {};
+        const init: Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean; bedTypeId: string }> = {};
         (storeBeds || [])
             .filter((b) => b.dormitoryId === dormitory.id)
             .forEach((b) => {
@@ -347,12 +347,13 @@ export function DormitoryEditForm({
                     basePrice: typeof b.basePrice === 'string' ? Number(b.basePrice) : b.basePrice,
                     status: b.status as BedStatus,
                     isActive: b.isActive,
+                    bedTypeId: (b as any)?.bedTypeId || (b as any)?.bedType?.id || '',
                 };
             });
         setEditRows(init);
     }, [storeBeds, dormitory.id]);
 
-    const handleEditRowChange = (id: string, field: 'number' | 'basePrice' | 'status' | 'isActive', value: any) => {
+    const handleEditRowChange = (id: string, field: 'number' | 'basePrice' | 'status' | 'isActive' | 'bedTypeId', value: any) => {
         setEditRows((prev) => ({
             ...prev,
             [id]: { ...prev[id], [field]: value },
@@ -371,6 +372,7 @@ export function DormitoryEditForm({
                         number: current.number,
                         basePrice: Number(current.basePrice) || 0,
                         isActive: current.isActive,
+                        bedTypeId: current.bedTypeId || undefined,
                     },
                 } as any),
             ).unwrap();
@@ -762,6 +764,25 @@ export function DormitoryEditForm({
                                                                 className="h-8"
                                                                 disabled={isCreatingBeds || loading}
                                                             />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-medium">Bed Type</label>
+                                                            <Select
+                                                                value={editRows[b.id]?.bedTypeId ?? ((b as any)?.bedTypeId || (b as any)?.bedType?.id || '')}
+                                                                onValueChange={(val) => handleEditRowChange(b.id, 'bedTypeId', val)}
+                                                                disabled={isCreatingBeds || loading}
+                                                            >
+                                                                <SelectTrigger className="h-8">
+                                                                    <SelectValue placeholder="Select bed type" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {(bedTypes || []).map((bt: BedType) => (
+                                                                        <SelectItem key={bt.id} value={bt.id}>
+                                                                            {bt.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
                                                         </div>
                                                         <div>
                                                             <label className="text-xs font-medium">Price</label>
