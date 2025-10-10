@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { TokenManager } from '@/lib/auth/token-manager';
+import Cookies from 'js-cookie';
 
 // Extend Window interface to include Redux store
 declare global {
@@ -59,7 +60,7 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle 401 errors (unauthorized)
+    // Handle 401 errors (unauthorized) - only refresh, don't logout
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If already refreshing, queue this request
@@ -80,7 +81,6 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = TokenManager.getRefreshToken();
-
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
@@ -104,13 +104,11 @@ apiClient.interceptors.response.use(
 
         console.log('✅ Token refresh successful');
 
-        // Update tokens in storage
+        // Update tokens in storage (this also updates the cookie)
         TokenManager.setTokens(accessToken, newRefreshToken);
 
-        // Update auth cookie
-        if (typeof document !== 'undefined') {
-          document.cookie = `auth-token=${accessToken}; path=/; max-age=3600; secure; samesite=strict`;
-        }
+        // Verify token consistency for middleware
+        TokenManager.verifyTokenConsistency();
 
         // Update Redux store if available
         if (typeof window !== 'undefined' && window.__REDUX_STORE__) {
@@ -142,28 +140,36 @@ apiClient.interceptors.response.use(
         // Process queued requests with error
         processQueue(refreshError, null);
 
-        // Clear tokens and redirect to login
-        TokenManager.clearTokens();
+        // Only logout if refresh token is also invalid/expired
+        // Don't logout just because access token expired
+        const refreshToken = TokenManager.getRefreshToken();
+        if (!refreshToken || TokenManager.isRefreshTokenExpired()) {
+          console.log('🔄 Refresh token expired, logging out user');
 
-        // Clear auth cookie
-        if (typeof document !== 'undefined') {
-          document.cookie =
-            'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        }
+          // Clear tokens and redirect to login
+          TokenManager.clearTokens();
 
-        // Clear Redux store if available
-        if (typeof window !== 'undefined' && window.__REDUX_STORE__) {
-          try {
-            const { clearAuth } = await import('@/store/slices/authSlice');
-            window.__REDUX_STORE__?.dispatch(clearAuth());
-          } catch (storeError) {
-            console.warn('Failed to clear Redux store:', storeError);
+          // Clear auth cookie
+          if (typeof window !== 'undefined') {
+            Cookies.remove('auth-token', { path: '/' });
           }
-        }
 
-        // Redirect to login page
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Clear Redux store if available
+          if (typeof window !== 'undefined' && window.__REDUX_STORE__) {
+            try {
+              const { clearAuth } = await import('@/store/slices/authSlice');
+              window.__REDUX_STORE__?.dispatch(clearAuth());
+            } catch (storeError) {
+              console.warn('Failed to clear Redux store:', storeError);
+            }
+          }
+
+          // Redirect to login page
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        } else {
+          console.log('🔄 Access token expired but refresh token is valid, will retry on next request');
         }
 
         return Promise.reject(refreshError);

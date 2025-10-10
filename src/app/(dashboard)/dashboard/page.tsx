@@ -24,32 +24,27 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  MoreHorizontal,
   Plus,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
-  ArrowUpRight,
-  ArrowDownRight,
   Activity,
   Building,
-  Home,
-  BedDouble,
 } from 'lucide-react';
 
 // Import extracted components
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatsCard } from '@/components/shared/StatsCard';
-import { DataTable } from '@/components/shared/DataTable';
+import { DashboardSkeleton } from '@/components/skeletons';
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { reservations } = useSelector((state: RootState) => state.reservation);
-  const { properties } = useSelector((state: RootState) => state.property);
-  const { guests } = useSelector((state: RootState) => state.guest);
+  const { user, loading: authLoading } = useSelector((state: RootState) => state.auth);
+  const { reservations, loading: reservationsLoading } = useSelector((state: RootState) => state.reservation);
+  const { properties, loading: propertiesLoading } = useSelector((state: RootState) => state.property);
+  const { guests, loading: guestsLoading } = useSelector((state: RootState) => state.guest);
 
-  const [selectedTimeRange, setSelectedTimeRange] = useState('3months');
+  // Show skeleton if any data is still loading
+  const isLoading = authLoading || reservationsLoading || propertiesLoading || guestsLoading;
+
 
   useEffect(() => {
     // Load initial data
@@ -120,6 +115,11 @@ export default function DashboardPage() {
 
   const recentReservations = reservations?.slice(0, 5) || [];
   const recentGuests = guests?.slice(0, 5) || [];
+
+  // Show skeleton during loading
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="p-6 space-y-6">
