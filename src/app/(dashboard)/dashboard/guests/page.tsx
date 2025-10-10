@@ -8,6 +8,7 @@ import {
   createGuest,
   updateGuest,
   deleteGuest,
+  uploadDocument,
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/guestSlice';
@@ -31,6 +32,7 @@ import { useNotification } from '@/hooks/useNotification';
 import type { AxiosError } from 'axios';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { Guest } from '@/types';
+import { FileType } from '@/types';
 
 // Import extracted components
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -89,7 +91,7 @@ export default function GuestsPage() {
         const now = new Date();
 
         setStatsData({
-          totalGuests: response.pagination?.total || 0,
+          totalGuests: allGuests.length,
           vipGuests: allGuests.filter((g) => g.loyaltyTier === 'PLATINUM')
             .length,
           newThisMonth: allGuests.filter((g) => {
@@ -148,9 +150,52 @@ export default function GuestsPage() {
 
   const handleCreateGuest = async (data: any) => {
     try {
-      await dispatch(createGuest(data)).unwrap();
+      // Extract documents from form data
+      const { documents, ...guestData } = data;
+      
+      // Create guest first
+      const createResult = await dispatch(createGuest(guestData)).unwrap();
+      const guestId = createResult.data?.id;
+      
+      if (!guestId) {
+        throw new Error('Failed to create guest');
+      }
+      
+      // Upload documents if provided
+      if (documents && documents.front && documents.back) {
+        try {
+          // Upload front ID card
+          await dispatch(uploadDocument({
+            id: guestId,
+            data: {
+              file: documents.front,
+              fileType: FileType.ID_CARD,
+              description: 'ID Card Front',
+            },
+          })).unwrap();
+          
+          // Upload back ID card
+          await dispatch(uploadDocument({
+            id: guestId,
+            data: {
+              file: documents.back,
+              fileType: FileType.ID_CARD,
+              description: 'ID Card Back',
+            },
+          })).unwrap();
+          
+          success('Guest created with documents uploaded successfully');
+        } catch (uploadError) {
+          // If document upload fails, show error but guest was created
+          const uploadApiErr = handleApiError(uploadError as AxiosError);
+          error(`Guest created but document upload failed: ${uploadApiErr.message}`);
+        }
+      } else {
       success('Guest created');
+      }
+      
       setOpenCreate(false);
+      
       // refetch with current search term
       dispatch(
         fetchGuests({
@@ -261,6 +306,7 @@ export default function GuestsPage() {
               onSubmit={handleCreateGuest}
               onCancel={() => setOpenCreate(false)}
               loading={loading}
+              isCreating={true}
             />
           </DialogContent>
         </Dialog>
@@ -336,6 +382,7 @@ export default function GuestsPage() {
               onSubmit={handleEditGuest}
               onCancel={() => setOpenEdit(false)}
               loading={loading}
+              isCreating={false}
             />
           )}
         </DialogContent>

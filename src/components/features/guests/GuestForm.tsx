@@ -21,7 +21,8 @@ import { TagInput } from '@/components/ui/tag-input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Guest } from '@/types';
+import type { Guest, FileType } from '@/types';
+import { DocumentUpload } from './DocumentUpload';
 
 const LOYALTY_TIER_OPTIONS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'] as const;
 const COUNTRY_OPTIONS = [
@@ -56,6 +57,11 @@ const guestSchema = z.object({
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
   isActive: z.boolean().optional().default(true),
+  // Document upload fields (only required for creation, not editing)
+  documents: z.object({
+    front: z.instanceof(File).optional(),
+    back: z.instanceof(File).optional(),
+  }).optional(),
 });
 
 type GuestFormData = z.input<typeof guestSchema>;
@@ -65,6 +71,7 @@ interface GuestFormProps {
   onSubmit: (data: GuestFormData) => void;
   onCancel: () => void;
   loading?: boolean;
+  isCreating?: boolean; // New prop to distinguish between create and edit modes
 }
 
 export function GuestForm({
@@ -72,6 +79,7 @@ export function GuestForm({
   onSubmit,
   onCancel,
   loading = false,
+  isCreating = false,
 }: GuestFormProps) {
   const form = useForm<GuestFormData>({
     resolver: zodResolver(guestSchema),
@@ -93,6 +101,7 @@ export function GuestForm({
           notes: guest.notes,
           tags: guest.tags || [],
           isActive: guest.isActive,
+          documents: undefined, // No documents for editing
         }
       : {
           firstName: '',
@@ -111,10 +120,25 @@ export function GuestForm({
           notes: '',
           tags: [],
           isActive: true,
+          documents: {
+            front: undefined,
+            back: undefined,
+          },
         },
   });
 
   const handleSubmit = (values: GuestFormData) => {
+    // For creation mode, validate that both documents are provided
+    if (isCreating && values.documents) {
+      if (!values.documents.front || !values.documents.back) {
+        form.setError('documents', {
+          type: 'manual',
+          message: 'Both ID card front and back are required',
+        });
+        return;
+      }
+    }
+
     const payload = {
       ...values,
       preferences: values.preferences?.join(', '),
@@ -305,6 +329,29 @@ export function GuestForm({
             )}
           />
         </div>
+
+        {/* Document Upload Section - Only for creation */}
+        {isCreating && (
+          <FormField
+            control={form.control}
+            name="documents"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <DocumentUpload
+                    value={{
+                      front: field.value?.front ?? null,
+                      back: field.value?.back ?? null,
+                    }}
+                    onChange={field.onChange}
+                    disabled={loading}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Tag Input Fields */}
         <FormField
