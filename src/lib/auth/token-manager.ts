@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js';
+import { CookieUtils } from './cookie-utils';
 
 // Extend Window interface to include Redux store
 declare global {
@@ -60,6 +61,9 @@ class TokenManager {
       sessionStorage.setItem('access_token', accessToken);
       const encryptedRefreshToken = this.encrypt(refreshToken);
       localStorage.setItem(this.REFRESH_TOKEN_KEY, encryptedRefreshToken);
+
+      // Update auth cookie immediately for middleware access
+      CookieUtils.setAuthCookie(accessToken);
     } catch (error) {
       console.error('Failed to store tokens:', error);
     }
@@ -143,7 +147,7 @@ class TokenManager {
       const expiration = payload.exp * 1000; // Convert to milliseconds
 
       const refreshBeforeExpiry = parseInt(
-        process.env.NEXT_PUBLIC_TOKEN_REFRESH_BEFORE_EXPIRY || '60000',
+        process.env.NEXT_PUBLIC_TOKEN_REFRESH_BEFORE_EXPIRY || '300000', // 5 minutes
       );
       const timeUntilExpiry = expiration - Date.now();
 
@@ -153,6 +157,43 @@ class TokenManager {
       return true;
     }
   }
+
+  /**
+   * Get token expiry time in milliseconds
+   */
+  static getTokenExpiry(accessToken: string): number | null {
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      return payload.exp * 1000; // Convert to milliseconds
+    } catch (error) {
+      console.error('Failed to get token expiry:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get time until token expires in milliseconds
+   */
+  static getTimeUntilExpiry(accessToken: string): number | null {
+    const expiry = this.getTokenExpiry(accessToken);
+    if (!expiry) return null;
+    return expiry - Date.now();
+  }
+
+  /**
+   * Check if auth cookie is set and get its value using js-cookie
+   */
+  static getAuthCookie(): string | undefined {
+    return CookieUtils.getAuthCookie();
+  }
+
+  /**
+   * Verify that the stored token matches the cookie
+   */
+  static verifyTokenConsistency(): boolean {
+    return CookieUtils.verifyCookieConsistency();
+  }
+
 
   /**
    * Clear all stored tokens
@@ -166,6 +207,7 @@ class TokenManager {
     try {
       sessionStorage.removeItem('access_token');
       localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+      CookieUtils.removeAuthCookie();
     } catch (error) {
       console.error('Failed to clear tokens:', error);
     }

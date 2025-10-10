@@ -10,6 +10,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { Header } from '@/components/layout/Header';
 import { Skeleton } from '@/components/ui/skeleton';
+import Cookies from 'js-cookie';
 
 export default function DashboardLayout({
   children,
@@ -52,10 +53,7 @@ export default function DashboardLayout({
       );
       setIsRedirecting(true);
       // Clear tokens and cookies when there's an auth error
-      if (typeof document !== 'undefined') {
-        document.cookie =
-          'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
+      Cookies.remove('auth-token', { path: '/' });
       router.push('/login');
       return;
     }
@@ -64,10 +62,7 @@ export default function DashboardLayout({
       console.log('🔐 Not authenticated, redirecting to login');
       setIsRedirecting(true);
       // Clear any stale tokens
-      if (typeof document !== 'undefined') {
-        document.cookie =
-          'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      }
+      Cookies.remove('auth-token', { path: '/' });
       router.push('/login');
     } else if (isAuthenticated) {
       console.log('🔐 User is authenticated, staying on dashboard');
