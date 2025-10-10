@@ -1,132 +1,244 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { fetchProperties } from '@/store/slices/propertySlice';
-import { fetchReportsSummary } from '@/store/slices/reportSlice';
+import { fetchRoomTypes } from '@/store/slices/roomTypeSlice';
+import { fetchDormitories } from '@/store/slices/dormitorySlice';
+import { 
+  setActiveTab, 
+  generateOccupancyReport,
+  generateRevenueReport,
+  generateOperationalReport,
+  generateFinancialReport,
+  generateGuestAnalyticsReport,
+  clearError,
+  updateFilters
+} from '@/store/slices/reportSlice';
 import { useNotification } from '@/hooks/useNotification';
-import type { AxiosError } from 'axios';
-import { handleApiError } from '@/lib/api/error-handler';
+import { ReportType } from '@/types/report.types';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { ReportFilters } from '@/components/features/reports/ReportFilters';
+import { OccupancyReportView } from '@/components/features/reports/OccupancyReportView';
+import { RevenueReportView } from '@/components/features/reports/RevenueReportView';
+import { OperationalReportView } from '@/components/features/reports/OperationalReportView';
+import { FinancialReportView } from '@/components/features/reports/FinancialReportView';
+import { GuestAnalyticsReportView } from '@/components/features/reports/GuestAnalyticsReportView';
+import { ReportExportButtons } from '@/components/features/reports/ReportExportButtons';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { BarChart3, TrendingUp, Users, DollarSign, FileText, UserCheck } from 'lucide-react';
 
 export default function ReportsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { properties } = useSelector((s: RootState) => s.property);
-  const { summary, loading } = useSelector((s: RootState) => s.reports);
-  const { error } = useNotification();
-
-  const [propertyId, setPropertyId] = useState('all');
-  const [from, setFrom] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
-  const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
+  const { roomTypes } = useSelector((s: RootState) => s.roomType);
+  const { dormitories } = useSelector((s: RootState) => s.dormitory);
+  const { 
+    generatedReports, 
+    activeTab, 
+    filters, 
+    loading, 
+    error 
+  } = useSelector((s: RootState) => s.reports);
+  const { error: showError, success } = useNotification();
 
   useEffect(() => {
     if (!properties || properties.length === 0) {
       dispatch(fetchProperties({ page: 1, limit: 100 }));
     }
-  }, [dispatch, properties]);
+    if (!roomTypes || roomTypes.length === 0) {
+      dispatch(fetchRoomTypes({ page: 1, limit: 100 }));
+    }
+    if (!dormitories || dormitories.length === 0) {
+      dispatch(fetchDormitories({ page: 1, limit: 100 }));
+    }
+  }, [dispatch, properties, roomTypes, dormitories]);
+
+  // Set default property when properties are loaded
+  useEffect(() => {
+    if (properties && properties.length > 0 && !filters.propertyId) {
+      dispatch(updateFilters({ propertyId: properties[0].id }));
+    }
+  }, [properties, filters.propertyId, dispatch]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        await dispatch(fetchReportsSummary({ from, to, propertyId: propertyId === 'all' ? undefined : propertyId })).unwrap();
-      } catch (e) {
-        const apiErr = handleApiError(e as AxiosError);
-        error(apiErr.message);
-      }
-    })();
-  }, [dispatch, propertyId, from, to, error]);
+    if (error) {
+      showError(error);
+      dispatch(clearError());
+    }
+  }, [error, showError, dispatch]);
 
-  const revenue = summary?.revenueOccupancy;
-  const guests = summary?.guestAnalytics;
-  const financial = summary?.financialMetrics;
+  const handleGenerateReport = async () => {
+    try {
+      // Validate required fields
+      if (!filters.propertyId) {
+        showError('Please select a property to generate the report');
+        return;
+      }
+
+      // Prepare report data with proper validation
+      const reportData: any = {
+        propertyId: filters.propertyId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        groupBy: filters.groupBy,
+        includeCharts: filters.includeCharts,
+      };
+
+      // Only add optional fields if they have values
+      if (filters.roomTypeId) {
+        reportData.roomTypeId = filters.roomTypeId;
+      }
+      if (filters.dormitoryId) {
+        reportData.dormitoryId = filters.dormitoryId;
+      }
+      if (filters.paymentMethod) {
+        reportData.paymentMethod = filters.paymentMethod;
+      }
+      if (filters.guestId) {
+        reportData.guestId = filters.guestId;
+      }
+
+      console.log('Generating report with data:', reportData);
+
+      switch (activeTab) {
+        case ReportType.OCCUPANCY:
+          await dispatch(generateOccupancyReport(reportData)).unwrap();
+          break;
+        case ReportType.REVENUE:
+          await dispatch(generateRevenueReport(reportData)).unwrap();
+          break;
+        case ReportType.OPERATIONAL:
+          await dispatch(generateOperationalReport(reportData)).unwrap();
+          break;
+        case ReportType.FINANCIAL:
+          await dispatch(generateFinancialReport(reportData)).unwrap();
+          break;
+        case ReportType.GUEST_ANALYTICS:
+          await dispatch(generateGuestAnalyticsReport(reportData)).unwrap();
+          break;
+      }
+      success('Report generated successfully');
+    } catch (err) {
+      console.error('Report generation failed:', err);
+      showError(`Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const getCurrentReport = () => {
+    const report = generatedReports[activeTab];
+    // The backend returns the full report object, but we need the data field
+    return report;
+  };
+
+  const isGenerating = loading.generating[activeTab];
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reports & Analytics</h1>
-          <p className="text-muted-foreground mt-1">Generate operational and financial reports</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Reports & Analytics"
+        description="Generate comprehensive reports and analytics for your properties"
+      />
 
       {/* Filters */}
-      <Card className="bg-card border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Property</Label>
-              <Select value={propertyId} onValueChange={setPropertyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All properties" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Properties</SelectItem>
-                  {properties.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>From</Label>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>To</Label>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ReportFilters 
+        onGenerate={handleGenerateReport}
+        loading={isGenerating}
+      />
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle>Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB' }).format(revenue?.totalRevenue || 0)}</div>
-            <p className="text-sm text-muted-foreground">Occupancy: {revenue?.occupancyRate ?? 0}%</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle>Guests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{guests?.totalGuests || 0}</div>
-            <p className="text-sm text-muted-foreground">New: {guests?.newGuests || 0} • Active: {guests?.activeGuests || 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle>Financial</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Payments: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB' }).format(financial?.totalPayments || 0)}</p>
-            <p className="text-sm text-muted-foreground">Refunds: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB' }).format(financial?.totalRefunds || 0)}</p>
-            <p className="text-sm text-muted-foreground">Net: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB' }).format(financial?.netRevenue || 0)}</p>
-          </CardContent>
-        </Card>
+      {/* Export Buttons */}
+      <div className="flex justify-end">
+        <ReportExportButtons filters={filters} />
       </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(value) => dispatch(setActiveTab(value as ReportType))}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value={ReportType.OCCUPANCY} className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            <span className="hidden sm:inline">Occupancy</span>
+          </TabsTrigger>
+          <TabsTrigger value={ReportType.REVENUE} className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            <span className="hidden sm:inline">Revenue</span>
+          </TabsTrigger>
+          <TabsTrigger value={ReportType.OPERATIONAL} className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Operational</span>
+          </TabsTrigger>
+          <TabsTrigger value={ReportType.FINANCIAL} className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Financial</span>
+          </TabsTrigger>
+          <TabsTrigger value={ReportType.GUEST_ANALYTICS} className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            <span className="hidden sm:inline">Guest Analytics</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={ReportType.OCCUPANCY} className="mt-6">
+          {getCurrentReport() ? (
+            <OccupancyReportView data={getCurrentReport() as any} />
+          ) : (
+            <EmptyState
+              title="No Occupancy Report"
+              description="Generate an occupancy report to view room and bed occupancy analytics"
+              icon={TrendingUp}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value={ReportType.REVENUE} className="mt-6">
+          {getCurrentReport() ? (
+            <RevenueReportView data={getCurrentReport() as any} />
+          ) : (
+            <EmptyState
+              title="No Revenue Report"
+              description="Generate a revenue report to view financial performance and trends"
+              icon={DollarSign}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value={ReportType.OPERATIONAL} className="mt-6">
+          {getCurrentReport() ? (
+            <OperationalReportView data={getCurrentReport() as any} />
+          ) : (
+            <EmptyState
+              title="No Operational Report"
+              description="Generate an operational report to view daily operations and guest management"
+              icon={FileText}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value={ReportType.FINANCIAL} className="mt-6">
+          {getCurrentReport() ? (
+            <FinancialReportView data={getCurrentReport() as any} />
+          ) : (
+            <EmptyState
+              title="No Financial Report"
+              description="Generate a financial report to view financial health and invoice tracking"
+              icon={BarChart3}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value={ReportType.GUEST_ANALYTICS} className="mt-6">
+          {getCurrentReport() ? (
+            <GuestAnalyticsReportView data={getCurrentReport() as any} />
+          ) : (
+            <EmptyState
+              title="No Guest Analytics Report"
+              description="Generate a guest analytics report to view demographics and behavior patterns"
+              icon={UserCheck}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

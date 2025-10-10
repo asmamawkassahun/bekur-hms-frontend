@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { Upload, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,6 +16,12 @@ interface DocumentUploadProps {
     back?: string;
   };
   disabled?: boolean;
+  existingDocuments?: Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    description: string;
+  }>;
 }
 
 export function DocumentUpload({
@@ -24,8 +29,10 @@ export function DocumentUpload({
   onChange,
   errors,
   disabled = false,
+  existingDocuments = [],
 }: DocumentUploadProps) {
   const [dragOver, setDragOver] = useState<'front' | 'back' | null>(null);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const validateFile = (file: File): string | null => {
     // Check file size (max 10MB)
@@ -109,6 +116,10 @@ export function DocumentUpload({
     });
   };
 
+  const handleImageError = (url: string) => {
+    setImageErrors(prev => new Set(prev).add(url));
+  };
+
   const createUploadZone = (
     type: 'front' | 'back',
     label: string,
@@ -116,6 +127,11 @@ export function DocumentUpload({
   ) => {
     const file = value[type];
     const isDragOverThis = dragOver === type;
+    
+    // Find existing document for this type
+    const existingDoc = existingDocuments.find(doc => 
+      doc.description?.toLowerCase().includes(type)
+    );
 
     return (
       <div className="space-y-2">
@@ -139,11 +155,9 @@ export function DocumentUpload({
             <div className="space-y-3">
               <div className="relative group">
                 {file.type.startsWith('image/') ? (
-                  <Image
+                  <img
                     src={URL.createObjectURL(file)}
                     alt={`${label} preview`}
-                    width={200}
-                    height={128}
                     className="w-full h-32 object-cover rounded-md border mx-auto"
                   />
                 ) : (
@@ -173,6 +187,47 @@ export function DocumentUpload({
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
                   {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              </div>
+            </div>
+          ) : existingDoc ? (
+            <div 
+              className="space-y-3 cursor-pointer"
+              onClick={() => document.getElementById(`upload-${type}`)?.click()}
+            >
+              <div className="relative group">
+                {imageErrors.has(existingDoc.fileUrl) ? (
+                  <div className="w-full h-32 bg-muted rounded-md flex items-center justify-center border hover:bg-muted/80 transition-colors">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-muted-foreground mb-2">
+                        📄
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Document Available
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {existingDoc.fileName}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={existingDoc.fileUrl.startsWith('http') ? existingDoc.fileUrl : `http://${existingDoc.fileUrl}`}
+                    alt={`${label} preview`}
+                    className="w-full h-32 object-cover rounded-md border mx-auto hover:opacity-80 transition-opacity"
+                    onError={() => handleImageError(existingDoc.fileUrl)}
+                  />
+                )}
+                <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                  Current
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  {existingDoc.fileName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Click to replace
                 </p>
               </div>
             </div>

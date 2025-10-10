@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,12 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star } from 'lucide-react';
-import type { Guest } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Star, Download, Eye, FileText } from 'lucide-react';
+import type { Guest, GuestDocument } from '@/types';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store';
+import { fetchGuestDocuments } from '@/store/slices/guestSlice';
 
 interface GuestDetailsDialogProps {
   guest: Guest | null;
@@ -21,6 +25,25 @@ export function GuestDetailsDialog({
   open,
   onOpenChange,
 }: GuestDetailsDialogProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const [documents, setDocuments] = useState<GuestDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+
+  useEffect(() => {
+    if (guest && open) {
+      setLoadingDocuments(true);
+      dispatch(fetchGuestDocuments(guest.id))
+        .unwrap()
+        .then((response) => {
+          // Handle the API response structure
+          const docs = Array.isArray(response) ? response : response?.data || [];
+          setDocuments(docs);
+        })
+        .catch(() => setDocuments([]))
+        .finally(() => setLoadingDocuments(false));
+    }
+  }, [guest, open, dispatch]);
+
   if (!guest) return null;
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -53,6 +76,28 @@ export function GuestDetailsDialog({
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleViewDocument = (doc: GuestDocument) => {
+    const url = doc.fileUrl.startsWith('http') ? doc.fileUrl : `http://${doc.fileUrl}`;
+    // Try to open the document, but handle access denied gracefully
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow) {
+      alert('Unable to open document. Please try downloading instead.');
+    }
+  };
+
+  const handleDownloadDocument = (doc: GuestDocument) => {
+    const link = document.createElement('a');
+    link.href = doc.fileUrl.startsWith('http') ? doc.fileUrl : `http://${doc.fileUrl}`;
+    link.download = doc.fileName;
+    link.target = '_blank';
+    link.click();
+  };
+
+  const getDocumentIcon = (fileType: string) => {
+    if (fileType === 'ID_CARD') return <FileText className="h-4 w-4" />;
+    return <FileText className="h-4 w-4" />;
   };
 
   return (
@@ -155,6 +200,55 @@ export function GuestDetailsDialog({
               <div className="md:col-span-2">
                 <div className="text-sm text-muted-foreground">Notes</div>
                 <div className="text-sm">{guest.notes}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Documents Section */}
+          <div className="border-t pt-4">
+            <div className="text-sm font-medium text-muted-foreground mb-3">
+              Identity Documents
+            </div>
+            {loadingDocuments ? (
+              <div className="text-sm text-muted-foreground">Loading documents...</div>
+            ) : documents.length > 0 ? (
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {getDocumentIcon(doc.fileType)}
+                      <div>
+                        <div className="text-sm font-medium">{doc.fileName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {doc.description || doc.fileType}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDocument(doc)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadDocument(doc)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                No documents uploaded
               </div>
             )}
           </div>
