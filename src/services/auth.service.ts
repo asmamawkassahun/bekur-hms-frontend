@@ -71,16 +71,8 @@ export const authService = {
   /**
    * Refresh access token
    */
-  refreshTokens: (refreshToken: string) =>
-    apiClient.post<ApiResponse<TokenResponse>>(
-      '/auth/refresh',
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      },
-    ),
+  refreshTokens: () =>
+    apiClient.post<ApiResponse<TokenResponse>>('/auth/refresh'),
 
   /**
    * Logout

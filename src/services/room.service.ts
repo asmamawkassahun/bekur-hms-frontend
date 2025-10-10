@@ -11,6 +11,7 @@ import {
   CreateBedData,
   UpdateBedData,
   UpdateBedStatusData,
+  BulkCreateRoomsData,
   ApiResponse,
   QueryParams,
 } from '@/types';
@@ -49,6 +50,20 @@ export const roomService = {
    */
   updateStatus: (id: string, data: UpdateRoomStatusData) =>
     apiClient.patch<ApiResponse<Room>>(`/rooms/${id}/status`, data),
+
+  /**
+   * Bulk create rooms
+   */
+  bulkCreate: (data: BulkCreateRoomsData) =>
+    apiClient.post<ApiResponse<Room[]>>('/rooms/bulk', data),
+
+  /**
+   * Search rooms
+   */
+  search: (query: string, params?: QueryParams) =>
+    apiClient.get<ApiResponse<Room[]>>('/rooms/search', {
+      params: { q: query, ...params },
+    }),
 };
 
 export const dormitoryService = {
@@ -81,6 +96,14 @@ export const dormitoryService = {
    */
   delete: (id: string) =>
     apiClient.delete<ApiResponse<null>>(`/dormitories/${id}`),
+
+  /**
+   * Search dormitories
+   */
+  search: (query: string, params?: QueryParams) =>
+    apiClient.get<ApiResponse<Dormitory[]>>('/dormitories/search', {
+      params: { q: query, ...params },
+    }),
 };
 
 export const bedService = {
@@ -117,4 +140,12 @@ export const bedService = {
    */
   updateStatus: (id: string, data: UpdateBedStatusData) =>
     apiClient.patch<ApiResponse<Bed>>(`/beds/${id}/status`, data),
+
+  /**
+   * Search beds
+   */
+  search: (query: string, params?: QueryParams) =>
+    apiClient.get<ApiResponse<Bed[]>>('/beds/search', {
+      params: { q: query, ...params },
+    }),
 };

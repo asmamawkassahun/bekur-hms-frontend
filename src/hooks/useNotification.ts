@@ -1,28 +1,37 @@
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 
 export function useNotification() {
   const success = useCallback((message: string) => {
     console.log('🔐 Notification SUCCESS:', message);
-    // In a real app, this would show a toast notification
-    alert(`✅ ${message}`);
+    toast.success(message, {
+      duration: 4000,
+      position: 'top-right',
+    });
   }, []);
 
   const error = useCallback((message: string) => {
     console.error('🔐 Notification ERROR:', message);
-    // In a real app, this would show a toast notification
-    alert(`❌ ${message}`);
+    toast.error(message, {
+      duration: 5000,
+      position: 'top-right',
+    });
   }, []);
 
   const warning = useCallback((message: string) => {
     console.warn('🔐 Notification WARNING:', message);
-    // In a real app, this would show a toast notification
-    alert(`⚠️ ${message}`);
+    toast.warning(message, {
+      duration: 4000,
+      position: 'top-right',
+    });
   }, []);
 
   const info = useCallback((message: string) => {
     console.info('🔐 Notification INFO:', message);
-    // In a real app, this would show a toast notification
-    alert(`ℹ️ ${message}`);
+    toast.info(message, {
+      duration: 4000,
+      position: 'top-right',
+    });
   }, []);
 
   return {

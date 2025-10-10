@@ -35,9 +35,10 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 interface HeaderProps {
   sidebarOpen: boolean;
   onToggle: () => void;
+  onMobileMenuToggle: () => void;
 }
 
-export function Header({ onToggle }: HeaderProps) {
+export function Header({ onToggle, onMobileMenuToggle }: HeaderProps) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -55,20 +56,22 @@ export function Header({ onToggle }: HeaderProps) {
     <header className="h-16 bg-background border-b border-border px-6 flex items-center justify-between">
       {/* Left side */}
       <div className="flex items-center space-x-4">
+        {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="sm"
-          onClick={onToggle}
-          className="md:hidden"
+          onClick={onMobileMenuToggle}
+          className="md:hidden cursor-pointer"
         >
           <Menu className="h-5 w-5" />
         </Button>
 
+        {/* Desktop sidebar toggle */}
         <Button
           variant="ghost"
           size="sm"
           onClick={onToggle}
-          className="hidden md:flex"
+          className="hidden md:flex cursor-pointer"
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -88,7 +91,11 @@ export function Header({ onToggle }: HeaderProps) {
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative cursor-pointer"
+            >
               <Bell className="h-5 w-5" />
               <Badge
                 variant="destructive"
@@ -128,7 +135,10 @@ export function Header({ onToggle }: HeaderProps) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              className="flex items-center space-x-2 cursor-pointer"
+            >
               <div className="h-8 w-8 bg-secondary rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium text-secondary-foreground">
                   {user?.firstName?.[0] || 'S'}

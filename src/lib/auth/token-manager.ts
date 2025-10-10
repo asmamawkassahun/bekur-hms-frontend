@@ -1,5 +1,12 @@
 import CryptoJS from 'crypto-js';
 
+// Extend Window interface to include Redux store
+declare global {
+  interface Window {
+    __REDUX_STORE__?: any;
+  }
+}
+
 class TokenManager {
   private static readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private static readonly ENCRYPTION_KEY =
@@ -59,8 +66,7 @@ class TokenManager {
   }
 
   /**
-   * Get access token from memory (Redux store)
-   * This is a placeholder - in a real implementation, you'd get this from the store
+   * Get access token from Redux store or sessionStorage fallback
    */
   static getAccessToken(): string | null {
     // Check if we're in a browser environment
@@ -69,8 +75,15 @@ class TokenManager {
     }
 
     try {
-      // In a real implementation, this would get the token from Redux store
-      // For now, we'll get it from sessionStorage as a fallback
+      // Try to get token from Redux store first
+      if (window.__REDUX_STORE__) {
+        const state = window.__REDUX_STORE__.getState();
+        if (state?.auth?.accessToken) {
+          return state.auth.accessToken;
+        }
+      }
+
+      // Fallback to sessionStorage
       return sessionStorage.getItem('access_token');
     } catch (error) {
       console.error('Failed to get access token:', error);

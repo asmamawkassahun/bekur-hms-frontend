@@ -20,6 +20,10 @@ interface ReservationState {
     total: number;
     totalPages: number;
   };
+  // Search optimization
+  searchCache: Record<string, Reservation[]>;
+  lastSearchTerm: string;
+  isSearching: boolean;
 }
 
 const initialState: ReservationState = {
@@ -33,6 +37,10 @@ const initialState: ReservationState = {
     total: 0,
     totalPages: 0,
   },
+  // Search optimization
+  searchCache: {},
+  lastSearchTerm: '',
+  isSearching: false,
 };
 
 // Async thunks
@@ -192,6 +200,19 @@ const reservationSlice = createSlice({
       state.pagination.page = action.payload.page;
       state.pagination.limit = action.payload.limit;
     },
+    // Optimistic search updates
+    setSearching: (state, action: PayloadAction<boolean>) => {
+      state.isSearching = action.payload;
+    },
+    updateSearchCache: (
+      state,
+      action: PayloadAction<{ term: string; results: Reservation[] }>,
+    ) => {
+      state.searchCache[action.payload.term] = action.payload.results;
+    },
+    setLastSearchTerm: (state, action: PayloadAction<string>) => {
+      state.lastSearchTerm = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -199,10 +220,20 @@ const reservationSlice = createSlice({
       .addCase(fetchReservations.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.isSearching = true;
       })
       .addCase(fetchReservations.fulfilled, (state, action) => {
         state.loading = false;
+        state.isSearching = false;
         state.reservations = action.payload.data || [];
+
+        // Cache search results for future use
+        const searchTerm = action.meta.arg.filters?.search || '';
+        if (searchTerm) {
+          state.searchCache[searchTerm] = action.payload.data || [];
+          state.lastSearchTerm = searchTerm;
+        }
+
         if (action.payload.meta) {
           state.pagination.page = action.payload.meta.page || 1;
           state.pagination.limit = action.payload.meta.limit || 10;
@@ -212,6 +243,7 @@ const reservationSlice = createSlice({
       })
       .addCase(fetchReservations.rejected, (state, action) => {
         state.loading = false;
+        state.isSearching = false;
         state.error = action.payload as string;
       })
       // Create Reservation
@@ -348,6 +380,9 @@ export const {
   setLoading,
   setError,
   setPagination,
+  setSearching,
+  updateSearchCache,
+  setLastSearchTerm,
 } = reservationSlice.actions;
 
 export default reservationSlice.reducer;

@@ -36,7 +36,7 @@ export default function LoginPage() {
   const { loading, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
   );
-  const { success, error: showError } = useNotification();
+  const { error: showError } = useNotification();
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -74,7 +74,6 @@ export default function LoginPage() {
       const result = await dispatch(login(data)).unwrap();
       console.log('🔐 Login action completed successfully:', result);
 
-      success('Login successful!');
       console.log('🔐 Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (error: unknown) {
@@ -145,7 +144,7 @@ export default function LoginPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={loading}
                   >
@@ -163,7 +162,11 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full cursor-pointer"
+                disabled={loading}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

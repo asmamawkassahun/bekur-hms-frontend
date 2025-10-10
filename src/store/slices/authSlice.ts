@@ -191,7 +191,7 @@ export const refreshTokens = createAsyncThunk(
         throw new Error('No refresh token available');
       }
 
-      const response = await authService.refreshTokens(refreshToken);
+      const response = await authService.refreshTokens();
       const { accessToken, refreshToken: newRefreshToken } =
         response.data.data!;
 
@@ -206,7 +206,8 @@ export const refreshTokens = createAsyncThunk(
       // Clear tokens on refresh failure
       TokenManager.clearTokens();
       if (typeof document !== 'undefined') {
-        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie =
+          'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       }
       return rejectWithValue(
         error instanceof Error ? error.message : 'Token refresh failed',
@@ -239,7 +240,8 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     // Always clear local tokens
     TokenManager.clearTokens();
     if (typeof document !== 'undefined') {
-      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie =
+        'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   }
 });
@@ -250,6 +252,9 @@ const authSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    setError: (state, action: PayloadAction<string>) => {
+      state.error = action.payload;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -289,6 +294,12 @@ const authSlice = createSlice({
 
       // Clear tokens from storage
       TokenManager.clearTokens();
+
+      // Clear auth cookie
+      if (typeof document !== 'undefined') {
+        document.cookie =
+          'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
     },
   },
   extraReducers: (builder) => {
@@ -454,8 +465,14 @@ export const initializeAuth = createAsyncThunk(
         return { accessToken: token, refreshToken: 'mock', user };
       } catch (error) {
         console.error('🔐 Failed to load user profile:', error);
-        // Clear invalid token
+        // Clear invalid token and set error state
         TokenManager.clearTokens();
+        // Clear auth cookie as well
+        if (typeof document !== 'undefined') {
+          document.cookie =
+            'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        }
+        dispatch(setError('Failed to load user profile. Please login again.'));
         return null;
       }
     }
@@ -467,6 +484,7 @@ export const initializeAuth = createAsyncThunk(
 
 export const {
   clearError,
+  setError,
   setLoading,
   updateTokens,
   setUser,

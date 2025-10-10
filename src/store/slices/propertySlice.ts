@@ -19,6 +19,10 @@ interface PropertyState {
     total: number;
     totalPages: number;
   };
+  // Search optimization
+  searchCache: Record<string, Property[]>;
+  lastSearchTerm: string;
+  isSearching: boolean;
 }
 
 const initialState: PropertyState = {
@@ -33,6 +37,10 @@ const initialState: PropertyState = {
     total: 0,
     totalPages: 0,
   },
+  // Search optimization
+  searchCache: {},
+  lastSearchTerm: '',
+  isSearching: false,
 };
 
 // Async thunks
@@ -142,6 +150,19 @@ const propertySlice = createSlice({
       state.pagination.page = action.payload.page;
       state.pagination.limit = action.payload.limit;
     },
+    // Optimistic search updates
+    setSearching: (state, action: PayloadAction<boolean>) => {
+      state.isSearching = action.payload;
+    },
+    updateSearchCache: (
+      state,
+      action: PayloadAction<{ term: string; results: Property[] }>,
+    ) => {
+      state.searchCache[action.payload.term] = action.payload.results;
+    },
+    setLastSearchTerm: (state, action: PayloadAction<string>) => {
+      state.lastSearchTerm = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -149,29 +170,40 @@ const propertySlice = createSlice({
       .addCase(fetchProperties.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.isSearching = true;
       })
       .addCase(fetchProperties.fulfilled, (state, action) => {
         state.loading = false;
+        state.isSearching = false;
         console.log('📦 fetchProperties.fulfilled payload:', action.payload);
         const apiData = action.payload?.data as
           | Property[]
-          | { items?: Property[]; meta?: { page?: number; limit?: number; total?: number; totalPages?: number } }
+          | {
+              items?: Property[];
+              meta?: {
+                page?: number;
+                limit?: number;
+                total?: number;
+                totalPages?: number;
+              };
+            }
           | undefined;
 
-        const items = Array.isArray(apiData)
-          ? apiData
-          : apiData?.items || [];
+        const items = Array.isArray(apiData) ? apiData : apiData?.items || [];
 
-        // Merge fetched items with any optimistic items already in state
-        if (state.properties.length > 0) {
-          const seen = new Set(items.map((p) => p.id));
-          const optimistic = state.properties.filter((p) => !seen.has(p.id));
-          state.properties = [...items, ...optimistic];
-        } else {
-          state.properties = items;
+        // Update properties
+        state.properties = items;
+
+        // Cache search results for future use
+        const searchTerm = action.meta.arg.search || '';
+        if (searchTerm) {
+          state.searchCache[searchTerm] = items;
+          state.lastSearchTerm = searchTerm;
         }
 
-        const meta = action.payload?.meta || (!Array.isArray(apiData) ? apiData?.meta : undefined);
+        const meta =
+          action.payload?.meta ||
+          (!Array.isArray(apiData) ? apiData?.meta : undefined);
         console.log('📦 Parsed items length:', items.length, 'meta:', meta);
         if (meta) {
           state.pagination.page = meta.page || 1;
@@ -269,6 +301,9 @@ export const {
   setLoading,
   setError,
   setPagination,
+  setSearching,
+  updateSearchCache,
+  setLastSearchTerm,
 } = propertySlice.actions;
 
 export default propertySlice.reducer;

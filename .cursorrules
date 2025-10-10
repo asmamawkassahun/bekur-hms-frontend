@@ -1,0 +1,297 @@
+# Bekur HMS Frontend - Cursor Rules
+
+## Project Overview
+
+This is the frontend for the Hotel & Hostel Property Management System (HMS) built with Next.js 14, React, TypeScript, Tailwind CSS, and shadcn/ui components. The system provides a comprehensive dashboard for managing hotels, guests, reservations, rooms, and more.
+
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: Redux Toolkit with RTK Query
+- **Forms**: React Hook Form with Zod validation
+- **Icons**: Lucide React
+- **Notifications**: Sonner (toast notifications)
+
+## Code Standards
+
+### General Principles
+
+1. **Component-First**: Extract reusable components to keep pages under 300 lines
+2. **Mobile-First**: Design for mobile first, then enhance for desktop
+3. **Consistent Spacing**: Use Tailwind's default spacing scale consistently
+4. **Type Safety**: Use TypeScript strictly, avoid `any` types
+5. **Performance**: Optimize for Core Web Vitals and mobile performance
+
+### Component Architecture
+
+1. **Page Components**: Keep under 300 lines, extract complex logic to custom hooks
+2. **Feature Components**: Organize by feature in `/components/features/[feature]/`
+3. **Shared Components**: Reusable UI components in `/components/shared/`
+4. **Layout Components**: Navigation and layout components in `/components/layout/`
+
+### File Organization
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── (auth)/            # Auth pages (login, register, etc.)
+│   ├── (dashboard)/       # Dashboard pages
+│   └── layout.tsx         # Root layout
+├── components/
+│   ├── features/          # Feature-specific components
+│   │   ├── guests/       # Guest management components
+│   │   ├── reservations/ # Reservation components
+│   │   ├── properties/   # Property components
+│   │   ├── rooms/        # Room components
+│   │   ├── dormitories/  # Dormitory components
+│   │   └── beds/         # Bed components
+│   ├── layout/           # Layout components (Header, Sidebar, etc.)
+│   ├── shared/           # Reusable UI components
+│   └── ui/               # shadcn/ui components
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions and configurations
+├── services/             # API service functions
+├── store/                # Redux store and slices
+└── types/                # TypeScript type definitions
+```
+
+### Component Naming Conventions
+
+1. **Components**: PascalCase (e.g., `GuestForm`, `ReservationTable`)
+2. **Files**: PascalCase for components, camelCase for utilities
+3. **Props**: camelCase with descriptive names
+4. **Events**: `on` prefix (e.g., `onSubmit`, `onCancel`)
+
+### Spacing & Layout Standards
+
+Use Tailwind's default spacing scale consistently:
+
+- **Page containers**: `p-6 space-y-6`
+- **Card content**: `space-y-4` for vertical sections
+- **Form fields**: `space-y-4` between fields, `gap-4` in grids
+- **Button groups**: `gap-2` or `space-x-2`
+- **Grid layouts**: `grid gap-4 md:grid-cols-2 lg:grid-cols-4`
+- **Filter sections**: `flex flex-col sm:flex-row gap-4`
+
+### Card Structure Standards
+
+**Consolidate cards to avoid unnecessary nesting:**
+
+```tsx
+// ✅ Good: Single card with integrated filters and table
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+    <CardDescription>Description</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    {/* Search and filters */}
+    <div className="flex flex-col sm:flex-row gap-4">
+      <SearchBar />
+      <FilterSelects />
+    </div>
+    {/* Table */}
+    <DataTable />
+  </CardContent>
+</Card>
+
+// ❌ Bad: Separate cards for filters and table
+<Card>
+  <CardHeader>Filters</CardHeader>
+  <CardContent>...</CardContent>
+</Card>
+<Card>
+  <CardHeader>Table</CardHeader>
+  <CardContent>...</CardContent>
+</Card>
+```
+
+### Mobile Responsiveness
+
+1. **Navigation**: Use Sheet drawer on mobile (< 768px), fixed sidebar on desktop
+2. **Grids**: Always use responsive classes (`grid-cols-1 md:grid-cols-2 lg:grid-cols-4`)
+3. **Forms**: Stack vertically on mobile (`flex-col sm:flex-row`)
+4. **Tables**: Enable horizontal scroll on mobile
+5. **Dialogs**: Full-screen on mobile (`sm:max-w-lg`)
+6. **Touch Targets**: Minimum 44px height for interactive elements
+
+### Component Patterns
+
+#### Stats Cards
+
+```tsx
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  description?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+}
+```
+
+#### Page Structure
+
+```tsx
+export default function PageName() {
+  // 1. Hooks (20-30 lines)
+  // 2. State management (10-20 lines)
+  // 3. Data fetching effects (20-30 lines)
+  // 4. Event handlers (30-40 lines)
+  // 5. Return JSX (100-150 lines max)
+
+  return (
+    <div className="p-6 space-y-6">
+      <PageHeader />
+      <StatsCards />
+      <DataTableWithFilters />
+    </div>
+  );
+}
+```
+
+#### Form Components
+
+```tsx
+interface FormProps {
+  onSubmit: (data: FormData) => void;
+  onCancel: () => void;
+  loading?: boolean;
+  defaultValues?: Partial<FormData>;
+}
+```
+
+### State Management
+
+1. **Redux**: Use for global state (auth, properties, etc.)
+2. **Local State**: Use useState for component-specific state
+3. **Form State**: Use React Hook Form for all forms
+4. **Server State**: Use RTK Query for API calls
+
+### Error Handling
+
+1. **API Errors**: Use `handleApiError` utility for consistent error handling
+2. **Form Errors**: Display validation errors inline
+3. **Notifications**: Use `useNotification` hook for success/error messages
+4. **Loading States**: Show loading skeletons/spinners for better UX
+
+### Performance Guidelines
+
+1. **Code Splitting**: Use dynamic imports for heavy components
+2. **Memoization**: Use React.memo for expensive components
+3. **Debouncing**: Debounce search inputs (300ms)
+4. **Lazy Loading**: Implement pagination for large datasets
+5. **Image Optimization**: Use Next.js Image component
+
+### Accessibility
+
+1. **Semantic HTML**: Use proper HTML elements
+2. **ARIA Labels**: Add labels for screen readers
+3. **Keyboard Navigation**: Ensure all interactive elements are keyboard accessible
+4. **Color Contrast**: Maintain WCAG AA compliance
+5. **Focus Management**: Manage focus in modals and drawers
+
+### Testing
+
+1. **Component Tests**: Test component behavior and props
+2. **Integration Tests**: Test user workflows
+3. **Accessibility Tests**: Use axe-core for accessibility testing
+4. **Visual Tests**: Use Storybook for component documentation
+
+### Code Quality
+
+1. **ESLint**: Follow Next.js ESLint configuration
+2. **Prettier**: Use Prettier for code formatting
+3. **TypeScript**: Enable strict mode, fix all errors
+4. **Imports**: Use absolute imports (`@/components/...`)
+5. **Unused Code**: Remove unused imports and dead code
+
+### Common Patterns
+
+#### Search with Debounce
+
+```tsx
+const [searchTerm, setSearchTerm] = useState('');
+const [debouncedSearch, setDebouncedSearch] = useState('');
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchTerm);
+  }, 300);
+  return () => clearTimeout(timer);
+}, [searchTerm]);
+```
+
+#### Optimistic Updates
+
+```tsx
+// Show cached results immediately
+useEffect(() => {
+  if (searchTerm.trim() && searchCache[searchTerm]) {
+    dispatch(
+      updateSearchCache({
+        term: searchTerm,
+        results: searchCache[searchTerm],
+      }),
+    );
+  }
+}, [searchTerm, searchCache, dispatch]);
+```
+
+#### Responsive Grid
+
+```tsx
+<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+  {items.map((item) => (
+    <StatsCard key={item.id} {...item} />
+  ))}
+</div>
+```
+
+### File Naming
+
+- **Components**: `ComponentName.tsx`
+- **Hooks**: `useHookName.ts`
+- **Types**: `types.ts` or `ComponentName.types.ts`
+- **Utils**: `utilName.ts`
+- **Constants**: `constants.ts`
+
+### Import Order
+
+1. React and Next.js imports
+2. Third-party libraries
+3. Internal components (shared first, then features)
+4. Hooks and utilities
+5. Types
+6. Relative imports
+
+```tsx
+import React from 'react';
+import { useRouter } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { GuestForm } from '@/components/features/guests/GuestForm';
+
+import { useNotification } from '@/hooks/useNotification';
+import { guestService } from '@/services/guest.service';
+
+import type { Guest } from '@/types';
+```
+
+### Best Practices
+
+1. **Keep components small**: Extract complex logic to custom hooks
+2. **Use TypeScript**: Define proper interfaces for all props
+3. **Consistent styling**: Use Tailwind classes consistently
+4. **Mobile-first**: Design for mobile, enhance for desktop
+5. **Performance**: Optimize for Core Web Vitals
+6. **Accessibility**: Ensure WCAG AA compliance
+7. **Testing**: Write tests for critical functionality
+8. **Documentation**: Document complex components and hooks
+
+Remember: This is a production-ready hotel management system. Write code that is maintainable, scalable, and provides an excellent user experience across all devices.

@@ -5,16 +5,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { fetchReservations } from '@/store/slices/reservationSlice';
 import { fetchProperties } from '@/store/slices/propertySlice';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { fetchGuests } from '@/store/slices/guestSlice';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -38,30 +32,42 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
+  Building,
+  Home,
+  BedDouble,
 } from 'lucide-react';
+
+// Import extracted components
+import { PageHeader } from '@/components/shared/PageHeader';
+import { StatsCard } from '@/components/shared/StatsCard';
+import { DataTable } from '@/components/shared/DataTable';
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { reservations } = useSelector((state: RootState) => state.reservation);
+  const { properties } = useSelector((state: RootState) => state.property);
+  const { guests } = useSelector((state: RootState) => state.guest);
 
   const [selectedTimeRange, setSelectedTimeRange] = useState('3months');
 
   useEffect(() => {
     // Load initial data
-    dispatch(fetchReservations({}));
-    dispatch(fetchProperties({}));
+    dispatch(fetchReservations({ page: 1, limit: 10 }));
+    dispatch(fetchProperties({ page: 1, limit: 10 }));
+    dispatch(fetchGuests({ page: 1, limit: 10 }));
   }, [dispatch]);
 
-  // Hotel PMS specific stats
+  // Calculate stats from actual data
   const stats = {
-    totalRevenue: 125000,
-    revenueChange: 12.5,
-    totalGuests: 1234,
-    guestsChange: -20,
-    occupancyRate: 78.5,
-    occupancyChange: 5.2,
-    averageStay: 3.2,
-    stayChange: 8.1,
+    totalRevenue: reservations?.reduce((sum, r) => sum + r.totalPrice, 0) || 0,
+    revenueChange: 12.5, // This would be calculated from historical data
+    totalGuests: guests?.length || 0,
+    guestsChange: -20, // This would be calculated from historical data
+    occupancyRate: 78.5, // This would be calculated from room/dormitory occupancy
+    occupancyChange: 5.2, // This would be calculated from historical data
+    averageStay: 3.2, // This would be calculated from reservation data
+    stayChange: 8.1, // This would be calculated from historical data
   };
 
   const chartData = [
@@ -81,469 +87,309 @@ export default function DashboardPage() {
     { date: 'Jun 30', occupancy: 100 },
   ];
 
-  const recentReservations = [
-    {
-      id: '1',
-      guestName: 'John Doe',
-      roomNumber: '101',
-      checkIn: '2024-07-20',
-      checkOut: '2024-07-25',
-      status: 'checked-in',
-      totalAmount: 500,
-      roomType: 'Deluxe Room',
-      nights: 5,
-      assignedTo: 'Sarah Johnson',
-    },
-    {
-      id: '2',
-      guestName: 'Jane Smith',
-      roomNumber: '203',
-      checkIn: '2024-07-22',
-      checkOut: '2024-07-28',
-      status: 'confirmed',
-      totalAmount: 600,
-      roomType: 'Executive Suite',
-      nights: 6,
-      assignedTo: 'Mike Chen',
-    },
-    {
-      id: '3',
-      guestName: 'Mike Johnson',
-      roomNumber: '105',
-      checkIn: '2024-07-25',
-      checkOut: '2024-07-30',
-      status: 'pending',
-      totalAmount: 450,
-      roomType: 'Standard Room',
-      nights: 5,
-      assignedTo: 'Lisa Wang',
-    },
-    {
-      id: '4',
-      guestName: 'Sarah Wilson',
-      roomNumber: '301',
-      checkIn: '2024-07-26',
-      checkOut: '2024-08-02',
-      status: 'checked-in',
-      totalAmount: 750,
-      roomType: 'Presidential Suite',
-      nights: 7,
-      assignedTo: 'Sarah Johnson',
-    },
-    {
-      id: '5',
-      guestName: 'David Brown',
-      roomNumber: '205',
-      checkIn: '2024-07-28',
-      checkOut: '2024-08-01',
-      status: 'confirmed',
-      totalAmount: 400,
-      roomType: 'Standard Room',
-      nights: 4,
-      assignedTo: 'Mike Chen',
-    },
-  ];
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'checked-in':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'confirmed':
-        return <Clock className="h-4 w-4 text-blue-600" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
-    }
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
   };
 
-  const getRoomTypeColor = (type: string) => {
-    switch (type) {
-      case 'Presidential Suite':
-        return 'bg-purple-100 text-purple-800';
-      case 'Executive Suite':
-        return 'bg-blue-100 text-blue-800';
-      case 'Deluxe Room':
-        return 'bg-green-100 text-green-800';
-      case 'Standard Room':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      PENDING: { color: 'bg-yellow-100 text-yellow-800' },
+      CONFIRMED: { color: 'bg-blue-100 text-blue-800' },
+      CHECKED_IN: { color: 'bg-green-100 text-green-800' },
+      CHECKED_OUT: { color: 'bg-gray-100 text-gray-800' },
+      CANCELLED: { color: 'bg-red-100 text-red-800' },
+      NO_SHOW: { color: 'bg-red-100 text-red-800' },
+    };
+
+    const config =
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
+
+    return <Badge className={config.color}>{status.replace('_', ' ')}</Badge>;
+  };
+
+  const recentReservations = reservations?.slice(0, 5) || [];
+  const recentGuests = guests?.slice(0, 5) || [];
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back, {user?.firstName}! Here's your hotel's performance
-            overview for today.
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" className="flex items-center">
-            <Calendar className="mr-2 h-4 w-4" />
-            Last 3 months
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New Reservation
-            <Calendar className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+      <PageHeader
+        title="Dashboard"
+        description={`Welcome back, ${user?.firstName || 'User'}! Here's what's happening at your properties.`}
+      >
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+          <Plus className="mr-2 h-4 w-4" />
+          New Reservation
+        </Button>
+      </PageHeader>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="Total Revenue"
+          value={formatCurrency(stats.totalRevenue)}
+          description="This month"
+          icon={DollarSign}
+          trend={{
+            value: stats.revenueChange,
+            isPositive: stats.revenueChange > 0,
+            label: 'vs last month',
+          }}
+          className="[&>div>div>svg]:text-green-600"
+        />
+        <StatsCard
+          title="Total Guests"
+          value={stats.totalGuests}
+          description="All time"
+          icon={Users}
+          trend={{
+            value: Math.abs(stats.guestsChange),
+            isPositive: stats.guestsChange > 0,
+            label: 'vs last month',
+          }}
+        />
+        <StatsCard
+          title="Occupancy Rate"
+          value={`${stats.occupancyRate}%`}
+          description="Current"
+          icon={TrendingUp}
+          trend={{
+            value: stats.occupancyChange,
+            isPositive: stats.occupancyChange > 0,
+            label: 'vs last month',
+          }}
+          className="[&>div>div>svg]:text-blue-600"
+        />
+        <StatsCard
+          title="Average Stay"
+          value={`${stats.averageStay} nights`}
+          description="Current"
+          icon={Clock}
+          trend={{
+            value: stats.stayChange,
+            isPositive: stats.stayChange > 0,
+            label: 'vs last month',
+          }}
+          className="[&>div>div>svg]:text-purple-600"
+        />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Revenue
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              ${stats.totalRevenue.toLocaleString()}
-            </div>
-            <div className="flex items-center mt-1">
-              <ArrowUpRight className="h-4 w-4 text-green-600 mr-1" />
-              <span className="text-sm text-green-600 font-medium">
-                +{stats.revenueChange}%
-              </span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Trending up this month
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Revenue for the last 6 months
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Guests
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {stats.totalGuests.toLocaleString()}
-            </div>
-            <div className="flex items-center mt-1">
-              <ArrowDownRight className="h-4 w-4 text-red-600 mr-1" />
-              <span className="text-sm text-red-600 font-medium">
-                {stats.guestsChange}%
-              </span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Down this period
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Guest acquisition needs attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Occupancy Rate
-            </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {stats.occupancyRate}%
-            </div>
-            <div className="flex items-center mt-1">
-              <ArrowUpRight className="h-4 w-4 text-green-600 mr-1" />
-              <span className="text-sm text-green-600 font-medium">
-                +{stats.occupancyChange}%
-              </span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Strong occupancy performance
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Room utilization exceeds targets
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Average Stay
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
-              {stats.averageStay} days
-            </div>
-            <div className="flex items-center mt-1">
-              <ArrowUpRight className="h-4 w-4 text-green-600 mr-1" />
-              <span className="text-sm text-green-600 font-medium">
-                +{stats.stayChange}%
-              </span>
-              <span className="text-sm text-muted-foreground ml-2">
-                Guest satisfaction improving
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Extended stays increasing
-            </p>
-          </CardContent>
-        </Card>
+      {/* Property Overview */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="Properties"
+          value={properties?.length || 0}
+          description="Total properties"
+          icon={Building}
+        />
+        <StatsCard
+          title="Reservations"
+          value={reservations?.length || 0}
+          description="Total reservations"
+          icon={Calendar}
+        />
+        <StatsCard
+          title="Guests"
+          value={guests?.length || 0}
+          description="Total guests"
+          icon={Users}
+        />
+        <StatsCard
+          title="Active Properties"
+          value={properties?.filter((p) => p.isActive).length || 0}
+          description="Currently active"
+          icon={CheckCircle}
+        />
       </div>
 
-      {/* Chart Section */}
-      <Card className="bg-card border-0 shadow-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg font-semibold text-card-foreground">
-                Occupancy Rate
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Hotel occupancy rate for the last 3 months
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant={
-                  selectedTimeRange === '3months' ? 'default' : 'outline'
-                }
-                size="sm"
-                onClick={() => setSelectedTimeRange('3months')}
-              >
-                Last 3 months
-              </Button>
-              <Button
-                variant={selectedTimeRange === '30days' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedTimeRange('30days')}
-              >
-                Last 30 days
-              </Button>
-              <Button
-                variant={selectedTimeRange === '7days' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedTimeRange('7days')}
-              >
-                Last 7 days
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 w-full">
-            {/* Placeholder for chart - you can integrate Recharts here */}
-            <div className="flex items-end justify-between h-full p-4 bg-muted rounded-lg">
-              {chartData.map((point, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div
-                    className="w-8 bg-primary rounded-t"
-                    style={{ height: `${point.occupancy * 2}px` }}
-                  />
-                  <span className="text-xs text-muted-foreground mt-2">
-                    {point.date}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Table Section */}
-      <Card className="bg-card border-0 shadow-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Tabs defaultValue="reservations" className="w-auto">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="reservations">Reservations</TabsTrigger>
-                  <TabsTrigger value="checkin" className="flex items-center">
-                    Check-ins Today
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 h-5 w-5 rounded-full text-xs"
-                    >
-                      3
-                    </Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="checkout" className="flex items-center">
-                    Check-outs Today
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 h-5 w-5 rounded-full text-xs"
-                    >
-                      2
-                    </Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="maintenance">
-                    Room Maintenance
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+      {/* Charts and Tables */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Occupancy Chart */}
+        <div className="bg-card border-0 shadow-sm rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Occupancy Trend</h3>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="flex items-center">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Filter
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                New Reservation
+              <Button variant="outline" size="sm" className="cursor-pointer">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                View Details
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="border border-border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border">
-                  <TableHead className="w-12"></TableHead>
-                  <TableHead className="w-12"></TableHead>
-                  <TableHead className="font-semibold">Guest Name</TableHead>
-                  <TableHead className="font-semibold">Room Type</TableHead>
-                  <TableHead className="font-semibold">
-                    Reservation Status
-                  </TableHead>
-                  <TableHead className="font-semibold">Nights</TableHead>
-                  <TableHead className="font-semibold">Total Amount</TableHead>
-                  <TableHead className="font-semibold">
-                    Front Desk Staff
-                  </TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentReservations.map((reservation) => (
-                  <TableRow
-                    key={reservation.id}
-                    className="border-b border-border hover:bg-muted/50"
-                  >
-                    <TableCell>
-                      <div className="flex items-center justify-center w-6 h-6 text-muted-foreground">
-                        <div className="flex flex-col space-y-0.5">
-                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                          <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        className="rounded border-border"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {reservation.guestName}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={getRoomTypeColor(reservation.roomType)}
-                      >
-                        {reservation.roomType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(reservation.status)}
-                        <span
-                          className={`text-sm font-medium ${
-                            reservation.status === 'checked-in'
-                              ? 'text-green-600'
-                              : reservation.status === 'confirmed'
-                                ? 'text-blue-600'
-                                : 'text-yellow-600'
-                          }`}
-                        >
-                          {reservation.status === 'checked-in'
-                            ? 'Checked In'
-                            : reservation.status === 'confirmed'
-                              ? 'Confirmed'
-                              : 'Pending'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {reservation.nights}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      ${reservation.totalAmount}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-foreground">
-                        {reservation.assignedTo}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="h-64 flex items-end justify-between space-x-1">
+            {chartData.map((item, index) => (
+              <div key={index} className="flex flex-col items-center space-y-2">
+                <div
+                  className="bg-primary rounded-t w-8 transition-all duration-300 hover:bg-primary/80"
+                  style={{ height: `${item.occupancy}%` }}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {item.date}
+                </span>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Table Footer */}
-          <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-            <div>0 of 5 reservation(s) selected.</div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span>Rows per page</span>
-                <select className="border border-border rounded px-2 py-1 bg-background">
-                  <option>10</option>
-                  <option>25</option>
-                  <option>50</option>
-                </select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>Page 1 of 1</span>
-                <div className="flex space-x-1">
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
+        {/* Recent Activity */}
+        <div className="bg-card border-0 shadow-sm rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Recent Activity</h3>
+            <Button variant="outline" size="sm" className="cursor-pointer">
+              <Activity className="h-4 w-4 mr-2" />
+              View All
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {recentReservations.slice(0, 5).map((reservation) => (
+              <div key={reservation.id} className="flex items-center space-x-3">
+                <div className="h-2 w-2 bg-green-500 rounded-full" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {reservation.guest?.firstName} {reservation.guest?.lastName}{' '}
+                    checked in
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(reservation.checkIn)}
+                  </p>
                 </div>
+                <Badge variant="outline" className="text-xs">
+                  {reservation.room?.number || reservation.bed?.number}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Reservations and Guests */}
+      <Tabs defaultValue="reservations" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="reservations">Recent Reservations</TabsTrigger>
+          <TabsTrigger value="guests">Recent Guests</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="reservations" className="space-y-4">
+          <div className="bg-card border-0 shadow-sm rounded-lg">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Recent Reservations</h3>
+                <Button variant="outline" size="sm" className="cursor-pointer">
+                  View All
+                </Button>
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Guest</TableHead>
+                      <TableHead>Room/Bed</TableHead>
+                      <TableHead>Check-in</TableHead>
+                      <TableHead>Check-out</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentReservations.map((reservation) => (
+                      <TableRow key={reservation.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {reservation.guest?.firstName}{' '}
+                              {reservation.guest?.lastName}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {reservation.guest?.email}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {reservation.room?.number || reservation.bed?.number}
+                        </TableCell>
+                        <TableCell>{formatDate(reservation.checkIn)}</TableCell>
+                        <TableCell>
+                          {formatDate(reservation.checkOut)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(reservation.status)}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(
+                            reservation.totalPrice,
+                            reservation.currency,
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        <TabsContent value="guests" className="space-y-4">
+          <div className="bg-card border-0 shadow-sm rounded-lg">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Recent Guests</h3>
+                <Button variant="outline" size="sm" className="cursor-pointer">
+                  View All
+                </Button>
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Guest</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Loyalty Tier</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentGuests.map((guest) => (
+                      <TableRow key={guest.id}>
+                        <TableCell>
+                          <div className="font-medium">
+                            {guest.firstName} {guest.lastName}
+                          </div>
+                        </TableCell>
+                        <TableCell>{guest.email}</TableCell>
+                        <TableCell>{guest.phone}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {guest.loyaltyTier || 'No Tier'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={guest.isActive ? 'default' : 'secondary'}
+                          >
+                            {guest.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

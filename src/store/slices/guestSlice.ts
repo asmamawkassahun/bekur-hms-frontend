@@ -21,6 +21,10 @@ interface GuestState {
     total: number;
     totalPages: number;
   };
+  // Search optimization
+  searchCache: Record<string, Guest[]>;
+  lastSearchTerm: string;
+  isSearching: boolean;
 }
 
 const initialState: GuestState = {
@@ -35,6 +39,10 @@ const initialState: GuestState = {
     total: 0,
     totalPages: 0,
   },
+  // Search optimization
+  searchCache: {},
+  lastSearchTerm: '',
+  isSearching: false,
 };
 
 // Async thunks
@@ -228,6 +236,19 @@ const guestSlice = createSlice({
       state.pagination.page = action.payload.page;
       state.pagination.limit = action.payload.limit;
     },
+    // Optimistic search updates
+    setSearching: (state, action: PayloadAction<boolean>) => {
+      state.isSearching = action.payload;
+    },
+    updateSearchCache: (
+      state,
+      action: PayloadAction<{ term: string; results: Guest[] }>,
+    ) => {
+      state.searchCache[action.payload.term] = action.payload.results;
+    },
+    setLastSearchTerm: (state, action: PayloadAction<string>) => {
+      state.lastSearchTerm = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -235,9 +256,11 @@ const guestSlice = createSlice({
       .addCase(fetchGuests.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.isSearching = true;
       })
       .addCase(fetchGuests.fulfilled, (state, action) => {
         state.loading = false;
+        state.isSearching = false;
         // Backend may return { success, data: Guest[] } or { success, data: { guests: Guest[], total, page, limit } }
         const payloadData = action.payload?.data as unknown;
         let items: Guest[] = [];
@@ -249,8 +272,19 @@ const guestSlice = createSlice({
         if (Array.isArray(payloadData)) {
           items = payloadData as Guest[];
         } else if (payloadData && typeof payloadData === 'object') {
-          const dataObj = payloadData as { guests?: Guest[]; items?: Guest[]; data?: Guest[]; total?: number; page?: number; limit?: number; totalPages?: number };
-          items = (dataObj.guests || dataObj.items || dataObj.data || []) as Guest[];
+          const dataObj = payloadData as {
+            guests?: Guest[];
+            items?: Guest[];
+            data?: Guest[];
+            total?: number;
+            page?: number;
+            limit?: number;
+            totalPages?: number;
+          };
+          items = (dataObj.guests ||
+            dataObj.items ||
+            dataObj.data ||
+            []) as Guest[];
           page = dataObj.page;
           limit = dataObj.limit;
           total = dataObj.total;
@@ -259,14 +293,27 @@ const guestSlice = createSlice({
 
         state.guests = items;
 
+        // Cache search results for future use
+        const searchTerm = action.meta.arg.search || '';
+        if (searchTerm) {
+          state.searchCache[searchTerm] = items;
+          state.lastSearchTerm = searchTerm;
+        }
+
         const metaFromTop = action.payload?.meta;
         state.pagination.page = metaFromTop?.page ?? page ?? 1;
         state.pagination.limit = metaFromTop?.limit ?? limit ?? 10;
         state.pagination.total = metaFromTop?.total ?? total ?? items.length;
-        state.pagination.totalPages = metaFromTop?.totalPages ?? totalPages ?? Math.ceil((state.pagination.total || 0) / (state.pagination.limit || 10));
+        state.pagination.totalPages =
+          metaFromTop?.totalPages ??
+          totalPages ??
+          Math.ceil(
+            (state.pagination.total || 0) / (state.pagination.limit || 10),
+          );
       })
       .addCase(fetchGuests.rejected, (state, action) => {
         state.loading = false;
+        state.isSearching = false;
         state.error = action.payload as string;
       })
       // Create Guest
@@ -410,6 +457,9 @@ export const {
   setLoading,
   setError,
   setPagination,
+  setSearching,
+  updateSearchCache,
+  setLastSearchTerm,
 } = guestSlice.actions;
 
 export default guestSlice.reducer;

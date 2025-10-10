@@ -8,6 +8,11 @@ import reportReducer from './slices/reportSlice';
 import staffReducer from './slices/staffSlice';
 import settingsReducer from './slices/settingsSlice';
 import invoiceReducer from './slices/invoiceSlice';
+import roomReducer from './slices/roomSlice';
+import dormitoryReducer from './slices/dormitorySlice';
+import bedReducer from './slices/bedSlice';
+import roomTypeReducer from './slices/roomTypeSlice';
+import bedTypeReducer from './slices/bedTypeSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +25,11 @@ export const store = configureStore({
     reports: reportReducer,
     staff: staffReducer,
     settings: settingsReducer,
+    room: roomReducer,
+    dormitory: dormitoryReducer,
+    bed: bedReducer,
+    roomType: roomTypeReducer,
+    bedType: bedTypeReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -33,3 +43,8 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+// Expose store globally for axios interceptor
+if (typeof window !== 'undefined') {
+  (window as any).__REDUX_STORE__ = store;
+}
