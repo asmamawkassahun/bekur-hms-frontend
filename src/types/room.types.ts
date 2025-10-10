@@ -78,6 +78,7 @@ export interface UpdateRoomTypeData {
 // Room Types (Updated to use Room Types)
 export interface Room {
   id: string;
+  basePrice: number;
   propertyId: string;
   roomTypeId: string;
   roomType?: RoomType;

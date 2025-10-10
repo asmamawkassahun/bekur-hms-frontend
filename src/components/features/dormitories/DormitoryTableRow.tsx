@@ -77,12 +77,12 @@ export function DormitoryTableRow({
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(dormitory.pricePerBed, dormitory.currency)}
+            {formatCurrency(dormitory.basePrice, dormitory.currency)}
           </div>
           <div className="text-sm text-muted-foreground">per bed per night</div>
         </div>
       </TableCell>
-      <TableCell>{getStatusBadge(dormitory.status)}</TableCell>
+      <TableCell>{getStatusBadge(dormitory.isActive ? 'AVAILABLE' : 'OUT_OF_ORDER')}</TableCell>
       <TableCell>
         <div className="space-y-1">
           {dormitory.amenities && dormitory.amenities.length > 0 && (
