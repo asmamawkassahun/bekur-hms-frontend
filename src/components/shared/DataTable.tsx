@@ -88,7 +88,18 @@ export function DataTable<T extends Record<string, any>>({
       Array.from(tr.querySelectorAll('td')).map((td) => getVisibleText(td))
     );
 
-    return { headers, rows };
+    // Exclude action columns from export (by header label)
+    const excludedIndexes = headers.reduce<number[]>((acc, h, idx) => {
+      if (h.trim().toLowerCase() === 'actions') acc.push(idx);
+      return acc;
+    }, []);
+
+    if (excludedIndexes.length === 0) return { headers, rows };
+
+    const filteredHeaders = headers.filter((_, idx) => !excludedIndexes.includes(idx));
+    const filteredRows = rows.map((r) => r.filter((_, idx) => !excludedIndexes.includes(idx)));
+
+    return { headers: filteredHeaders, rows: filteredRows };
   };
 
   const buildHTMLTable = (headers: string[], rows: string[][]) => {
@@ -195,20 +206,14 @@ export function DataTable<T extends Record<string, any>>({
     const orientation = headers.length > 6 ? 'landscape' : 'portrait';
     const doc = new jsPDF({ orientation });
 
-    const now = new Date();
-    const meta = `${now.toLocaleString()}`;
-
     doc.setFontSize(14);
     doc.text(String(title || 'Export'), 14, 16);
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated ${meta}`, 14, 23);
 
     // Use function-style API for better typings
     autoTable(doc, {
       head: [headers],
       body: rows,
-      startY: 28,
+      startY: 22,
       styles: {
         fontSize: 10,
         cellPadding: 3,
@@ -232,13 +237,8 @@ export function DataTable<T extends Record<string, any>>({
     ensurePrintStyles();
     const container = document.createElement('div');
     container.id = 'data-table-print-container';
-
-    const now = new Date();
-    const meta = `${now.toLocaleString()}`;
-
     const content = `
       <h1>${escapeHtml(title || 'Print')}</h1>
-      <div class="meta">Generated ${escapeHtml(meta)}</div>
       ${buildHTMLTable(headers, rows)}
     `;
     container.innerHTML = content;
@@ -247,7 +247,10 @@ export function DataTable<T extends Record<string, any>>({
     const cleanup = () => {
       container.remove();
       window.removeEventListener('afterprint', cleanup);
+      document.title = originalTitle;
     };
+    const originalTitle = document.title;
+    document.title = '';
     window.addEventListener('afterprint', cleanup);
     window.print();
     // Fallback cleanup in case afterprint is not fired
@@ -256,7 +259,7 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <Card className={`bg-card border-0 shadow-sm ${className}`}>
-      <CardHeader>
+      <CardHeader className='flex flex-row items-center justify-between'>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>{title}</CardTitle>
