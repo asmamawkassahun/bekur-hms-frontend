@@ -67,23 +67,18 @@ export function DormitoryTableRow({
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-3 w-3 text-muted-foreground" />
             <span>{dormitory.capacity} beds</span>
-          </div>
-          {dormitory.floor && (
-            <div className="text-sm text-muted-foreground">
-              Floor {dormitory.floor}
-            </div>
-          )}
+          </div>          
         </div>
       </TableCell>
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(dormitory.basePrice, dormitory.currency)}
+            {formatCurrency(dormitory.basePrice)}
           </div>
           <div className="text-sm text-muted-foreground">per bed per night</div>
         </div>
       </TableCell>
-      <TableCell>{dormitory.status ? getStatusBadge(dormitory.status) : <Badge>N/A</Badge>}</TableCell>
+      <TableCell>{getStatusBadge(dormitory.isActive ? 'AVAILABLE' : 'OUT_OF_ORDER')}</TableCell>
       <TableCell>
         <div className="space-y-1">
           {dormitory.amenities && dormitory.amenities.length > 0 && (

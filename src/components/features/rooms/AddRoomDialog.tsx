@@ -27,159 +27,159 @@ import { DollarSign, Plus, Users } from 'lucide-react';
 import type { Property, RoomType, BulkCreateRoomsData, CreateRoomData } from '@/types';
 
 const singleRoomSchema = z.object({
-    propertyId: z.string().min(1, 'Property is required'),
-    roomTypeId: z.string().min(1, 'Room type is required'),
-    number: z.string().min(1, 'Room number is required'),
-    floor: z.number().min(0, 'Floor must be 0 or greater'),
-    status: z.enum(['AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'OUT_OF_ORDER']),
+  propertyId: z.string().min(1, 'Property is required'),
+  roomTypeId: z.string().min(1, 'Room type is required'),
+  number: z.string().min(1, 'Room number is required'),
+  floor: z.number().min(0, 'Floor must be 0 or greater'),
+  status: z.enum(['AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'OUT_OF_ORDER']),
 });
 
 const bulkRoomSchema = z.object({
-    propertyId: z.string().min(1, 'Property is required'),
-    roomTypeId: z.string().min(1, 'Room type is required'),
-    floor: z.number().min(0, 'Floor must be 0 or greater'),
-    prefix: z.string().min(1, 'Prefix is required'),
-    count: z.number().min(1, 'Count must be at least 1').max(50, 'Count cannot exceed 50'),
-    startingNumber: z.number().min(1, 'Starting number must be at least 1'),
+  propertyId: z.string().min(1, 'Property is required'),
+  roomTypeId: z.string().min(1, 'Room type is required'),
+  floor: z.number().min(0, 'Floor must be 0 or greater'),
+  prefix: z.string().min(1, 'Prefix is required'),
+  count: z.number().min(1, 'Count must be at least 1').max(50, 'Count cannot exceed 50'),
+  startingNumber: z.number().min(1, 'Starting number must be at least 1'),
 });
 
 type SingleFormValues = z.infer<typeof singleRoomSchema>;
 type BulkFormValues = z.infer<typeof bulkRoomSchema>;
 
 export function AddRoomDialog() {
-    const dispatch = useDispatch<AppDispatch>();
-    const pathname = usePathname();
-    const { success, error } = useNotification();
-    const open = useSelector((s: RootState) => Boolean(s.ui.modals['addRoom']));
+  const dispatch = useDispatch<AppDispatch>();
+  const pathname = usePathname();
+  const { success, error } = useNotification();
+  const open = useSelector((s: RootState) => Boolean(s.ui.modals['addRoom']));
 
-    const [activeTab, setActiveTab] = useState<'single' | 'bulk'>('single');
-    const [submitting, setSubmitting] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [properties, setProperties] = useState<Property[]>([]);
-    const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+  const [activeTab, setActiveTab] = useState<'single' | 'bulk'>('single');
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
 
-    // Forms
-    const singleForm = useForm<SingleFormValues>({
-        resolver: zodResolver(singleRoomSchema),
-        defaultValues: {
-            propertyId: '',
-            roomTypeId: '',
-            number: '',
-            floor: 0,
-            status: 'AVAILABLE',
-        },
-    });
+  // Forms
+  const singleForm = useForm<SingleFormValues>({
+    resolver: zodResolver(singleRoomSchema),
+    defaultValues: {
+      propertyId: '',
+      roomTypeId: '',
+      number: '',
+      floor: 0,
+      status: 'AVAILABLE',
+    },
+  });
 
-    const bulkForm = useForm<BulkFormValues>({
-        resolver: zodResolver(bulkRoomSchema),
-        defaultValues: {
-            propertyId: '',
-            roomTypeId: '',
-            floor: 0,
-            prefix: '',
-            count: 1,
-            startingNumber: 1,
-        },
-    });
+  const bulkForm = useForm<BulkFormValues>({
+    resolver: zodResolver(bulkRoomSchema),
+    defaultValues: {
+      propertyId: '',
+      roomTypeId: '',
+      floor: 0,
+      prefix: '',
+      count: 1,
+      startingNumber: 1,
+    },
+  });
 
-    // Load data when opened
-    useEffect(() => {
-        if (!open) return;
-        (async () => {
-            try {
-                setLoading(true);
-                const [roomTypesResponse, propertiesResponse] = await Promise.all([
-                    roomTypeService.getAll({ page: 1, limit: 1000 }),
-                    propertyService.getAll({ page: 1, limit: 1000 }),
-                ]);
-                setRoomTypes(roomTypesResponse.data.data || []);
-                setProperties(propertiesResponse.data.data || []);
-            } catch (e) {
-                console.error('Failed to load data:', e);
-                error('Failed to load data');
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [open, error]);
+  // Load data when opened
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const [roomTypesResponse, propertiesResponse] = await Promise.all([
+          roomTypeService.getAll({ page: 1, limit: 1000 }),
+          propertyService.getAll({ page: 1, limit: 1000 }),
+        ]);
+        setRoomTypes(roomTypesResponse.data.data || []);
+        setProperties(propertiesResponse.data.data || []);
+      } catch (e) {
+        console.error('Failed to load data:', e);
+        error('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [open, error]);
 
-    // Derived helpers
-    const filteredRoomTypes = useMemo(
-        () =>
-            (propertyId: string) => roomTypes.filter((rt) => rt.propertyId === propertyId),
-        [roomTypes],
-    );
+  // Derived helpers
+  const filteredRoomTypes = useMemo(
+    () =>
+      (propertyId: string) => roomTypes.filter((rt) => rt.propertyId === propertyId),
+    [roomTypes],
+  );
 
-    const getRoomTypeDetails = (roomTypeId: string) => {
-        const rt = roomTypes.find((r) => r.id === roomTypeId);
-        return rt
-            ? {
-                capacity: `${rt.adultCapacity} adults, ${rt.childCapacity} children`,
-                price: rt.basePrice,
-            }
-            : null;
-    };
+  const getRoomTypeDetails = (roomTypeId: string) => {
+    const rt = roomTypes.find((r) => r.id === roomTypeId);
+    return rt
+      ? {
+        capacity: `${rt.adultCapacity} adults, ${rt.childCapacity} children`,
+        price: rt.basePrice,
+      }
+      : null;
+  };
 
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
-    const generateRoomNumbers = (prefix: string, count: number, startingNumber: number) =>
-        Array.from({ length: count }, (_, i) => `${prefix}-${String(startingNumber + i).padStart(2, '0')}`);
+  const generateRoomNumbers = (prefix: string, count: number, startingNumber: number) =>
+    Array.from({ length: count }, (_, i) => `${prefix}-${String(startingNumber + i).padStart(2, '0')}`);
 
-    const watchedBulkValues = bulkForm.watch();
-    const roomNumbersPreview = generateRoomNumbers(
-        watchedBulkValues.prefix || '',
-        watchedBulkValues.count || 0,
-        watchedBulkValues.startingNumber || 0,
-    );
+  const watchedBulkValues = bulkForm.watch();
+  const roomNumbersPreview = generateRoomNumbers(
+    watchedBulkValues.prefix || '',
+    watchedBulkValues.count || 0,
+    watchedBulkValues.startingNumber || 0,
+  );
 
-    const close = () => dispatch(closeModal('addRoom'));
+  const close = () => dispatch(closeModal('addRoom'));
 
-    const refreshRoomsIfOnList = () => {
-        if (pathname?.startsWith('/dashboard/rooms/list')) {
-            dispatch(
-                fetchRooms({ page: 1, limit: 10, search: undefined, status: undefined, propertyId: undefined }),
-            );
-        }
-    };
+  const refreshRoomsIfOnList = () => {
+    if (pathname?.startsWith('/dashboard/rooms/list')) {
+      dispatch(
+        fetchRooms({ page: 1, limit: 10, search: undefined, status: undefined, propertyId: undefined }),
+      );
+    }
+  };
 
-    const onSingleSubmit = async (data: SingleFormValues) => {
-        try {
-            setSubmitting(true);
-            const payload: CreateRoomData = { ...data, isActive: true } as CreateRoomData;
-            await roomService.create(payload);
-            success('Room created successfully');
-            refreshRoomsIfOnList();
-            close();
-        } catch (e) {
-            console.error('Failed to create room:', e);
-            error('Failed to create room');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+  const onSingleSubmit = async (data: SingleFormValues) => {
+    try {
+      setSubmitting(true);
+      const payload: CreateRoomData = { ...data, isActive: true } as CreateRoomData;
+      await roomService.create(payload);
+      success('Room created successfully');
+      refreshRoomsIfOnList();
+      close();
+    } catch (e) {
+      console.error('Failed to create room:', e);
+      error('Failed to create room');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    const onBulkSubmit = async (data: BulkFormValues) => {
-        try {
-            setSubmitting(true);
-            await roomService.bulkCreate(data);
-            success(`${data.count} rooms created successfully`);
-            refreshRoomsIfOnList();
-            close();
-        } catch (e) {
-            console.error('Failed to create rooms:', e);
-            error('Failed to create rooms');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+  const onBulkSubmit = async (data: BulkFormValues) => {
+    try {
+      setSubmitting(true);
+      await roomService.bulkCreate(data);
+      success(`${data.count} rooms created successfully`);
+      refreshRoomsIfOnList();
+      close();
+    } catch (e) {
+      console.error('Failed to create rooms:', e);
+      error('Failed to create rooms');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-    return (
-        <Dialog open={open} onOpenChange={(o) => (!o ? close() : null)}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>Add Room</DialogTitle>
-                </DialogHeader>
+  return (
+    <Dialog open={open} onOpenChange={(o) => (!o ? close() : null)}>
+      <DialogContent className="w-[150vw] !max-w-[52rem] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add Room</DialogTitle>
+        </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'single' | 'bulk')} className="w-full">
           <Card className="w-full">
@@ -445,9 +445,9 @@ export function AddRoomDialog() {
             </CardContent>
           </Card>
         </Tabs>
-            </DialogContent>
-        </Dialog>
-    );
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default AddRoomDialog;

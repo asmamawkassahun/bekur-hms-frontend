@@ -8,6 +8,7 @@ import {
   createDormitory,
   updateSearchCache,
   setLastSearchTerm,
+  deleteDormitory,
 } from '@/store/slices/dormitorySlice';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,7 +55,8 @@ export default function DormitoriesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // Status is not part of Dormitory type; using active filter instead
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
   const [openView, setOpenView] = useState(false);
@@ -83,7 +85,6 @@ export default function DormitoriesPage() {
             page: 1,
             limit: 1000, // Get all dormitories for stats calculation
             search: undefined,
-            status: undefined,
             type: undefined,
           }),
         ).unwrap();
@@ -92,15 +93,9 @@ export default function DormitoriesPage() {
 
         setStatsData({
           totalDormitories: allDormitories.length,
-          availableDormitories: allDormitories.filter(
-            (d) => d.status === 'AVAILABLE',
-          ).length,
-          occupiedDormitories: allDormitories.filter(
-            (d) => d.status === 'OCCUPIED',
-          ).length,
-          maintenanceDormitories: allDormitories.filter(
-            (d) => d.status === 'MAINTENANCE',
-          ).length,
+          availableDormitories: allDormitories.filter((d) => d.isActive).length,
+          occupiedDormitories: 0,
+          maintenanceDormitories: 0,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
@@ -141,7 +136,6 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -149,7 +143,7 @@ export default function DormitoriesPage() {
   }, [
     dispatch,
     debouncedSearch,
-    statusFilter,
+    activeFilter,
     typeFilter,
     searchCache,
     lastSearchTerm,
@@ -166,7 +160,6 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -186,7 +179,6 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -209,7 +201,6 @@ export default function DormitoriesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -222,7 +213,7 @@ export default function DormitoriesPage() {
   const handleDeleteDormitory = async () => {
     if (!selectedDormitory) return;
     try {
-      // await dispatch(deleteDormitory(selectedDormitory.id)).unwrap();
+      await dispatch(deleteDormitory(selectedDormitory.id)).unwrap();
       success('Dormitory deleted');
       setOpenDelete(false);
       setSelectedDormitory(null);
@@ -232,7 +223,6 @@ export default function DormitoriesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
           type: typeFilter === 'all' ? undefined : typeFilter,
         }),
       );
@@ -318,16 +308,14 @@ export default function DormitoriesPage() {
         }
         filters={
           <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as 'all' | 'active' | 'inactive')}>
               <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Active" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="AVAILABLE">Available</SelectItem>
-                <SelectItem value="OCCUPIED">Occupied</SelectItem>
-                <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                <SelectItem value="OUT_OF_ORDER">Out of Order</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
             <Select value={typeFilter} onValueChange={setTypeFilter}>

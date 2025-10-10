@@ -18,6 +18,7 @@ export function RoomTableRow({
   onEdit,
   onDelete,
 }: RoomTableRowProps) {
+  console.log("room: ", room);
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       AVAILABLE: { color: 'bg-green-100 text-green-800', icon: Bed },
@@ -56,7 +57,7 @@ export function RoomTableRow({
           <div className="min-w-0">
             <div className="font-medium truncate">{room.number}</div>
             <div className="text-sm text-muted-foreground">
-              {room.type?.name || 'Standard'}
+              {room.roomType?.name || 'Standard'}
             </div>
           </div>
         </div>
@@ -65,19 +66,15 @@ export function RoomTableRow({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-3 w-3 text-muted-foreground" />
-            <span>{room.capacity} guests</span>
+            <span>{room.roomType?.adultCapacity + room.roomType?.childCapacity} guests</span>
           </div>
-          {room.floor && (
-            <div className="text-sm text-muted-foreground">
-              Floor {room.floor}
-            </div>
-          )}
+          
         </div>
       </TableCell>
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(room.basePrice, room.currency)}
+            {formatCurrency(room.roomType?.basePrice, room.roomType?.currency)}
           </div>
           <div className="text-sm text-muted-foreground">per night</div>
         </div>
@@ -85,11 +82,11 @@ export function RoomTableRow({
       <TableCell>{getStatusBadge(room.status)}</TableCell>
       <TableCell>
         <div className="space-y-1">
-          {room.amenities && room.amenities.length > 0 && (
+          {room.roomType?.amenities && room.roomType?.amenities.length > 0 && (
             <div className="text-sm">
-              {room.amenities.slice(0, 2).join(', ')}
-              {room.amenities.length > 2 &&
-                ` +${room.amenities.length - 2} more`}
+              {room.roomType?.amenities.slice(0, 2).join(', ')}
+              {room.roomType?.amenities.length > 2 &&
+                ` +${room.roomType?.amenities.length - 2} more`}
             </div>
           )}
         </div>

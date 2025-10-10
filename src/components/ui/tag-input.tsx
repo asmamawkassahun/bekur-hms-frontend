@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, useRef } from 'react';
 import { X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 interface TagInputProps {
@@ -19,6 +18,7 @@ export function TagInput({
   className,
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === ',' || e.key === 'Enter') {
@@ -39,7 +39,10 @@ export function TagInput({
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap gap-2 mb-2">
+      <div
+        className="min-h-10 flex flex-wrap items-center gap-2 rounded-md border bg-background px-3 py-2 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ring-offset-background"
+        onClick={() => inputRef.current?.focus()}
+      >
         {value.map((tag, index) => (
           <Badge key={index} variant="secondary" className="px-2 py-1">
             {tag}
@@ -52,14 +55,16 @@ export function TagInput({
             </button>
           </Badge>
         ))}
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={value.length === 0 ? placeholder || 'Type and press Enter' : ''}
+          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground h-6"
+        />
       </div>
-      <Input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder || 'Type and press comma to add'}
-      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,8 +21,11 @@ import { TagInput } from '@/components/ui/tag-input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Guest, FileType } from '@/types';
+import type { Guest, FileType, GuestDocument } from '@/types';
 import { DocumentUpload } from './DocumentUpload';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/store';
+import { fetchGuestDocuments } from '@/store/slices/guestSlice';
 
 const LOYALTY_TIER_OPTIONS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'] as const;
 const COUNTRY_OPTIONS = [
@@ -81,6 +84,25 @@ export function GuestForm({
   loading = false,
   isCreating = false,
 }: GuestFormProps) {
+  const dispatch = useDispatch<AppDispatch>();
+  const [existingDocuments, setExistingDocuments] = useState<GuestDocument[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+
+  // Load existing documents for editing
+  useEffect(() => {
+    if (guest && !isCreating) {
+      setLoadingDocuments(true);
+      dispatch(fetchGuestDocuments(guest.id))
+        .unwrap()
+        .then((response) => {
+          const docs = Array.isArray(response) ? response : response?.data || [];
+          setExistingDocuments(docs);
+        })
+        .catch(() => setExistingDocuments([]))
+        .finally(() => setLoadingDocuments(false));
+    }
+  }, [guest, isCreating, dispatch]);
+
   const form = useForm<GuestFormData>({
     resolver: zodResolver(guestSchema),
     defaultValues: guest
@@ -331,28 +353,27 @@ export function GuestForm({
           />
         </div>
 
-        {/* Document Upload Section - Only for creation */}
-        {isCreating && (
-          <FormField
-            control={form.control}
-            name="documents"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <DocumentUpload
-                    value={{
-                      front: field.value?.front ?? null,
-                      back: field.value?.back ?? null,
-                    }}
-                    onChange={field.onChange}
-                    disabled={loading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        {/* Document Upload Section - For creation and editing */}
+        <FormField
+          control={form.control}
+          name="documents"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <DocumentUpload
+                  value={{
+                    front: field.value?.front ?? null,
+                    back: field.value?.back ?? null,
+                  }}
+                  onChange={field.onChange}
+                  disabled={loading}
+                  existingDocuments={existingDocuments}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Tag Input Fields */}
         <FormField

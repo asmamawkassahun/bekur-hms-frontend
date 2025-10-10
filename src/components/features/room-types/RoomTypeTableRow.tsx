@@ -29,15 +29,14 @@ export function RoomTypeTableRow({
     // This would need to be passed from parent or fetched
     return `Property ${propertyId}`;
   };
+  console.log("roomType: ", roomType);
 
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell className="font-medium">
         <div>
           <div className="font-semibold">{roomType.name}</div>
-          <div className="text-sm text-muted-foreground">
-            {getPropertyName(roomType.propertyId)}
-          </div>
+         
         </div>
       </TableCell>
       <TableCell>
@@ -50,14 +49,7 @@ export function RoomTypeTableRow({
       </TableCell>
       <TableCell>
         <div className="text-sm">
-          {roomType.roomSize && (
-            <div>
-              {roomType.roomSize} {roomType.sizeUnit?.replace('_', ' ')}
-            </div>
-          )}
-          <div className="text-muted-foreground">
-            {roomType.amenities.length} amenities
-          </div>
+          {roomType.adultCapacity + roomType.childCapacity} guests
         </div>
       </TableCell>
       <TableCell className="font-medium">
@@ -65,7 +57,9 @@ export function RoomTypeTableRow({
       </TableCell>
       <TableCell>
         <Badge variant={roomType.isActive ? 'default' : 'secondary'}>
-          {roomType.isActive ? 'Active' : 'Inactive'}
+          {
+            roomType.isActive ? 'Active' : 'Inactive'
+          }
         </Badge>
       </TableCell>
       <TableCell className="text-right">

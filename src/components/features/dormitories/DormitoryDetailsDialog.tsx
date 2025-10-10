@@ -18,11 +18,13 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
-import { fetchBeds } from '@/store/slices/bedSlice';
+import { fetchBeds, deleteBed } from '@/store/slices/bedSlice';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
 import type { Dormitory, Bed } from '@/types';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
     Home,
     Users,
@@ -31,6 +33,7 @@ import {
     CheckCircle,
     XCircle,
     Bed as BedIcon,
+    Trash,
 } from 'lucide-react';
 
 interface DormitoryDetailsDialogProps {
@@ -45,9 +48,12 @@ export function DormitoryDetailsDialog({
     dormitory,
 }: DormitoryDetailsDialogProps) {
     const dispatch = useDispatch<AppDispatch>();
-    const { error } = useNotification();
+    const { error, success } = useNotification();
     const [beds, setBeds] = useState<Bed[]>([]);
     const [loadingBeds, setLoadingBeds] = useState(false);
+    const [openDelete, setOpenDelete] = useState(false);
+    const [selectedBedId, setSelectedBedId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Fetch beds when dialog opens
     useEffect(() => {
@@ -74,6 +80,28 @@ export function DormitoryDetailsDialog({
             error(apiErr.message);
         } finally {
             setLoadingBeds(false);
+        }
+    };
+
+    const handleRequestDelete = (bedId: string) => {
+        setSelectedBedId(bedId);
+        setOpenDelete(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedBedId) return;
+        setDeleting(true);
+        try {
+            await dispatch(deleteBed(selectedBedId)).unwrap();
+            setBeds((prev) => prev.filter((b) => b.id !== selectedBedId));
+            setOpenDelete(false);
+            setSelectedBedId(null);
+            success('Bed deleted');
+        } catch (e) {
+            const apiErr = handleApiError(e as AxiosError);
+            error(apiErr.message);
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -142,25 +170,14 @@ export function DormitoryDetailsDialog({
                                         </div>
                                     </div>
 
-                                    {dormitory.floor !== undefined && (
-                                        <div className="flex items-start gap-3">
-                                            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                                            <div>
-                                                <p className="text-sm font-medium">Floor</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Floor {dormitory.floor}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Floor info not available on Dormitory type */}
 
                                     <div className="flex items-start gap-3">
                                         <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                                         <div>
                                             <p className="text-sm font-medium">Price Per Bed</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {formatCurrency(dormitory.basePrice, dormitory.currency)}{' '}
-                                                per night
+                                                {formatCurrency(dormitory.basePrice)} per night
                                             </p>
                                         </div>
                                     </div>
@@ -177,7 +194,7 @@ export function DormitoryDetailsDialog({
                                     <div>
                                         <p className="text-sm font-medium mb-1">Status</p>
                                         <div className="flex items-center gap-2">
-                                            {getStatusBadge(dormitory.status)}
+                                            {/* {getStatusBadge(dormitory.status)} */}
                                             {dormitory.isActive ? (
                                                 <Badge className="bg-green-100 text-green-800">
                                                     <CheckCircle className="h-3 w-3 mr-1" />
@@ -205,14 +222,7 @@ export function DormitoryDetailsDialog({
                                         </div>
                                     )}
 
-                                    {dormitory.description && (
-                                        <div>
-                                            <p className="text-sm font-medium mb-1">Description</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {dormitory.description}
-                                            </p>
-                                        </div>
-                                    )}
+                                    {/* Description not available on Dormitory type */}
                                 </div>
                             </div>
                         </div>
@@ -247,7 +257,8 @@ export function DormitoryDetailsDialog({
                                             <TableHead>Type</TableHead>
                                             <TableHead>Price</TableHead>
                                             <TableHead>Status</TableHead>
-                                            <TableHead>Amenities</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                            {/* <TableHead>Amenities</TableHead> */}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -256,19 +267,26 @@ export function DormitoryDetailsDialog({
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <BedIcon className="h-4 w-4 text-muted-foreground" />
-                                                        <span className="font-medium">Bed {bed.number}</span>
+                                                        <span className="font-medium"> {bed.number}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline">
-                                                        {bed.typeId || 'Standard'}
-                                                    </Badge>
+                                                    <Badge variant="outline">Standard</Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {formatCurrency(bed.price, bed.currency)}
+                                                    {formatCurrency(bed.basePrice)}
                                                 </TableCell>
                                                 <TableCell>{getStatusBadge(bed.status)}</TableCell>
                                                 <TableCell>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleRequestDelete(bed.id)}
+                                                    >
+                                                        <Trash className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                                {/* <TableCell>
                                                     {bed.amenities && bed.amenities.length > 0 ? (
                                                         <div className="flex flex-wrap gap-1">
                                                             {bed.amenities.slice(0, 2).map((amenity, index) => (
@@ -287,7 +305,7 @@ export function DormitoryDetailsDialog({
                                                             No amenities
                                                         </span>
                                                     )}
-                                                </TableCell>
+                                                </TableCell> */}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -301,6 +319,20 @@ export function DormitoryDetailsDialog({
                         )}
                     </div>
                 </div>
+                <ConfirmDialog
+                    open={openDelete}
+                    onOpenChange={(o) => {
+                        setOpenDelete(o);
+                        if (!o) setSelectedBedId(null);
+                    }}
+                    title="Delete bed?"
+                    description="This action cannot be undone. This will permanently delete the bed."
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    variant="destructive"
+                    onConfirm={handleConfirmDelete}
+                    loading={deleting}
+                />
             </DialogContent>
         </Dialog>
     );

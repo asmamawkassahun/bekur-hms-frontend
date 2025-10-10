@@ -6,6 +6,7 @@ import {
   UpdateGuestData,
   UpdateLoyaltyTierData,
   UploadDocumentData,
+  FileType,
   ApiResponse,
   QueryParams,
 } from '@/types';
@@ -89,4 +90,41 @@ export const guestService = {
    */
   getDocuments: (id: string) =>
     apiClient.get<ApiResponse<GuestDocument[]>>(`/guests/${id}/documents`),
+
+  /**
+   * Update guest document
+   */
+  updateDocument: (documentId: string, data: { file?: File; fileType?: FileType; description?: string }) => {
+    const formData = new FormData();
+    if (data.file) {
+      formData.append('file', data.file);
+    }
+    if (data.fileType) {
+      formData.append('fileType', data.fileType);
+    }
+    if (data.description) {
+      formData.append('description', data.description);
+    }
+    return apiClient.patch<ApiResponse<GuestDocument>>(
+      `/guests/documents/${documentId}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+  },
+
+  /**
+   * Delete guest document
+   */
+  deleteDocument: (documentId: string) =>
+    apiClient.delete<ApiResponse<null>>(`/guests/documents/${documentId}`),
+
+  /**
+   * Get presigned URL for document
+   */
+  getDocumentUrl: (documentId: string) =>
+    apiClient.get<ApiResponse<{ url: string }>>(`/guests/documents/${documentId}/url`),
 };

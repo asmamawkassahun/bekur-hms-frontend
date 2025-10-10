@@ -23,15 +23,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TagInput } from '@/components/ui/tag-input';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { fetchProperties } from '@/store/slices/propertySlice';
 import { fetchBedTypes } from '@/store/slices/bedTypeSlice';
-import { createBed } from '@/store/slices/bedSlice';
+import { createBed, fetchBeds, updateBed, deleteBed, updateBedStatus } from '@/store/slices/bedSlice';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
-import type { Property, Dormitory, Bed, BedType } from '@/types';
+import type { Property, Dormitory, Bed, BedType, BedStatus } from '@/types';
 import { Plus, Trash2, Check } from 'lucide-react';
 
 const DORMITORY_TYPES = ['MIXED', 'MALE', 'FEMALE'] as const;
@@ -56,22 +57,22 @@ const dormitorySchema = z.object({
     name: z.string().min(1, 'Dormitory name is required'),
     propertyId: z.string().min(1, 'Property is required'),
     type: z.enum(['MIXED', 'MALE', 'FEMALE']),
-    capacity: z.coerce.number().int().min(1, 'Capacity must be at least 1'),
-    pricePerBed: z.coerce.number().min(0, 'Price must be positive'),
-    amenities: z.string().optional(),
-    isActive: z.boolean().default(true),
+    capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+    pricePerBed: z.number().min(0, 'Price must be positive'),
+    amenities: z.array(z.string()),
+    isActive: z.boolean(),
 });
 
 // Bed Schema - Frontend form schema (for configuration)
 const bedSchema = z.object({
     number: z.string().min(1, 'Bed number is required'),
     typeId: z.string().min(1, 'Bed type is required'),
-    price: z.coerce.number().min(0, 'Price must be positive'),
+    price: z.number().min(0, 'Price must be positive'),
     currency: z.string().min(1, 'Currency is required'),
     status: z.enum(['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'OUT_OF_ORDER']),
-    amenities: z.string().optional(),
+    amenities: z.array(z.string()),
     description: z.string().optional(),
-    isActive: z.boolean().default(true),
+    isActive: z.boolean(),
 });
 
 type DormitoryFormData = z.infer<typeof dormitorySchema>;
@@ -93,25 +94,41 @@ export function DormitoryEditForm({
     const dispatch = useDispatch<AppDispatch>();
     const { properties } = useSelector((state: RootState) => state.property);
     const { bedTypes } = useSelector((state: RootState) => state.bedType);
+    const { beds: storeBeds, loading: bedsLoading } = useSelector((state: RootState) => state.bed);
 
     const { success, error } = useNotification();
 
     const [beds, setBeds] = useState<BedFormData[]>([]);
     const [isCreatingBeds, setIsCreatingBeds] = useState(false);
     const [activeTab, setActiveTab] = useState('dormitory');
+    // Batch generator state
+    const [batchCount, setBatchCount] = useState<number>(0);
+    const [batchPrefix, setBatchPrefix] = useState<string>('');
+    const [batchStart, setBatchStart] = useState<number>(1);
+    const [batchPrice, setBatchPrice] = useState<number>(0);
+    const [batchCurrency, setBatchCurrency] = useState<string>('USD');
+    const [batchStatus, setBatchStatus] = useState<(typeof BED_STATUSES)[number]>('AVAILABLE');
+    const [batchIsActive, setBatchIsActive] = useState<boolean>(true);
+
+    // Map server type values to UI enum values
+    const mapDormitoryType = (t: Dormitory['type']): 'MIXED' | 'MALE' | 'FEMALE' => {
+        if (t === "Men's") return 'MALE';
+        if (t === "Women's") return 'FEMALE';
+        return 'MIXED';
+    };
 
     const form = useForm<DormitoryFormData>({
-        resolver: zodResolver(dormitorySchema),
+        resolver: zodResolver<DormitoryFormData, any, DormitoryFormData>(dormitorySchema),
         defaultValues: {
             name: dormitory.name,
             propertyId: dormitory.propertyId,
-            type: dormitory.type,
-            capacity: dormitory.capacity,
+            type: mapDormitoryType(dormitory.type),
+            capacity: Number(dormitory.capacity) || 0,
             pricePerBed: typeof dormitory.basePrice === 'string'
                 ? parseFloat(dormitory.basePrice)
                 : dormitory.basePrice || 0,
-            amenities: dormitory.amenities?.join(', ') || '',
-            isActive: dormitory.isActive,
+            amenities: dormitory.amenities || [],
+            isActive: Boolean(dormitory.isActive),
         },
     });
 
@@ -120,6 +137,13 @@ export function DormitoryEditForm({
         dispatch(fetchProperties({ page: 1, limit: 100 }));
         dispatch(fetchBedTypes({ page: 1, limit: 100 }));
     }, [dispatch]);
+
+    // Fetch existing beds for this dormitory when beds tab is active
+    useEffect(() => {
+        if (activeTab === 'beds' && dormitory.id) {
+            dispatch(fetchBeds({ page: 1, limit: 100, dormitoryId: dormitory.id } as any));
+        }
+    }, [activeTab, dormitory.id, dispatch]);
 
     // Initialize with one empty bed for adding
     useEffect(() => {
@@ -132,11 +156,19 @@ export function DormitoryEditForm({
             price: dormitoryPrice,
             currency: 'USD',
             status: 'AVAILABLE',
-            amenities: '',
+            amenities: [],
             description: '',
             isActive: true,
         }];
         setBeds(initialBeds);
+        // Initialize batch generator defaults
+        setBatchPrefix(dormitory.name);
+        setBatchPrice(dormitoryPrice);
+        setBatchCurrency('USD');
+        setBatchStatus('AVAILABLE');
+        setBatchIsActive(true);
+        setBatchCount(0);
+        setBatchStart(1);
     }, [dormitory.basePrice]);
 
     const handleSubmit = (values: DormitoryFormData) => {
@@ -147,7 +179,7 @@ export function DormitoryEditForm({
             type: values.type,
             capacity: values.capacity,
             basePrice: Number(values.pricePerBed) || 0, // Backend expects basePrice as number
-            amenities: values.amenities ? values.amenities.split(',').map(s => s.trim()).filter(Boolean) : [],
+            amenities: (values.amenities || []).map((s) => s.trim()).filter(Boolean),
             isActive: values.isActive,
         };
         onSubmit(payload as any);
@@ -160,7 +192,7 @@ export function DormitoryEditForm({
             price: form.getValues('pricePerBed'),
             currency: 'USD',
             status: 'AVAILABLE',
-            amenities: '',
+            amenities: [],
             description: '',
             isActive: true,
         };
@@ -177,6 +209,80 @@ export function DormitoryEditForm({
         setBeds(updatedBeds);
     };
 
+    const generateBedsBatch = () => {
+        if (batchCount <= 0) return;
+        const newBeds: BedFormData[] = Array.from({ length: batchCount }).map((_, idx) => {
+            const seq = batchStart + idx;
+            const number = `${batchPrefix}-${seq}`;
+            return {
+                number,
+                typeId: '',
+                price: batchPrice,
+                currency: batchCurrency,
+                status: batchStatus,
+                amenities: [],
+                description: '',
+                isActive: batchIsActive,
+            };
+        });
+        setBeds((prev) => [...prev, ...newBeds]);
+        setBatchStart(batchStart + batchCount);
+    };
+
+    // Auto-generate beds when count changes (no button needed)
+    const regenerateBeds = (count: number, startOverride?: number) => {
+        if (!count || count <= 0) {
+            setBeds([]);
+            return;
+        }
+        const effectivePrefix = batchPrefix || dormitory.name;
+        const startFrom = typeof startOverride === 'number' ? startOverride : batchStart;
+        const newBeds: BedFormData[] = Array.from({ length: count }).map((_, idx) => {
+            const seq = startFrom + idx;
+            const number = `${effectivePrefix}-${seq}`;
+            return {
+                number,
+                typeId: '',
+                price: batchPrice,
+                currency: batchCurrency,
+                status: batchStatus,
+                amenities: [],
+                description: '',
+                isActive: batchIsActive,
+            };
+        });
+        setBeds(newBeds);
+    };
+
+    // Auto-adjust starting index to avoid duplicates based on existing beds
+    const getNextAvailableStart = (prefix: string): number => {
+        const existing = (storeBeds || []).filter((b) => b.dormitoryId === dormitory.id);
+        let maxSeq = 0;
+        const normalizedPrefix = prefix || dormitory.name;
+        existing.forEach((b) => {
+            const num = b.number || '';
+            if (num.startsWith(`${normalizedPrefix}-`)) {
+                const tail = num.slice((`${normalizedPrefix}-`).length);
+                const parsed = parseInt(tail, 10);
+                if (!isNaN(parsed)) {
+                    maxSeq = Math.max(maxSeq, parsed);
+                }
+            }
+        });
+        return maxSeq + 1;
+    };
+
+    useEffect(() => {
+        if (activeTab === 'beds') {
+            const nextStart = getNextAvailableStart(batchPrefix);
+            setBatchStart(nextStart);
+            if (batchCount > 0) {
+                regenerateBeds(batchCount, nextStart);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [storeBeds, batchPrefix, activeTab]);
+
     const handleCreateBeds = async () => {
         setIsCreatingBeds(true);
         try {
@@ -188,6 +294,7 @@ export function DormitoryEditForm({
                     dormitoryId: dormitory.id,
                     number: bedData.number,
                     basePrice: Number(bedData.price) || 0,
+                    status: bedData.status,
                     isActive: bedData.isActive,
                 };
 
@@ -206,7 +313,7 @@ export function DormitoryEditForm({
                 price: form.getValues('pricePerBed'),
                 currency: 'USD',
                 status: 'AVAILABLE',
-                amenities: '',
+                amenities: [],
                 description: '',
                 isActive: true,
             }]);
@@ -215,6 +322,70 @@ export function DormitoryEditForm({
             error(apiErr.message);
         } finally {
             setIsCreatingBeds(false);
+        }
+    };
+
+    // Existing beds editing helpers
+    const [editRows, setEditRows] = useState<Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean }>>({});
+
+    useEffect(() => {
+        const init: Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean }> = {};
+        (storeBeds || [])
+            .filter((b) => b.dormitoryId === dormitory.id)
+            .forEach((b) => {
+                init[b.id] = {
+                    number: b.number,
+                    basePrice: typeof b.basePrice === 'string' ? Number(b.basePrice) : b.basePrice,
+                    status: b.status as BedStatus,
+                    isActive: b.isActive,
+                };
+            });
+        setEditRows(init);
+    }, [storeBeds, dormitory.id]);
+
+    const handleEditRowChange = (id: string, field: 'number' | 'basePrice' | 'status' | 'isActive', value: any) => {
+        setEditRows((prev) => ({
+            ...prev,
+            [id]: { ...prev[id], [field]: value },
+        }));
+    };
+
+    const handleSaveExistingBed = async (bed: Bed) => {
+        const current = editRows[bed.id];
+        if (!current) return;
+        try {
+            // Update number/basePrice/isActive
+            await dispatch(
+                updateBed({
+                    id: bed.id,
+                    data: {
+                        number: current.number,
+                        basePrice: Number(current.basePrice) || 0,
+                        isActive: current.isActive,
+                    },
+                } as any),
+            ).unwrap();
+
+            // Update status if changed
+            if (current.status !== bed.status) {
+                await dispatch(
+                    updateBedStatus({ id: bed.id, data: { status: current.status } } as any),
+                ).unwrap();
+            }
+            success('Bed updated');
+        } catch (e) {
+            const apiErr = handleApiError(e as AxiosError);
+            error(apiErr.message);
+        }
+    };
+
+    const handleDeleteExistingBed = async (bedId: string) => {
+        try {
+            await dispatch(deleteBed(bedId) as any).unwrap();
+            success('Bed deleted');
+        } catch (e) {
+            const apiErr = handleApiError(e as AxiosError);
+            error(apiErr.message);
         }
     };
 
@@ -338,9 +509,10 @@ export function DormitoryEditForm({
                                 <FormItem>
                                     <FormLabel>Amenities (optional)</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            placeholder="WiFi, Lockers, Shared Bathroom, Common Area"
-                                            {...field}
+                                        <TagInput
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="Type an amenity and press Enter"
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -415,8 +587,224 @@ export function DormitoryEditForm({
                         </Button>
                     </div>
 
+                    {/* Batch generator */}
+                    <div className="border rounded-lg p-3 space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <div>
+                                <label className="text-xs font-medium">How many beds?</label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    value={batchCount}
+                                    onChange={(e) => {
+                                        const val = Number(e.target.value);
+                                        setBatchCount(val);
+                                        regenerateBeds(val);
+                                    }}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium">Prefix</label>
+                                <Input
+                                    value={batchPrefix}
+                                    onChange={(e) => setBatchPrefix(e.target.value)}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium">Start #</label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    value={batchStart}
+                                    onChange={(e) => setBatchStart(Number(e.target.value))}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium">Price</label>
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={batchPrice}
+                                    onChange={(e) => setBatchPrice(Number(e.target.value))}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+                            {/* <div>
+                                <label className="text-xs font-medium">Currency</label>
+                                <Select
+                                    value={batchCurrency}
+                                    onValueChange={(val) => setBatchCurrency(val)}
+                                    disabled={isCreatingBeds || loading}
+                                >
+                                    <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Select currency" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {CURRENCIES.map((currency) => (
+                                            <SelectItem key={currency.value} value={currency.value}>
+                                                {currency.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div> */}
+                            <div>
+                                <label className="text-xs font-medium">Status</label>
+                                <Select
+                                    value={batchStatus}
+                                    onValueChange={(val) => setBatchStatus(val as (typeof BED_STATUSES)[number])}
+                                    disabled={isCreatingBeds || loading}
+                                >
+                                    <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {BED_STATUSES.map((status) => (
+                                            <SelectItem key={status} value={status}>
+                                                {status}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className='flex items-center gap-3'>
+
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        checked={batchIsActive}
+                                        onCheckedChange={(checked) => setBatchIsActive(Boolean(checked))}
+                                        disabled={isCreatingBeds || loading}
+                                    />
+                                    <label className="text-xs font-medium">Active</label>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                    Auto number as: {batchPrefix || dormitory.name}-{batchStart} ...
+                                </span>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="cursor-pointer"
+                                    onClick={onCancel}
+                                    disabled={isCreatingBeds || loading}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={handleCreateBeds}
+                                    className="bg-primary cursor-pointer"
+                                    disabled={isCreatingBeds || loading}
+                                >
+                                    {isCreatingBeds ? 'Creating Beds...' : `Create ${beds.length} Beds`}
+                                    <Check className="h-4 w-4 ml-2" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="space-y-4 max-h-80 overflow-y-auto">
-                        {beds.map((bed, index) => (
+                        {/* Existing Beds */}
+                        {(storeBeds || []).filter((b) => b.dormitoryId === dormitory.id).length > 0 && (
+                            <div className="space-y-2">
+                                <div className="text-sm font-medium">Existing Beds</div>
+                                <div className="space-y-2">
+                                    {(storeBeds || [])
+                                        .filter((b) => b.dormitoryId === dormitory.id)
+                                        .map((b) => (
+                                            <div key={b.id} className="border rounded-lg p-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <div>
+                                                            <label className="text-xs font-medium">Number</label>
+                                                            <Input
+                                                                value={editRows[b.id]?.number ?? b.number}
+                                                                onChange={(e) => handleEditRowChange(b.id, 'number', e.target.value)}
+                                                                className="h-8"
+                                                                disabled={isCreatingBeds || loading}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-medium">Price</label>
+                                                            <Input
+                                                                type="number"
+                                                                min={0}
+                                                                step="0.01"
+                                                                value={editRows[b.id]?.basePrice ?? (typeof b.basePrice === 'string' ? Number(b.basePrice) : b.basePrice)}
+                                                                onChange={(e) => handleEditRowChange(b.id, 'basePrice', Number(e.target.value))}
+                                                                className="h-8"
+                                                                disabled={isCreatingBeds || loading}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div>
+                                                            <label className="text-xs font-medium">Status</label>
+                                                            <Select
+                                                                value={editRows[b.id]?.status ?? (b.status as BedStatus)}
+                                                                onValueChange={(val) => handleEditRowChange(b.id, 'status', val as BedStatus)}
+                                                                disabled={isCreatingBeds || loading}
+                                                            >
+                                                                <SelectTrigger className="h-8">
+                                                                    <SelectValue placeholder="Select status" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {BED_STATUSES.map((status) => (
+                                                                        <SelectItem key={status} value={status}>
+                                                                            {status}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                checked={editRows[b.id]?.isActive ?? b.isActive}
+                                                                onCheckedChange={(checked) => handleEditRowChange(b.id, 'isActive', Boolean(checked))}
+                                                                disabled={isCreatingBeds || loading}
+                                                            />
+                                                            <label className="text-xs font-medium">Active</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end gap-2 mt-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        className="cursor-pointer"
+                                                        onClick={() => handleDeleteExistingBed(b.id)}
+                                                        disabled={isCreatingBeds || loading}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => handleSaveExistingBed(b)}
+                                                        className="bg-primary cursor-pointer"
+                                                        disabled={isCreatingBeds || loading}
+                                                    >
+                                                        Save
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        )}
+
+
+                        {/* {beds.map((bed, index) => (
                             <div key={index} className="border rounded-lg p-4 space-y-4 bg-card">
                                 <div className="flex items-center justify-between">
                                     <h4 className="font-medium text-sm">Bed {bed.number || `${index + 1}`}</h4>
@@ -432,11 +820,11 @@ export function DormitoryEditForm({
                                             <Trash2 className="h-3 w-3" />
                                         </Button>
                                     )}
-                                </div>
+                                </div> */}
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    {/* Left Column */}
-                                    <div className="space-y-3">
+                        {/* <div className="grid grid-cols-2 gap-3"> */}
+                        {/* Left Column */}
+                        {/* <div className="space-y-3">
                                         <div>
                                             <label className="text-xs font-medium">Bed Number</label>
                                             <Input
@@ -446,9 +834,9 @@ export function DormitoryEditForm({
                                                 className="h-8"
                                                 disabled={isCreatingBeds || loading}
                                             />
-                                        </div>
+                                        </div> */}
 
-                                        <div>
+                        {/* <div>
                                             <label className="text-xs font-medium">Bed Type</label>
                                             <Select
                                                 value={bed.typeId}
@@ -466,9 +854,9 @@ export function DormitoryEditForm({
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
+                                        </div> */}
 
-                                        <div>
+                        {/* <div>
                                             <label className="text-xs font-medium">Price</label>
                                             <Input
                                                 type="number"
@@ -479,9 +867,9 @@ export function DormitoryEditForm({
                                                 className="h-8"
                                                 disabled={isCreatingBeds || loading}
                                             />
-                                        </div>
+                                        </div> */}
 
-                                        <div>
+                        {/* <div>
                                             <label className="text-xs font-medium">Amenities</label>
                                             <Input
                                                 placeholder="Pillow, Blanket, Locker, Power Outlet"
@@ -490,9 +878,9 @@ export function DormitoryEditForm({
                                                 className="h-8"
                                                 disabled={isCreatingBeds || loading}
                                             />
-                                        </div>
+                                        </div> */}
 
-                                        <div>
+                        {/* <div>
                                             <label className="text-xs font-medium">Description</label>
                                             <Textarea
                                                 placeholder="Bed description..."
@@ -501,11 +889,11 @@ export function DormitoryEditForm({
                                                 className="h-16 resize-none"
                                                 disabled={isCreatingBeds || loading}
                                             />
-                                        </div>
-                                    </div>
+                                        </div> */}
+                    {/* </div> */}
 
-                                    {/* Right Column */}
-                                    <div className="space-y-3">
+                    {/* Right Column */}
+                    {/* <div className="space-y-3">
                                         <div>
                                             <label className="text-xs font-medium">Dormitory</label>
                                             <div className="h-8 flex items-center px-3 bg-muted rounded-md text-sm text-muted-foreground">
@@ -531,9 +919,9 @@ export function DormitoryEditForm({
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
+                                        </div> */}
 
-                                        <div>
+                    {/* <div>
                                             <label className="text-xs font-medium">Currency</label>
                                             <Select
                                                 value={bed.currency}
@@ -551,8 +939,8 @@ export function DormitoryEditForm({
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
-                                    </div>
+                                        </div> */}
+                    {/* </div>
                                 </div>
 
                                 <div className="flex items-center space-x-2">
@@ -564,29 +952,10 @@ export function DormitoryEditForm({
                                     <label className="text-xs font-medium">Active Bed</label>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        ))} */}
+                </div>
 
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="cursor-pointer"
-                            onClick={onCancel}
-                            disabled={isCreatingBeds || loading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleCreateBeds}
-                            className="bg-primary cursor-pointer"
-                            disabled={isCreatingBeds || loading}
-                        >
-                            {isCreatingBeds ? 'Creating Beds...' : `Create ${beds.length} Beds`}
-                            <Check className="h-4 w-4 ml-2" />
-                        </Button>
-                    </div>
+
                 </div>
             </TabsContent>
         </Tabs>

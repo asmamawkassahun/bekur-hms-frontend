@@ -199,6 +199,7 @@ export default function RoomTypesPage() {
         search: undefined,
         propertyId: undefined,
       });
+      console.log("roomTypesResponse: ", roomTypesResponse);
       setRoomTypes(roomTypesResponse.data.data || []);
 
       // Load bed types

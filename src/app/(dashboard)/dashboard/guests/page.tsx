@@ -9,6 +9,8 @@ import {
   updateGuest,
   deleteGuest,
   uploadDocument,
+  deleteGuestDocument,
+  fetchGuestDocuments,
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/guestSlice';
@@ -87,21 +89,21 @@ export default function GuestsPage() {
           }),
         ).unwrap();
 
-        const allGuests = response.data || [];
+        const allGuests = Array.isArray((response as any)?.data?.guests) ? (response as any).data.guests : [];
         const now = new Date();
 
         setStatsData({
           totalGuests: allGuests.length,
-          vipGuests: allGuests.filter((g) => g.loyaltyTier === 'PLATINUM')
+          vipGuests: allGuests.filter((g: any) => g.loyaltyTier === 'PLATINUM')
             .length,
-          newThisMonth: allGuests.filter((g) => {
+          newThisMonth: allGuests.filter((g: any) => {
             const created = new Date(g.createdAt);
             return (
               created.getMonth() === now.getMonth() &&
               created.getFullYear() === now.getFullYear()
             );
           }).length,
-          activeGuests: allGuests.filter((g) => g.isActive).length,
+          activeGuests: allGuests.filter((g: any) => g.isActive).length,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
@@ -236,8 +238,23 @@ export default function GuestsPage() {
   const handleDeleteGuest = async () => {
     if (!selectedGuest) return;
     try {
+      // First, get guest documents to delete them
+      try {
+        const documentsResponse = await dispatch(fetchGuestDocuments(selectedGuest.id)).unwrap();
+        // Delete all documents
+        if (Array.isArray(documentsResponse)) {
+          for (const doc of documentsResponse) {
+            await dispatch(deleteGuestDocument(doc.id)).unwrap();
+          }
+        }
+      } catch (docError) {
+        // Log error but continue with guest deletion
+        console.error('Failed to delete some documents:', docError);
+      }
+
+      // Then delete the guest
       await dispatch(deleteGuest(selectedGuest.id)).unwrap();
-      success('Guest deleted');
+      success('Guest and associated documents deleted');
       setOpenDelete(false);
       setSelectedGuest(null);
       // refetch with current search term

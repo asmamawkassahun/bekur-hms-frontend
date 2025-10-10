@@ -19,7 +19,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Badge } from '@/components/ui/badge';
+import { TagInput } from '@/components/ui/tag-input';
 import { useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
@@ -39,22 +41,22 @@ const dormitorySchema = z.object({
   name: z.string().min(1, 'Dormitory name is required'),
   propertyId: z.string().min(1, 'Property is required'),
   type: z.enum(['MIXED', 'MALE', 'FEMALE']),
-  capacity: z.coerce.number().int().min(1, 'Capacity must be at least 1'),
-  pricePerBed: z.coerce.number().min(0, 'Price must be positive'),
-  amenities: z.string().optional(),
-  isActive: z.boolean().default(true),
+  capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+  pricePerBed: z.number().min(0, 'Price must be positive'),
+  amenities: z.array(z.string()),
+  isActive: z.boolean(),
 });
 
 // Bed Schema - Frontend form schema (for configuration)
 const bedSchema = z.object({
   number: z.string().min(1, 'Bed number is required'),
   typeId: z.string().min(1, 'Bed type is required'),
-  price: z.coerce.number().min(0, 'Price must be positive'),
+  price: z.number().min(0, 'Price must be positive'),
   currency: z.string().min(1, 'Currency is required'),
   status: z.enum(['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'OUT_OF_ORDER']),
-  amenities: z.string().optional(),
+  amenities: z.array(z.string()),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type DormitoryFormData = z.infer<typeof dormitorySchema>;
@@ -98,31 +100,39 @@ export function DormitoryWizardFormCompact({
   const [beds, setBeds] = useState<BedFormData[]>([]);
   const [isCreatingDormitory, setIsCreatingDormitory] = useState(false);
   const [isCreatingBeds, setIsCreatingBeds] = useState(false);
+  // Bed batch generator controls
+  const [batchCount, setBatchCount] = useState<number>(0);
+  const [batchPrefix, setBatchPrefix] = useState<string>('');
+  const [batchStart, setBatchStart] = useState<number>(1);
+  const [batchPrice, setBatchPrice] = useState<number>(0);
+  const [batchCurrency, setBatchCurrency] = useState<string>('USD');
+  const [batchStatus, setBatchStatus] = useState<(typeof BED_STATUSES)[number]>('AVAILABLE');
+  const [batchIsActive, setBatchIsActive] = useState<boolean>(true);
 
   // Dormitory form
   const dormitoryForm = useForm<DormitoryFormData>({
-    resolver: zodResolver(dormitorySchema),
+    resolver: zodResolver<DormitoryFormData, any, DormitoryFormData>(dormitorySchema),
     defaultValues: {
       name: '',
       propertyId: '',
       type: 'MIXED',
       capacity: 4,
       pricePerBed: 0,
-      amenities: '',
+      amenities: [],
       isActive: true,
     },
   });
 
   // Bed form
   const bedForm = useForm<BedFormData>({
-    resolver: zodResolver(bedSchema),
+    resolver: zodResolver<BedFormData, any, BedFormData>(bedSchema),
     defaultValues: {
       number: '',
       typeId: '',
       price: 0,
       currency: 'USD',
       status: 'AVAILABLE',
-      amenities: '',
+      amenities: [],
       description: '',
       isActive: true,
     },
@@ -134,24 +144,44 @@ export function DormitoryWizardFormCompact({
     dispatch(fetchBedTypes({ page: 1, limit: 100 }));
   }, [dispatch]);
 
-  // Initialize with just one bed
+  // Initialize generator defaults when dormitory is created
   useEffect(() => {
     if (createdDormitory) {
-      const initialBeds: BedFormData[] = [{
-        number: '',
-        typeId: '',
-        price: dormitoryForm.getValues('pricePerBed'),
-        currency: 'USD',
-        status: 'AVAILABLE',
-        amenities: '',
-        description: '',
-        isActive: true,
-      }];
-      setBeds(initialBeds);
+      setBeds([]);
+      const defaultPrefix = `${createdDormitory.name}`;
+      setBatchPrefix(defaultPrefix);
+      setBatchPrice(dormitoryForm.getValues('pricePerBed'));
+      setBatchCurrency('USD');
+      setBatchStatus('AVAILABLE');
+      setBatchIsActive(true);
+      setBatchCount(0);
+      setBatchStart(1);
     }
   }, [createdDormitory, dormitoryForm]);
 
-  const handleDormitorySubmit = async (values: DormitoryFormData) => {
+  const generateBedsBatch = () => {
+    if (!createdDormitory || batchCount <= 0) return;
+    const newBeds: BedFormData[] = Array.from({ length: batchCount }).map((_, idx) => {
+      const seq = batchStart + idx;
+      const number = `${batchPrefix}-${seq}`;
+      return {
+        number,
+        typeId: '',
+        price: batchPrice,
+        currency: batchCurrency,
+        status: batchStatus,
+        amenities: [],
+        description: '',
+        isActive: batchIsActive,
+      };
+    });
+    setBeds((prev) => [...prev, ...newBeds]);
+    // advance starting number for next batch
+    setBatchStart(batchStart + batchCount);
+    // keep other settings to allow quick subsequent batches
+  };
+
+  const handleDormitorySubmit: SubmitHandler<DormitoryFormData> = async (values) => {
     setIsCreatingDormitory(true);
     try {
       console.log('📝 Raw form values:', values);
@@ -163,7 +193,7 @@ export function DormitoryWizardFormCompact({
         type: values.type,
         capacity: values.capacity,
         basePrice: Number(values.pricePerBed) || 0, // Backend expects basePrice as number
-        amenities: values.amenities ? values.amenities.split(',').map(s => s.trim()).filter(Boolean) : [],
+        amenities: (values.amenities || []).map(s => s.trim()).filter(Boolean),
         isActive: values.isActive,
       };
 
@@ -199,7 +229,7 @@ export function DormitoryWizardFormCompact({
       price: dormitoryForm.getValues('pricePerBed'),
       currency: 'USD',
       status: 'AVAILABLE',
-      amenities: '',
+      amenities: [],
       description: '',
       isActive: true,
     };
@@ -230,6 +260,7 @@ export function DormitoryWizardFormCompact({
           dormitoryId: createdDormitory.id,
           number: bedData.number,
           basePrice: Number(bedData.price) || 0,
+          status: bedData.status,
           isActive: bedData.isActive,
         };
 
@@ -369,9 +400,10 @@ export function DormitoryWizardFormCompact({
             <FormItem>
               <FormLabel>Amenities (optional)</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="WiFi, Lockers, Shared Bathroom, Common Area"
-                  {...field}
+                <TagInput
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  placeholder="Type an amenity and press Enter"
                 />
               </FormControl>
               <FormMessage />
@@ -446,6 +478,100 @@ export function DormitoryWizardFormCompact({
         </Button>
       </div>
 
+      {/* Batch generator */}
+      <div className="border rounded-lg p-3 space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div>
+            <label className="text-xs font-medium">How many beds?</label>
+            <Input
+              type="number"
+              min={1}
+              value={batchCount}
+              onChange={(e) => setBatchCount(Number(e.target.value))}
+              className="h-8"
+              disabled={isCreatingBeds || loading}
+            />
+          </div>
+
+
+
+          <div>
+                                <label className="text-xs font-medium">Prefix</label>
+                                <Input
+                                    value={batchPrefix}
+                                    onChange={(e) => setBatchPrefix(e.target.value)}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium">Start #</label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    value={batchStart}
+                                    onChange={(e) => setBatchStart(Number(e.target.value))}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+
+          
+          <div>
+            <label className="text-xs font-medium">Price</label>
+            <Input
+              type="number"
+              min={0}
+              step="0.01"
+              value={batchPrice}
+              onChange={(e) => setBatchPrice(Number(e.target.value))}
+              className="h-8"
+              disabled={isCreatingBeds || loading}
+            />
+          </div>
+          
+          <div>
+            <label className="text-xs font-medium">Status</label>
+            <Select
+              value={batchStatus}
+              onValueChange={(val) => setBatchStatus(val as (typeof BED_STATUSES)[number])}
+              disabled={isCreatingBeds || loading}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {BED_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={batchIsActive}
+              onCheckedChange={(checked) => setBatchIsActive(Boolean(checked))}
+            />
+            <label className="text-xs font-medium">Active</label>
+          </div>
+          <Button
+            type="button"
+            onClick={generateBedsBatch}
+            className="cursor-pointer"
+            disabled={isCreatingBeds || loading || !createdDormitory || batchCount <= 0}
+          >
+            Generate Beds
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            Auto number as: {batchPrefix || createdDormitory?.name}-{batchStart} ...
+          </span>
+        </div>
+      </div>
+
       <div className="space-y-4 max-h-80 overflow-y-auto">
         {beds.map((bed, index) => (
           <div key={index} className="border rounded-lg p-4 space-y-4 bg-card">
@@ -478,7 +604,7 @@ export function DormitoryWizardFormCompact({
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="text-xs font-medium">Bed Type</label>
                   <Select
                     value={bed.typeId}
@@ -496,7 +622,7 @@ export function DormitoryWizardFormCompact({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <div>
                   <label className="text-xs font-medium">Price</label>
@@ -511,14 +637,13 @@ export function DormitoryWizardFormCompact({
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="text-xs font-medium">Amenities</label>
-                  <Input
-                    placeholder="Pillow, Blanket, Locker, Power Outlet"
-                    value={bed.amenities || ''}
-                    onChange={(e) => handleUpdateBed(index, 'amenities', e.target.value)}
-                    className="h-8"
-                    disabled={isCreatingBeds || loading}
+                  <TagInput
+                    value={(bed.amenities as string[]) || []}
+                    onChange={(value) => handleUpdateBed(index, 'amenities', value)}
+                    placeholder="Type and press Enter"
+                    className=""
                   />
                 </div>
 
@@ -531,7 +656,7 @@ export function DormitoryWizardFormCompact({
                     className="h-16 resize-none"
                     disabled={isCreatingBeds || loading}
                   />
-                </div>
+                </div> */}
               </div>
 
               {/* Right Column */}
@@ -563,7 +688,7 @@ export function DormitoryWizardFormCompact({
                   </Select>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="text-xs font-medium">Currency</label>
                   <Select
                     value={bed.currency}
@@ -581,7 +706,7 @@ export function DormitoryWizardFormCompact({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
               </div>
             </div>
 
