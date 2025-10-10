@@ -9,6 +9,7 @@ import { fetchProperties } from '@/store/slices/propertySlice';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { Header } from '@/components/layout/Header';
+import AddRoomDialog from '@/components/features/rooms/AddRoomDialog';
 import Cookies from 'js-cookie';
 
 export default function DashboardLayout({
@@ -128,6 +129,7 @@ export default function DashboardLayout({
             loading={loading || !hasInitialized}
           />
           <main className="flex-1">{children}</main>
+          <AddRoomDialog />
         </div>
       </div>
     </div>

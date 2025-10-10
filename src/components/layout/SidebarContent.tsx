@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { openModal } from '@/store/slices/uiSlice';
 import {
   LayoutDashboard,
   BarChart3,
@@ -34,6 +35,7 @@ interface SidebarContentProps {
 
 export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const pathname = usePathname();
+  const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const [roomsExpanded, setRoomsExpanded] = useState(false);
 
@@ -64,7 +66,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const roomsSubmenu = [
     { label: 'Room Types', icon: BedDouble, href: '/dashboard/rooms/types' },
     { label: 'Rooms List', icon: Bed, href: '/dashboard/rooms/list' },
-    { label: 'Add Room', icon: Plus, href: '/dashboard/rooms/add' },
+    { label: 'Add Room', icon: Plus, href: undefined },
   ];
 
   // Hotel Management section
@@ -158,14 +160,10 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           <div className="ml-4 mt-1 space-y-1">
             {roomsSubmenu.map((item) => {
               const Icon = item.icon;
-              const active = isActive(item.href);
+              const active = item.href ? isActive(item.href) : false;
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={handleNavigation}
-                >
+              return item.href ? (
+                <Link key={item.label} href={item.href} onClick={handleNavigation}>
                   <div
                     className={cn(
                       'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
@@ -178,6 +176,17 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                     <span>{item.label}</span>
                   </div>
                 </Link>
+              ) : (
+                <button
+                  key={item.label}
+                  className={cn(
+                    'w-full flex items-center px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-sidebar-accent/50'
+                  )}
+                  onClick={() => dispatch(openModal('addRoom'))}
+                >
+                  <Icon className="mr-3 h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
               );
             })}
           </div>
