@@ -39,11 +39,12 @@ export function DormitoryTableRow({
     );
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number | string, currency?: string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
-    }).format(amount);
+    }).format(numAmount);
   };
 
   return (
@@ -77,12 +78,12 @@ export function DormitoryTableRow({
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(dormitory.pricePerBed, dormitory.currency)}
+            {formatCurrency(dormitory.basePrice, dormitory.currency)}
           </div>
           <div className="text-sm text-muted-foreground">per bed per night</div>
         </div>
       </TableCell>
-      <TableCell>{getStatusBadge(dormitory.status)}</TableCell>
+      <TableCell>{dormitory.status ? getStatusBadge(dormitory.status) : <Badge>N/A</Badge>}</TableCell>
       <TableCell>
         <div className="space-y-1">
           {dormitory.amenities && dormitory.amenities.length > 0 && (

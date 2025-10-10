@@ -37,7 +37,9 @@ import { DataTable } from '@/components/shared/DataTable';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { DormitoryStatsCards } from '@/components/features/dormitories/DormitoryStatsCards';
 import { DormitoryTableRow } from '@/components/features/dormitories/DormitoryTableRow';
-import { DormitoryForm } from '@/components/features/dormitories/DormitoryForm';
+import { DormitoryWizardFormCompact } from '@/components/features/dormitories/DormitoryWizardFormCompact';
+import { DormitoryEditForm } from '@/components/features/dormitories/DormitoryEditForm';
+import { DormitoryDetailsDialog } from '@/components/features/dormitories/DormitoryDetailsDialog';
 
 export default function DormitoriesPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -55,6 +57,7 @@ export default function DormitoriesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedDormitory, setSelectedDormitory] = useState<Dormitory | null>(
@@ -88,7 +91,7 @@ export default function DormitoriesPage() {
         const allDormitories = response.data || [];
 
         setStatsData({
-          totalDormitories: response.pagination?.total || 0,
+          totalDormitories: allDormitories.length,
           availableDormitories: allDormitories.filter(
             (d) => d.status === 'AVAILABLE',
           ).length,
@@ -173,6 +176,26 @@ export default function DormitoriesPage() {
     }
   };
 
+  const handleWizardSubmit = async (dormitory: Dormitory, beds: any[]) => {
+    try {
+      success(`Dormitory and ${beds.length} beds created successfully!`);
+      setOpenCreate(false);
+      // refetch with current search term
+      dispatch(
+        fetchDormitories({
+          page: 1,
+          limit: 10,
+          search: debouncedSearch || undefined,
+          status: statusFilter === 'all' ? undefined : statusFilter,
+          type: typeFilter === 'all' ? undefined : typeFilter,
+        }),
+      );
+    } catch (e) {
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message);
+    }
+  };
+
   const handleEditDormitory = async (data: any) => {
     if (!selectedDormitory) return;
     try {
@@ -234,7 +257,7 @@ export default function DormitoriesPage() {
       dormitory={dormitory}
       onView={(d) => {
         setSelectedDormitory(d);
-        // setOpenView(true);
+        setOpenView(true);
       }}
       onEdit={(d) => {
         setSelectedDormitory(d);
@@ -265,8 +288,8 @@ export default function DormitoriesPage() {
             <DialogHeader>
               <DialogTitle>New Dormitory</DialogTitle>
             </DialogHeader>
-            <DormitoryForm
-              onSubmit={handleCreateDormitory}
+            <DormitoryWizardFormCompact
+              onSubmit={handleWizardSubmit}
               onCancel={() => setOpenCreate(false)}
               loading={loading}
             />
@@ -340,7 +363,7 @@ export default function DormitoriesPage() {
             <DialogTitle>Edit Dormitory</DialogTitle>
           </DialogHeader>
           {selectedDormitory && (
-            <DormitoryForm
+            <DormitoryEditForm
               dormitory={selectedDormitory}
               onSubmit={handleEditDormitory}
               onCancel={() => setOpenEdit(false)}
@@ -350,6 +373,16 @@ export default function DormitoriesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* View Dormitory Details Dialog */}
+      <DormitoryDetailsDialog
+        open={openView}
+        onOpenChange={(open) => {
+          setOpenView(open);
+          if (!open) setSelectedDormitory(null);
+        }}
+        dormitory={selectedDormitory}
+      />
+
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={openDelete}
@@ -358,9 +391,8 @@ export default function DormitoriesPage() {
           if (!open) setSelectedDormitory(null);
         }}
         title="Delete Dormitory"
-        description={`Are you sure you want to delete ${
-          selectedDormitory ? selectedDormitory.name : 'this dormitory'
-        }? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${selectedDormitory ? selectedDormitory.name : 'this dormitory'
+          }? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
         onConfirm={handleDeleteDormitory}
