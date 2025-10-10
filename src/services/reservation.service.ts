@@ -11,6 +11,7 @@ import {
   BookingSource,
   ApiResponse,
   QueryParams,
+  CalculatePriceData,
 } from '@/types';
 
 export const reservationService = {
@@ -45,22 +46,37 @@ export const reservationService = {
     apiClient.delete<ApiResponse<null>>(`/bookings/${id}`),
 
   /**
+   * Confirm reservation
+   */
+  confirm: (reservationId: string) =>
+    apiClient.post<ApiResponse<Reservation>>(
+      `/bookings/${reservationId}/confirm`,
+      {}
+    ),
+
+  /**
    * Check-in guest
    */
   checkIn: (data: CheckInData) =>
-    apiClient.post<ApiResponse<Reservation>>('/reservations/check-in', data),
+    apiClient.post<ApiResponse<Reservation>>(
+      `/bookings/${data.reservationId}/check-in`,
+      {}
+    ),
 
   /**
    * Check-out guest
    */
   checkOut: (data: CheckOutData) =>
-    apiClient.post<ApiResponse<Reservation>>('/reservations/check-out', data),
+    apiClient.post<ApiResponse<Reservation>>(
+      `/bookings/${data.reservationId}/check-out`,
+      {}
+    ),
 
   /**
    * Cancel reservation
    */
   cancel: (id: string, reason?: string) =>
-    apiClient.patch<ApiResponse<Reservation>>(`/reservations/${id}/cancel`, {
+    apiClient.patch<ApiResponse<Reservation>>(`/bookings/${id}/cancel`, {
       reason,
     }),
 
@@ -107,4 +123,7 @@ export const reservationService = {
    */
   getBookingSourceById: (id: string) =>
     apiClient.get<ApiResponse<BookingSource>>(`/booking-sources/${id}`),
+
+  calculate: (data: CalculatePriceData) =>
+    apiClient.post<ApiResponse<CalculatePriceData>>(`/bookings/calculate-price`, data),
 };

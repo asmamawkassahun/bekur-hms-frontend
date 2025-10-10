@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Eye, Edit, Trash2, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Eye, Edit, Trash2, CheckCircle, Clock, XCircle, LogIn, Check } from 'lucide-react';
 import type { Reservation } from '@/types';
 
 interface ReservationTableRowProps {
@@ -10,6 +10,8 @@ interface ReservationTableRowProps {
   onView: (reservation: Reservation) => void;
   onEdit: (reservation: Reservation) => void;
   onDelete: (reservation: Reservation) => void;
+  onConfirm: (reservation: Reservation) => void;
+  onCheckIn: (reservation: Reservation) => void;
 }
 
 export function ReservationTableRow({
@@ -17,6 +19,8 @@ export function ReservationTableRow({
   onView,
   onEdit,
   onDelete,
+  onConfirm,
+  onCheckIn,
 }: ReservationTableRowProps) {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -111,6 +115,30 @@ export function ReservationTableRow({
           >
             <Edit className="h-4 w-4" />
           </Button>
+          {/* Show confirm button for PENDING reservations */}
+          {reservation.status === 'PENDING' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="cursor-pointer text-blue-600 hover:text-blue-700"
+              onClick={() => onConfirm(reservation)}
+              title="Confirm Reservation"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+          )}
+          {/* Show check-in button for CONFIRMED reservations only */}
+          {reservation.status === 'CONFIRMED' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="cursor-pointer text-green-600 hover:text-green-700"
+              onClick={() => onCheckIn(reservation)}
+              title="Check In Guest"
+            >
+              <LogIn className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"

@@ -6,8 +6,8 @@ import { AppDispatch, RootState } from '@/store';
 import {
   fetchReservations,
   createReservation,
-  updateSearchCache,
-  setLastSearchTerm,
+  confirmReservation,
+  checkInGuest,
 } from '@/store/slices/reservationSlice';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,8 +40,6 @@ export default function ReservationsPage() {
     reservations,
     loading,
     pagination,
-    searchCache,
-    lastSearchTerm,
     isSearching,
   } = useSelector((state: RootState) => state.reservation);
 
@@ -59,9 +57,13 @@ export default function ReservationsPage() {
     checkedInReservations: 0,
     pendingReservations: 0,
     totalRevenue: 0,
+    totalPaidAmount: 0,
+    totalUnpaidAmount: 0,
+    paidReservations: 0,
+    currency: 'ETB',
   });
 
-  const { success, error } = useNotification();
+  const { success, error: showError } = useNotification();
 
   // Fetch overall stats data (not affected by search)
   useEffect(() => {
@@ -74,45 +76,87 @@ export default function ReservationsPage() {
           }),
         ).unwrap();
 
-        const allReservations = response.data || [];
-        const total = response.meta?.total || allReservations.length;
+        const allReservations = response?.data || [];
+        const total = response?.meta?.total || allReservations.length;
+
+        // Calculate stats with safe property access
+        const confirmedCount = allReservations.filter(
+          (r) => r?.status === 'CONFIRMED',
+        ).length;
+
+        const checkedInCount = allReservations.filter(
+          (r) => r?.status === 'CHECKED_IN',
+        ).length;
+
+        const pendingCount = allReservations.filter(
+          (r) => r?.status === 'PENDING',
+        ).length;
+
+        const totalRevenue = allReservations.reduce(
+          (sum, r) => {
+            const price = Number(r?.totalPrice || r?.finalPrice || 0);
+            return sum + (isNaN(price) ? 0 : price);
+          },
+          0,
+        );
+
+        // Calculate payment statistics from paymentSummary or paymentStatus
+        const totalPaidAmount = allReservations.reduce((sum, r) => {
+          // Try paymentSummary first, then paymentStatus, then fallback to 0
+          const reservation = r as any;
+          const paidAmount = reservation?.paymentSummary?.paidAmount || reservation?.paymentStatus?.paidAmount || 0;
+          const amount = Number(paidAmount);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
+
+        const totalUnpaidAmount = allReservations.reduce((sum, r) => {
+          // Try paymentSummary first, then paymentStatus, then fallback to 0
+          const reservation = r as any;
+          const unpaidAmount = reservation?.paymentSummary?.unpaidAmount || reservation?.paymentStatus?.unpaidAmount || 0;
+          const amount = Number(unpaidAmount);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
+
+        const paidReservations = allReservations.filter((r) => {
+          // Check if reservation has any paid amount
+          const reservation = r as any;
+          const paidAmount = reservation?.paymentSummary?.paidAmount || reservation?.paymentStatus?.paidAmount || 0;
+          return Number(paidAmount) > 0;
+        }).length;
+
+        // Get currency from first reservation's property, fallback to ETB
+        const currency = allReservations[0]?.property?.currency || 'ETB';
 
         setStatsData({
           totalReservations: total,
-          confirmedReservations: allReservations.filter(
-            (r) => r.status === 'CONFIRMED',
-          ).length,
-          checkedInReservations: allReservations.filter(
-            (r) => r.status === 'CHECKED_IN',
-          ).length,
-          pendingReservations: allReservations.filter(
-            (r) => r.status === 'PENDING',
-          ).length,
-          totalRevenue: allReservations.reduce(
-            (sum, r) => sum + Number(r.totalPrice || r.finalPrice || 0),
-            0,
-          ),
+          confirmedReservations: confirmedCount,
+          checkedInReservations: checkedInCount,
+          pendingReservations: pendingCount,
+          totalRevenue: totalRevenue,
+          totalPaidAmount: totalPaidAmount,
+          totalUnpaidAmount: totalUnpaidAmount,
+          paidReservations: paidReservations,
+          currency: currency,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
+        // Set default stats on error
+        setStatsData({
+          totalReservations: 0,
+          confirmedReservations: 0,
+          checkedInReservations: 0,
+          pendingReservations: 0,
+          totalRevenue: 0,
+          totalPaidAmount: 0,
+          totalUnpaidAmount: 0,
+          paidReservations: 0,
+          currency: 'ETB',
+        });
       }
     };
 
     fetchStatsData();
   }, [dispatch]);
-
-  // Optimistic search - show cached results immediately
-  useEffect(() => {
-    if (searchTerm.trim() && searchCache[searchTerm]) {
-      dispatch(
-        updateSearchCache({
-          term: searchTerm,
-          results: searchCache[searchTerm],
-        }),
-      );
-      dispatch(setLastSearchTerm(searchTerm));
-    }
-  }, [searchTerm, searchCache, dispatch]);
 
   // Debounced search
   useEffect(() => {
@@ -122,34 +166,36 @@ export default function ReservationsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with caching
+  // Fetch with filtering - always fetch when filters change
   useEffect(() => {
-    const shouldFetch =
-      !searchCache[debouncedSearch] || debouncedSearch !== lastSearchTerm;
-    if (shouldFetch) {
-      dispatch(
-        fetchReservations({
-          page: 1,
-          limit: 10,
-          filters: {
-            status:
-              statusFilter === 'all'
-                ? undefined
-                : (statusFilter as ReservationStatus),
-            guestName: debouncedSearch || undefined,
-          },
-        }),
-      );
-    }
-  }, [dispatch, debouncedSearch, statusFilter, searchCache, lastSearchTerm]);
+    dispatch(
+      fetchReservations({
+        page: 1,
+        limit: 100, // Increased limit to show more results
+        filters: {
+          status:
+            statusFilter === 'all'
+              ? undefined
+              : (statusFilter as ReservationStatus),
+          guestName: debouncedSearch || undefined,
+        },
+      }),
+    ).catch((err) => {
+      console.error('Failed to fetch reservations:', err);
+      showError('Failed to load reservations');
+    });
+  }, [dispatch, debouncedSearch, statusFilter, showError]);
 
   const handleDeleteReservation = async () => {
     if (!selectedReservation) return;
     try {
+      // TODO: Uncomment when deleteReservation is implemented
       // await dispatch(deleteReservation(selectedReservation.id)).unwrap();
+
       success('Reservation deleted');
       setOpenDelete(false);
       setSelectedReservation(null);
+
       // Refetch with current search term
       dispatch(
         fetchReservations({
@@ -165,8 +211,9 @@ export default function ReservationsPage() {
         }),
       );
     } catch (e) {
+      console.error('Delete reservation error:', e);
       const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      showError(apiErr.message || 'Failed to delete reservation');
     }
   };
 
@@ -180,6 +227,48 @@ export default function ReservationsPage() {
     { key: 'actions', label: 'Actions', width: 'w-[120px]', sortable: false },
   ];
 
+  const handleConfirm = async (reservation: Reservation) => {
+    try {
+      await dispatch(confirmReservation(reservation.id)).unwrap();
+      success('Reservation confirmed successfully!');
+
+      // Refresh the reservations list
+      dispatch(
+        fetchReservations({
+          page: pagination.page,
+          limit: pagination.limit,
+        }),
+      );
+    } catch (error: any) {
+      console.error('Failed to confirm reservation:', error);
+      showError(error || 'Failed to confirm reservation');
+    }
+  };
+
+  const handleCheckIn = async (reservation: Reservation) => {
+    try {
+      const checkInData = {
+        reservationId: reservation.id,
+        actualCheckIn: new Date().toISOString(),
+        notes: 'Checked in via dashboard',
+      };
+
+      await dispatch(checkInGuest(checkInData)).unwrap();
+      success('Guest checked in successfully!');
+
+      // Refresh the reservations list
+      dispatch(
+        fetchReservations({
+          page: pagination.page,
+          limit: pagination.limit,
+        }),
+      );
+    } catch (error: any) {
+      console.error('Failed to check in guest:', error);
+      showError(error || 'Failed to check in guest');
+    }
+  };
+
   const renderReservationRow = (reservation: Reservation) => (
     <ReservationTableRow
       key={reservation.id}
@@ -188,7 +277,13 @@ export default function ReservationsPage() {
         router.push(`/dashboard/reservations/list/${r.id}`);
       }}
       onEdit={(r) => {
-        router.push(`/dashboard/reservations/list/${r.id}/edit`);
+        router.push(`/dashboard/reservations/edit/${r.id}`);
+      }}
+      onConfirm={(r) => {
+        handleConfirm(r);
+      }}
+      onCheckIn={(r) => {
+        handleCheckIn(r);
       }}
       onDelete={(r) => {
         setSelectedReservation(r);
