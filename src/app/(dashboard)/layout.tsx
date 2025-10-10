@@ -9,7 +9,6 @@ import { fetchProperties } from '@/store/slices/propertySlice';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { Header } from '@/components/layout/Header';
-import { Skeleton } from '@/components/ui/skeleton';
 import Cookies from 'js-cookie';
 
 export default function DashboardLayout({
@@ -78,35 +77,6 @@ export default function DashboardLayout({
     }
   }, [isAuthenticated, user, dispatch]);
 
-  // Show loading state
-  if (loading || !hasInitialized || isRedirecting) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex">
-          {/* Sidebar Skeleton */}
-          <div className="w-64 bg-white border-r border-gray-200 p-4">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-32" />
-              <div className="space-y-2">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content Skeleton */}
-          <div className="flex-1 p-6">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-64 w-full" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Show error state or redirect to login if not authenticated
   if (error) {
     return (
@@ -155,6 +125,7 @@ export default function DashboardLayout({
             sidebarOpen={sidebarOpen}
             onToggle={() => setSidebarOpen(!sidebarOpen)}
             onMobileMenuToggle={() => setMobileSidebarOpen(true)}
+            loading={loading || !hasInitialized}
           />
           <main className="flex-1">{children}</main>
         </div>
