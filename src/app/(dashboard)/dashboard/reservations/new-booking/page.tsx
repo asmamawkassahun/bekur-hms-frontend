@@ -42,6 +42,7 @@ import { GuestSelectionDialog } from '@/components/features/reservations/GuestSe
 import { useNotification } from '@/hooks/useNotification';
 import type { RootState, AppDispatch } from '@/store';
 import type { Guest } from '@/types';
+import Link from 'next/link';
 
 export default function NewBookingPage() {
     const dispatch = useDispatch<AppDispatch>();
@@ -431,10 +432,10 @@ export default function NewBookingPage() {
                         <h1 className="text-2xl font-bold text-gray-900">New Reservation</h1>
                         <p className="text-gray-600">Create a new hotel reservation</p>
                     </div>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Link href="/dashboard/reservations/list" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
                         <Plus className="mr-2 h-4 w-4" />
-                        Booking List
-                    </Button>
+                        Book List
+                    </Link>
                 </div>
 
                 <div className="flex flex-col gap-6 w-full">

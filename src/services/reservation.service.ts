@@ -30,19 +30,19 @@ export const reservationService = {
    * Get reservation by ID
    */
   getById: (id: string) =>
-    apiClient.get<ApiResponse<Reservation>>(`/reservations/${id}`),
+    apiClient.get<ApiResponse<Reservation>>(`/bookings/${id}`),
 
   /**
    * Update reservation
    */
   update: (id: string, data: UpdateReservationData) =>
-    apiClient.patch<ApiResponse<Reservation>>(`/reservations/${id}`, data),
+    apiClient.patch<ApiResponse<Reservation>>(`/bookings/${id}`, data),
 
   /**
    * Delete reservation
    */
   delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(`/reservations/${id}`),
+    apiClient.delete<ApiResponse<null>>(`/bookings/${id}`),
 
   /**
    * Check-in guest

@@ -185,10 +185,10 @@ export default function ReservationsPage() {
       key={reservation.id}
       reservation={reservation}
       onView={(r) => {
-        router.push(`/dashboard/reservations/${r.id}`);
+        router.push(`/dashboard/reservations/list/${r.id}`);
       }}
       onEdit={(r) => {
-        router.push(`/dashboard/reservations/${r.id}/edit`);
+        router.push(`/dashboard/reservations/list/${r.id}/edit`);
       }}
       onDelete={(r) => {
         setSelectedReservation(r);
