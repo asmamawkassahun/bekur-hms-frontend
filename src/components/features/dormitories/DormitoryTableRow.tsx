@@ -73,7 +73,7 @@ export function DormitoryTableRow({
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(dormitory.basePrice, dormitory.currency)}
+            {formatCurrency(dormitory.basePrice)}
           </div>
           <div className="text-sm text-muted-foreground">per bed per night</div>
         </div>

@@ -605,7 +605,7 @@ export function DormitoryEditForm({
                                     disabled={isCreatingBeds || loading}
                                 />
                             </div>
-                            {/* <div>
+                            <div>
                                 <label className="text-xs font-medium">Prefix</label>
                                 <Input
                                     value={batchPrefix}
@@ -624,7 +624,7 @@ export function DormitoryEditForm({
                                     className="h-8"
                                     disabled={isCreatingBeds || loading}
                                 />
-                            </div> */}
+                            </div>
                             <div>
                                 <label className="text-xs font-medium">Price</label>
                                 <Input
@@ -890,7 +890,7 @@ export function DormitoryEditForm({
                                                 disabled={isCreatingBeds || loading}
                                             />
                                         </div> */}
-                    </div>
+                    {/* </div> */}
 
                     {/* Right Column */}
                     {/* <div className="space-y-3">
@@ -956,7 +956,7 @@ export function DormitoryEditForm({
                 </div>
 
 
-                {/* </div> */}
+                </div>
             </TabsContent>
         </Tabs>
     );

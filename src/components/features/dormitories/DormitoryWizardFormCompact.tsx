@@ -493,6 +493,29 @@ export function DormitoryWizardFormCompact({
             />
           </div>
 
+
+
+          <div>
+                                <label className="text-xs font-medium">Prefix</label>
+                                <Input
+                                    value={batchPrefix}
+                                    onChange={(e) => setBatchPrefix(e.target.value)}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium">Start #</label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    value={batchStart}
+                                    onChange={(e) => setBatchStart(Number(e.target.value))}
+                                    className="h-8"
+                                    disabled={isCreatingBeds || loading}
+                                />
+                            </div>
+
           
           <div>
             <label className="text-xs font-medium">Price</label>
