@@ -48,7 +48,7 @@ export function DormitoryTableRow({
   };
 
   return (
-    <TableRow className="hover:bg-muted/50">
+    <TableRow className="hover:bg-muted/50" onClick={() => onView(dormitory)}>
       <TableCell>
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
