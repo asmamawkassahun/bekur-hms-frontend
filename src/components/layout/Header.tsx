@@ -31,14 +31,16 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { HeaderSkeleton } from '@/components/skeletons';
 
 interface HeaderProps {
   sidebarOpen: boolean;
   onToggle: () => void;
   onMobileMenuToggle: () => void;
+  loading?: boolean;
 }
 
-export function Header({ onToggle, onMobileMenuToggle }: HeaderProps) {
+export function Header({ sidebarOpen, onToggle, onMobileMenuToggle, loading = false }: HeaderProps) {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -51,6 +53,11 @@ export function Header({ onToggle, onMobileMenuToggle }: HeaderProps) {
       console.error('Logout failed:', error);
     }
   };
+
+  // Show skeleton during loading
+  if (loading) {
+    return <HeaderSkeleton sidebarOpen={sidebarOpen} onToggle={onToggle} onMobileMenuToggle={onMobileMenuToggle} />;
+  }
 
   return (
     <header className="h-16 bg-background border-b border-border px-6 flex items-center justify-between">

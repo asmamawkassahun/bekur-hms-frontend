@@ -196,7 +196,7 @@ export function PropertyForm({
                   <SelectContent>
                     {PROPERTY_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type.replace('_', ' ')}
+                        {type?.replace('_', ' ') || 'Unknown'}
                       </SelectItem>
                     ))}
                   </SelectContent>

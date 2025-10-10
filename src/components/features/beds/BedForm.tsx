@@ -187,7 +187,7 @@ export function BedForm({
                   <SelectContent>
                     {BED_STATUSES.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {status.replace('_', ' ')}
+                        {status?.replace('_', ' ') || 'Unknown'}
                       </SelectItem>
                     ))}
                   </SelectContent>

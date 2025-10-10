@@ -7,6 +7,13 @@ export function middleware(request: NextRequest) {
   // Get token from cookies
   const token = request.cookies.get('auth-token')?.value;
 
+  // Debug logging for token refresh
+  if (token) {
+    console.log('🔍 Middleware: Found auth token in cookie');
+  } else {
+    console.log('🔍 Middleware: No auth token found in cookie');
+  }
+
   // Define public routes that don't require authentication
   const publicRoutes = [
     '/login',
@@ -36,7 +43,7 @@ export function middleware(request: NextRequest) {
   }
 
   // For protected routes with token, let the client-side handle token validation
-  // This prevents middleware from making assumptions about token validity
+  // The client-side will handle token refresh automatically
   if (token && isProtectedRoute) {
     return NextResponse.next();
   }
