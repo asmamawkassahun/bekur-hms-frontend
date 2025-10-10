@@ -30,7 +30,9 @@ export function SyncLogTableRow({ log }: SyncLogTableRowProps) {
     <TableRow className="hover:bg-muted/50">
       <TableCell>
         <div className="flex flex-col">
-          <span className="text-sm font-medium">{formatTime(log.createdAt)}</span>
+          <span className="text-sm font-medium">
+            {formatTime(log.createdAt)}
+          </span>
           <span className="text-xs text-muted-foreground">
             {formatDate(log.createdAt)}
           </span>
@@ -38,7 +40,9 @@ export function SyncLogTableRow({ log }: SyncLogTableRowProps) {
       </TableCell>
 
       <TableCell>
-        <span className="text-sm">{log.property?.name || 'Unknown Property'}</span>
+        <span className="text-sm">
+          {log.property?.name || 'Unknown Property'}
+        </span>
       </TableCell>
 
       <TableCell>
@@ -127,7 +131,9 @@ export function SyncLogTableRow({ log }: SyncLogTableRowProps) {
                 </div>
                 <div>
                   <p className="text-sm font-medium">Retry Count</p>
-                  <p className="text-sm text-muted-foreground">{log.retryCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {log.retryCount}
+                  </p>
                 </div>
               </div>
 
@@ -149,14 +155,15 @@ export function SyncLogTableRow({ log }: SyncLogTableRowProps) {
                 </div>
               )}
 
-              {log.aiosellPayload && Object.keys(log.aiosellPayload).length > 0 && (
-                <div>
-                  <p className="text-sm font-medium mb-2">Aiosell Payload</p>
-                  <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto">
-                    {JSON.stringify(log.aiosellPayload, null, 2)}
-                  </pre>
-                </div>
-              )}
+              {log.aiosellPayload &&
+                Object.keys(log.aiosellPayload).length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Aiosell Payload</p>
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto">
+                      {JSON.stringify(log.aiosellPayload, null, 2)}
+                    </pre>
+                  </div>
+                )}
             </div>
           </DialogContent>
         </Dialog>
@@ -164,4 +171,3 @@ export function SyncLogTableRow({ log }: SyncLogTableRowProps) {
     </TableRow>
   );
 }
-

@@ -76,7 +76,11 @@ export default function AiosellLogsPage() {
         title="Sync Logs"
         description="Monitor all Aiosell synchronization operations"
       >
-        <Button onClick={handleRefresh} variant="outline" className="cursor-pointer">
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          className="cursor-pointer"
+        >
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>

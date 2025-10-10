@@ -6,7 +6,9 @@ interface AiosellStatsCardsProps {
   connectedProperties: number;
 }
 
-export function AiosellStatsCards({ connectedProperties }: AiosellStatsCardsProps) {
+export function AiosellStatsCards({
+  connectedProperties,
+}: AiosellStatsCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <StatsCard
@@ -31,4 +33,3 @@ export function AiosellStatsCards({ connectedProperties }: AiosellStatsCardsProp
     </div>
   );
 }
-
