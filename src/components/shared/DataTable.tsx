@@ -15,7 +15,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronUp, ChevronDown, FileDown, FileSpreadsheet, FileText, Printer } from 'lucide-react';
+import {
+  ChevronUp,
+  ChevronDown,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+  Printer,
+} from 'lucide-react';
 
 interface Column<T> {
   key: keyof T | string;
@@ -71,21 +78,23 @@ export function DataTable<T extends Record<string, any>>({
   const getVisibleText = (el: Element): string => {
     // innerText respects CSS visibility (excludes display:none), closer to what user sees
     const text = (el as HTMLElement).innerText ?? '';
-    return text.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+    return text
+      .replace(/\u00A0/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   const collectTableData = () => {
     const tableElement = tableContainerRef.current?.querySelector('table');
-    if (!tableElement) return { headers: [] as string[], rows: [] as string[][] };
+    if (!tableElement)
+      return { headers: [] as string[], rows: [] as string[][] };
 
-    const headerCells = Array.from(
-      tableElement.querySelectorAll('thead th')
-    );
+    const headerCells = Array.from(tableElement.querySelectorAll('thead th'));
     const headers = headerCells.map((th) => getVisibleText(th));
 
     const bodyRows = Array.from(tableElement.querySelectorAll('tbody tr'));
     const rows = bodyRows.map((tr) =>
-      Array.from(tr.querySelectorAll('td')).map((td) => getVisibleText(td))
+      Array.from(tr.querySelectorAll('td')).map((td) => getVisibleText(td)),
     );
 
     // Exclude action columns from export (by header label)
@@ -96,8 +105,12 @@ export function DataTable<T extends Record<string, any>>({
 
     if (excludedIndexes.length === 0) return { headers, rows };
 
-    const filteredHeaders = headers.filter((_, idx) => !excludedIndexes.includes(idx));
-    const filteredRows = rows.map((r) => r.filter((_, idx) => !excludedIndexes.includes(idx)));
+    const filteredHeaders = headers.filter(
+      (_, idx) => !excludedIndexes.includes(idx),
+    );
+    const filteredRows = rows.map((r) =>
+      r.filter((_, idx) => !excludedIndexes.includes(idx)),
+    );
 
     return { headers: filteredHeaders, rows: filteredRows };
   };
@@ -108,7 +121,7 @@ export function DataTable<T extends Record<string, any>>({
       .join('')}</tr></thead>`;
     const tbody = `<tbody>${rows
       .map(
-        (r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`
+        (r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`,
       )
       .join('')}</tbody>`;
     return `<table>${thead}${tbody}</table>`;
@@ -259,7 +272,7 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <Card className={`bg-card border-0 shadow-sm ${className}`}>
-      <CardHeader className='flex flex-row items-center justify-between'>
+      <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>{title}</CardTitle>
@@ -270,19 +283,39 @@ export function DataTable<T extends Record<string, any>>({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCSV} aria-label="Export CSV">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            aria-label="Export CSV"
+          >
             <FileDown className="h-4 w-4" />
             <span className="ml-2 hidden sm:inline">CSV</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportExcel} aria-label="Export Excel">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            aria-label="Export Excel"
+          >
             <FileSpreadsheet className="h-4 w-4" />
             <span className="ml-2 hidden sm:inline">Excel</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPDF} aria-label="Export PDF">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            aria-label="Export PDF"
+          >
             <FileText className="h-4 w-4" />
             <span className="ml-2 hidden sm:inline">PDF</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePrint} aria-label="Print">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrint}
+            aria-label="Print"
+          >
             <Printer className="h-4 w-4" />
             <span className="ml-2 hidden sm:inline">Print</span>
           </Button>
@@ -298,8 +331,11 @@ export function DataTable<T extends Record<string, any>>({
         )}
 
         {/* Table */}
-        <div className="rounded-md border overflow-x-auto" ref={tableContainerRef}>
-          <Table className="w-full min-w-[1200px]">
+        <div
+          className="rounded-md border overflow-x-auto"
+          ref={tableContainerRef}
+        >
+          <Table className="w-full">
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
@@ -316,18 +352,20 @@ export function DataTable<T extends Record<string, any>>({
                       {column.sortable && (
                         <div className="flex flex-col">
                           <ChevronUp
-                            className={`h-3 w-3 ${sortColumn === column.key &&
-                                sortDirection === 'asc'
+                            className={`h-3 w-3 ${
+                              sortColumn === column.key &&
+                              sortDirection === 'asc'
                                 ? 'text-primary'
                                 : 'text-muted-foreground'
-                              }`}
+                            }`}
                           />
                           <ChevronDown
-                            className={`h-3 w-3 -mt-1 ${sortColumn === column.key &&
-                                sortDirection === 'desc'
+                            className={`h-3 w-3 -mt-1 ${
+                              sortColumn === column.key &&
+                              sortDirection === 'desc'
                                 ? 'text-primary'
                                 : 'text-muted-foreground'
-                              }`}
+                            }`}
                           />
                         </div>
                       )}
