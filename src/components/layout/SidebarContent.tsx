@@ -254,7 +254,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
             <div className="h-4 w-4 bg-sidebar-primary-foreground rounded-full"></div>
           </div>
           <div>
-            <h1 className="text-lg font-semibold">Bekur HMS</h1>
+            <h1 className="text-lg font-semibold">Automata HMS</h1>
           </div>
         </div>
       </div>
