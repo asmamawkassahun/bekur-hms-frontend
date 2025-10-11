@@ -1,11 +1,14 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText } from 'lucide-react';
 import type { NightAudit } from '@/types/night-audit.types';
 
 interface NightAuditDetailDialogProps {
@@ -14,16 +17,38 @@ interface NightAuditDetailDialogProps {
   audit: NightAudit | null;
 }
 
-export function NightAuditDetailDialog({ open, onOpenChange, audit }: NightAuditDetailDialogProps) {
+export function NightAuditDetailDialog({
+  open,
+  onOpenChange,
+  audit,
+}: NightAuditDetailDialogProps) {
+  const router = useRouter();
+
   if (!audit) return null;
+
+  const handleOpenFullReport = () => {
+    onOpenChange(false);
+    router.push(`/dashboard/reports/night-audit/${audit.id}`);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
-          <DialogTitle>
-            Night Audit — {new Date(audit.businessDate).toLocaleDateString()} ({audit.status})
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>
+              Night Audit — {new Date(audit.businessDate).toLocaleDateString()}{' '}
+              ({audit.status})
+            </DialogTitle>
+            <Button
+              onClick={handleOpenFullReport}
+              size="sm"
+              className="cursor-pointer"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Open Full Report
+            </Button>
+          </div>
         </DialogHeader>
         <Tabs defaultValue="financial">
           <TabsList>
@@ -36,18 +61,31 @@ export function NightAuditDetailDialog({ open, onOpenChange, audit }: NightAudit
           </TabsList>
           <TabsContent value="financial">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>Total Revenue: {Number(audit.totalRevenue).toLocaleString()}</div>
-              <div>Total Payments: {Number(audit.totalPayments).toLocaleString()}</div>
+              <div>
+                Total Revenue: {Number(audit.totalRevenue).toLocaleString()}
+              </div>
+              <div>
+                Total Payments: {Number(audit.totalPayments).toLocaleString()}
+              </div>
               <div>Refunds: {Number(audit.totalRefunds).toLocaleString()}</div>
-              <div>Commission: {Number(audit.totalCommission).toLocaleString()}</div>
+              <div>
+                Commission: {Number(audit.totalCommission).toLocaleString()}
+              </div>
               <div>Net: {Number(audit.netRevenue).toLocaleString()}</div>
-              <div>Net After Commission: {Number(audit.netAfterCommission).toLocaleString()}</div>
+              <div>
+                Net After Commission:{' '}
+                {Number(audit.netAfterCommission).toLocaleString()}
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="occupancy">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>Rooms: {audit.occupiedRooms}/{audit.totalRooms}</div>
-              <div>Beds: {audit.occupiedBeds}/{audit.totalBeds}</div>
+              <div>
+                Rooms: {audit.occupiedRooms}/{audit.totalRooms}
+              </div>
+              <div>
+                Beds: {audit.occupiedBeds}/{audit.totalBeds}
+              </div>
               <div>Room Occ: {Number(audit.roomOccupancyRate).toFixed(1)}%</div>
               <div>Bed Occ: {Number(audit.bedOccupancyRate).toFixed(1)}%</div>
             </div>
@@ -73,9 +111,13 @@ export function NightAuditDetailDialog({ open, onOpenChange, audit }: NightAudit
               {audit.guestLedger.map((entry) => (
                 <div key={entry.bookingId} className="rounded border p-3">
                   <div className="font-medium">{entry.primaryGuest.name}</div>
-                  <div className="text-sm text-muted-foreground">{entry.accommodation}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {entry.accommodation}
+                  </div>
                   <div className="text-sm">
-                    Charges: {Number(entry.charges.totalAmount).toLocaleString()} — Balance: {Number(entry.balance).toLocaleString()}
+                    Charges:{' '}
+                    {Number(entry.charges.totalAmount).toLocaleString()} —
+                    Balance: {Number(entry.balance).toLocaleString()}
                   </div>
                 </div>
               ))}
@@ -93,5 +135,3 @@ export function NightAuditDetailDialog({ open, onOpenChange, audit }: NightAudit
     </Dialog>
   );
 }
-
-

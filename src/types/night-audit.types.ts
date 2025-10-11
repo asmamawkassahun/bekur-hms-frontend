@@ -68,6 +68,66 @@ export interface GuestLedgerEntry {
   balance: number;
 }
 
+// Enhanced analytics types
+export interface HourlyRevenueData {
+  hour: number;
+  revenue: number;
+  roomRevenue: number;
+  bedRevenue: number;
+  bookings: number;
+}
+
+export interface HourlyOccupancyData {
+  hour: number;
+  roomOccupancy: number;
+  bedOccupancy: number;
+  roomOccupancyRate: number;
+  bedOccupancyRate: number;
+}
+
+export interface NationalityDemographic {
+  country: string;
+  count: number;
+  revenue: number;
+}
+
+export interface AgeGroupDemographic {
+  ageGroup: string;
+  count: number;
+}
+
+export interface BookingChannelDemographic {
+  channel: string;
+  count: number;
+  revenue: number;
+}
+
+export interface LoyaltyStatusDemographic {
+  status: string;
+  count: number;
+}
+
+export interface GuestDemographics {
+  byNationality: NationalityDemographic[];
+  byAgeGroup: AgeGroupDemographic[];
+  byBookingChannel: BookingChannelDemographic[];
+  byLoyaltyStatus: LoyaltyStatusDemographic[];
+}
+
+export interface PreviousDayComparison {
+  businessDate: string;
+  totalRevenue: number;
+  netRevenue: number;
+  netAfterCommission: number;
+  roomOccupancyRate: number;
+  bedOccupancyRate: number;
+  totalBookings: number;
+  checkIns: number;
+  checkOuts: number;
+  totalGuests: number;
+  newGuests: number;
+}
+
 export interface NightAudit {
   id: string;
   propertyId: string;
@@ -119,6 +179,12 @@ export interface NightAudit {
   bookingBreakdown: BookingBreakdown;
   discrepancies: string[];
 
+  // Enhanced Analytics
+  hourlyRevenue?: HourlyRevenueData[];
+  hourlyOccupancy?: HourlyOccupancyData[];
+  guestDemographics?: GuestDemographics;
+  previousDayComparison?: PreviousDayComparison | null;
+
   // Audit Trail
   performedBy?: string;
   performedByStaff?: Record<string, unknown>;
@@ -164,5 +230,3 @@ export type NightAuditListResponse = ApiResponse<NightAudit[]> & {
 };
 
 export type NightAuditResponse = ApiResponse<NightAudit>;
-
-
