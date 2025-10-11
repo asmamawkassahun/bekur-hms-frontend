@@ -41,10 +41,10 @@ import {
 import { fetchBookingSources } from '@/store/slices/bookingSourceSlice';
 import { createPayment } from '@/store/slices/paymentSlice';
 import { fetchRoomTypes } from '@/store/slices/roomTypeSlice';
-import { fetchRooms } from '@/store/slices/roomSlice';
+import { fetchRooms, fetchAvailableRooms } from '@/store/slices/roomSlice';
 import { fetchGuests } from '@/store/slices/guestSlice';
 import { fetchProperties } from '@/store/slices/propertySlice';
-import { fetchBeds } from '@/store/slices/bedSlice';
+import { fetchBeds, fetchAvailableBeds } from '@/store/slices/bedSlice';
 import { fetchDormitories } from '@/store/slices/dormitorySlice';
 import { GuestSelectionDialog } from '@/components/features/reservations/GuestSelectionDialog';
 import { CreateGuestDialog } from '@/components/features/reservations/CreateGuestDialog';
@@ -87,9 +87,12 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
     (state: RootState) => state.roomType,
   );
 
-  const { rooms, loading: roomsLoading } = useSelector(
-    (state: RootState) => state.room,
-  );
+  const {
+    rooms,
+    loading: roomsLoading,
+    availableRooms,
+    availableRoomsLoading,
+  } = useSelector((state: RootState) => state.room);
 
   const { guests, loading: guestsLoading } = useSelector(
     (state: RootState) => state.guest,
@@ -97,9 +100,12 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
 
   const { properties } = useSelector((state: RootState) => state.property);
 
-  const { beds, loading: bedsLoading } = useSelector(
-    (state: RootState) => state.bed,
-  );
+  const {
+    beds,
+    loading: bedsLoading,
+    availableBeds,
+    availableBedsLoading,
+  } = useSelector((state: RootState) => state.bed);
 
   const { dormitories, loading: dormitoriesLoading } = useSelector(
     (state: RootState) => state.dormitory,
@@ -167,6 +173,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   const [guestSearchLoading, setGuestSearchLoading] = useState(false);
   const [lastGuestSearch, setLastGuestSearch] = useState('');
   const [accommodationType, setAccommodationType] = useState('ROOM');
+  const [selectedDormitoryId, setSelectedDormitoryId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [externalTransactionId, setExternalTransactionId] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -190,7 +197,6 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
 
     dispatch(fetchProperties({ page: 1, limit: 100 }));
     dispatch(fetchRoomTypes({ page: 1, limit: 100 }));
-    dispatch(fetchBeds({ page: 1, limit: 100 }));
     dispatch(fetchDormitories({ page: 1, limit: 100 }));
   }, [dispatch]);
 
@@ -223,31 +229,101 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
     }
   }, [bookingType, dispatch]);
 
-  // Fetch rooms when room type changes
+  // Fetch available rooms when dates, property, accommodation type, or room type changes
   useEffect(() => {
-    if (roomType) {
-      setRoomNo('');
-      dispatch(fetchRooms({ page: 1, limit: 100, status: 'AVAILABLE' }));
+    if (
+      selectedPropertyId &&
+      checkIn &&
+      checkOut &&
+      accommodationType === 'ROOM' &&
+      roomType
+    ) {
+      setRoomNo(''); // Reset selected room when filters change
+
+      // Format dates to ISO string
+      const formatToISO = (dateTimeLocal: string): string => {
+        if (!dateTimeLocal) return '';
+        const date = new Date(dateTimeLocal);
+        return date.toISOString();
+      };
+
+      dispatch(
+        fetchAvailableRooms({
+          propertyId: selectedPropertyId,
+          checkIn: formatToISO(checkIn),
+          checkOut: formatToISO(checkOut),
+          roomTypeId: roomType,
+        }),
+      );
     }
-  }, [roomType, dispatch]);
+  }, [
+    selectedPropertyId,
+    checkIn,
+    checkOut,
+    accommodationType,
+    roomType,
+    dispatch,
+  ]);
+
+  // Fetch available beds when dates, property, accommodation type, or dormitory changes
+  useEffect(() => {
+    if (
+      selectedPropertyId &&
+      checkIn &&
+      checkOut &&
+      accommodationType === 'BED' &&
+      selectedDormitoryId
+    ) {
+      setRoomNo(''); // Reset selected bed when filters change
+
+      // Format dates to ISO string
+      const formatToISO = (dateTimeLocal: string): string => {
+        if (!dateTimeLocal) return '';
+        const date = new Date(dateTimeLocal);
+        return date.toISOString();
+      };
+
+      dispatch(
+        fetchAvailableBeds({
+          propertyId: selectedPropertyId,
+          checkIn: formatToISO(checkIn),
+          checkOut: formatToISO(checkOut),
+          dormitoryId: selectedDormitoryId,
+        }),
+      );
+    }
+  }, [
+    selectedPropertyId,
+    checkIn,
+    checkOut,
+    accommodationType,
+    selectedDormitoryId,
+    dispatch,
+  ]);
 
   // Update capacity when room is selected
   useEffect(() => {
     if (roomNo) {
-      const selectedRoom = rooms.find((room) => room.id === roomNo);
+      const selectedRoom = availableRooms.find((room) => room.id === roomNo);
       if (selectedRoom && selectedRoom.roomType) {
         setAdults(Math.min(adults, selectedRoom.roomType.adultCapacity));
         setChildren(Math.min(children, selectedRoom.roomType.childCapacity));
       }
     }
-  }, [roomNo, rooms]);
+  }, [roomNo, availableRooms]);
 
   const handleSelecteAccommodation = () => {
     if (accommodationType === 'ROOM') {
       setAccommodationType('BED');
+      setRoomType('');
+      setSelectedDormitoryId('');
     } else {
       setAccommodationType('ROOM');
+      setRoomType('');
+      setSelectedDormitoryId('');
     }
+    setRoomNo('');
+    setPricingData(null);
   };
 
   // Calculate price when room/bed is selected
@@ -368,7 +444,10 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
 
   const handleSave = async () => {
     // Validation
-    if (!roomType || !roomNo || !bookingType) {
+    const hasRoomTypeOrDormitory =
+      accommodationType === 'ROOM' ? roomType : selectedDormitoryId;
+
+    if (!hasRoomTypeOrDormitory || !roomNo || !bookingType) {
       showError('Please fill in all required fields');
       return;
     }
@@ -762,6 +841,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                     onValueChange={(value) => {
                       setAccommodationType(value);
                       setRoomType('');
+                      setSelectedDormitoryId('');
                       setRoomNo('');
                       setPricingData(null);
                     }}
@@ -787,9 +867,17 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                         : 'Dormitory*'}
                     </Label>
                     <Select
-                      value={roomType}
+                      value={
+                        accommodationType === 'ROOM'
+                          ? roomType
+                          : selectedDormitoryId
+                      }
                       onValueChange={(value) => {
-                        setRoomType(value);
+                        if (accommodationType === 'ROOM') {
+                          setRoomType(value);
+                        } else {
+                          setSelectedDormitoryId(value);
+                        }
                         setRoomNo('');
                         setPricingData(null);
                       }}
@@ -832,7 +920,11 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                     <Select
                       value={roomNo}
                       onValueChange={setRoomNo}
-                      disabled={!roomType}
+                      disabled={
+                        accommodationType === 'ROOM'
+                          ? !roomType
+                          : !selectedDormitoryId
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue
@@ -840,56 +932,44 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {!roomType ? (
-                          <SelectItem value="no-type" disabled>
-                            Please select{' '}
-                            {accommodationType === 'ROOM'
-                              ? 'room type'
-                              : 'dormitory'}{' '}
-                            first
-                          </SelectItem>
-                        ) : accommodationType === 'ROOM' ? (
-                          rooms.filter(
-                            (r) =>
-                              r.roomTypeId === roomType &&
-                              r.status === 'AVAILABLE',
-                          ).length === 0 ? (
+                        {accommodationType === 'ROOM' ? (
+                          !roomType ? (
+                            <SelectItem value="no-type" disabled>
+                              Please select room type first
+                            </SelectItem>
+                          ) : availableRoomsLoading ? (
+                            <SelectItem value="loading" disabled>
+                              Loading available rooms...
+                            </SelectItem>
+                          ) : availableRooms.length === 0 ? (
                             <SelectItem value="empty" disabled>
-                              No available rooms
+                              No available rooms for selected dates
                             </SelectItem>
                           ) : (
-                            rooms
-                              .filter(
-                                (r) =>
-                                  r.roomTypeId === roomType &&
-                                  r.status === 'AVAILABLE',
-                              )
-                              .map((room) => (
-                                <SelectItem key={room.id} value={room.id}>
-                                  {room.number}
-                                </SelectItem>
-                              ))
-                          )
-                        ) : beds.filter(
-                            (b) =>
-                              b.dormitoryId === roomType &&
-                              b.status === 'AVAILABLE',
-                          ).length === 0 ? (
-                          <SelectItem value="empty" disabled>
-                            No available beds
-                          </SelectItem>
-                        ) : (
-                          beds
-                            .filter(
-                              (b) =>
-                                b.dormitoryId === roomType &&
-                                b.status === 'AVAILABLE',
-                            )
-                            .map((bed) => (
-                              <SelectItem key={bed.id} value={bed.id}>
-                                {bed.number}
+                            availableRooms.map((room) => (
+                              <SelectItem key={room.id} value={room.id}>
+                                {room.number}
                               </SelectItem>
                             ))
+                          )
+                        ) : !selectedDormitoryId ? (
+                          <SelectItem value="no-dorm" disabled>
+                            Please select dormitory first
+                          </SelectItem>
+                        ) : availableBedsLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading available beds...
+                          </SelectItem>
+                        ) : availableBeds.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No available beds for selected dates
+                          </SelectItem>
+                        ) : (
+                          availableBeds.map((bed) => (
+                            <SelectItem key={bed.id} value={bed.id}>
+                              {bed.number}
+                            </SelectItem>
+                          ))
                         )}
                       </SelectContent>
                     </Select>

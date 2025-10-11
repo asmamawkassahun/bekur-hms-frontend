@@ -23,6 +23,10 @@ interface RoomState {
   searchCache: Record<string, Room[]>;
   lastSearchTerm: string;
   isSearching: boolean;
+  // Period-based availability
+  availableRooms: Room[];
+  availableRoomsLoading: boolean;
+  availableRoomsError: string | null;
 }
 
 const initialState: RoomState = {
@@ -40,6 +44,10 @@ const initialState: RoomState = {
   searchCache: {},
   lastSearchTerm: '',
   isSearching: false,
+  // Period-based availability
+  availableRooms: [],
+  availableRoomsLoading: false,
+  availableRoomsError: null,
 };
 
 // Async thunks
@@ -57,7 +65,7 @@ export const fetchRooms = createAsyncThunk(
   ) => {
     try {
       const response = await roomService.getAll(params);
-      console.log("response from fetching rooms: ", response);
+      console.log('response from fetching rooms: ', response);
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -138,6 +146,31 @@ export const bulkCreateRooms = createAsyncThunk(
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to bulk create rooms';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+// Fetch available rooms for a specific period
+export const fetchAvailableRooms = createAsyncThunk(
+  'room/fetchAvailableRooms',
+  async (
+    params: {
+      propertyId: string;
+      checkIn: string;
+      checkOut: string;
+      roomTypeId?: string;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await roomService.getAvailable(params);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch available rooms';
       return rejectWithValue(errorMessage);
     }
   },
@@ -376,6 +409,21 @@ const roomSlice = createSlice({
       .addCase(searchRooms.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      // Fetch Available Rooms (period-based)
+      .addCase(fetchAvailableRooms.pending, (state) => {
+        state.availableRoomsLoading = true;
+        state.availableRoomsError = null;
+      })
+      .addCase(fetchAvailableRooms.fulfilled, (state, action) => {
+        state.availableRoomsLoading = false;
+        // Extract data from response (can be direct array or nested in data property)
+        const payloadData = action.payload?.data || action.payload;
+        state.availableRooms = Array.isArray(payloadData) ? payloadData : [];
+      })
+      .addCase(fetchAvailableRooms.rejected, (state, action) => {
+        state.availableRoomsLoading = false;
+        state.availableRoomsError = action.payload as string;
       });
   },
 });
