@@ -1,7 +1,15 @@
 'use client';
 
 import React from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addDays, subDays } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  addDays,
+  subDays,
+} from 'date-fns';
 import { DailyDormitoryOccupancy } from '@/types/dormitory.types';
 import { DormitoryOccupancyCalendarCell } from './DormitoryOccupancyCalendarCell';
 
@@ -20,16 +28,16 @@ export function DormitoryOccupancyCalendarGrid({
 }: DormitoryOccupancyCalendarGridProps) {
   const monthStart = startOfMonth(new Date(year, month - 1));
   const monthEnd = endOfMonth(new Date(year, month - 1));
-  
+
   // Get the first day of the week for the month (0 = Sunday)
   const startDayOfWeek = getDay(monthStart);
-  
+
   // Calculate the start date for the calendar grid (including previous month's trailing days)
   const calendarStart = subDays(monthStart, startDayOfWeek);
-  
+
   // Calculate the end date for the calendar grid (including next month's leading days)
   const calendarEnd = addDays(monthEnd, 6 - getDay(monthEnd));
-  
+
   // Generate all days for the calendar grid
   const calendarDays = eachDayOfInterval({
     start: calendarStart,
@@ -37,20 +45,18 @@ export function DormitoryOccupancyCalendarGrid({
   });
 
   // Create a map of date strings to occupancy data for quick lookup
-  const occupancyMap = new Map(
-    data.map(item => [item.date, item])
-  );
+  const occupancyMap = new Map(data.map((item) => [item.date, item]));
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-white border rounded-lg overflow-hidden">
+    <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
       {/* Calendar Header */}
-      <div className="grid grid-cols-7 bg-gray-50 border-b">
+      <div className="grid grid-cols-7 bg-muted/50 border-b">
         {weekDays.map((day) => (
           <div
             key={day}
-            className="p-3 text-center text-sm font-medium text-gray-700 border-r last:border-r-0"
+            className="p-3 text-center text-sm font-medium text-foreground border-r last:border-r-0"
           >
             {day}
           </div>
@@ -63,7 +69,8 @@ export function DormitoryOccupancyCalendarGrid({
           const dateString = format(date, 'yyyy-MM-dd');
           const occupancyData = occupancyMap.get(dateString) || null;
           const isCurrentMonth = date.getMonth() === month - 1;
-          const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+          const isToday =
+            format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
           return (
             <DormitoryOccupancyCalendarCell

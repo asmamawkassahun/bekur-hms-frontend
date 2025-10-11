@@ -8,8 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -19,6 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Home, Bed, Calendar, BarChart3 } from 'lucide-react';
 
 interface DormitoryOccupancyDetailsDialogProps {
   isOpen: boolean;
@@ -33,92 +35,112 @@ export function DormitoryOccupancyDetailsDialog({
   data,
   date,
 }: DormitoryOccupancyDetailsDialogProps) {
+  const getOccupancyBadgeColor = (occupancyRate: number) => {
+    if (occupancyRate >= 80) return 'destructive';
+    if (occupancyRate >= 60) return 'default';
+    return 'secondary';
+  };
+
+  const getOccupancyLabel = (occupancyRate: number) => {
+    if (occupancyRate >= 80) return 'High';
+    if (occupancyRate >= 60) return 'Medium';
+    return 'Low';
+  };
+
   if (!data) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {format(date, 'EEEE, MMMM d, yyyy')}
-            </DialogTitle>
+            <DialogTitle>{format(date, 'EEEE, MMMM d, yyyy')}</DialogTitle>
+            <DialogDescription>Dormitory occupancy details</DialogDescription>
           </DialogHeader>
           <div className="text-center py-8">
-            <p className="text-gray-500">No occupancy data available for this date.</p>
+            <p className="text-sm text-muted-foreground">
+              No occupancy data available for this date.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  const getOccupancyBadgeColor = (occupancyRate: number) => {
-    if (occupancyRate <= 40) {
-      return 'bg-emerald-100 text-emerald-800';
-    } else if (occupancyRate <= 70) {
-      return 'bg-amber-100 text-amber-800';
-    } else {
-      return 'bg-rose-100 text-rose-800';
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            Dormitory Occupancy - {format(date, 'EEEE, MMMM d, yyyy')}
-          </DialogTitle>
+          <DialogTitle>{format(date, 'EEEE, MMMM d, yyyy')}</DialogTitle>
+          <DialogDescription>
+            Dormitory occupancy details and bed availability
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">
+        <div className="space-y-6 pt-4">
+          {/* Summary Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BarChart3 className="h-4 w-4" />
+                <span>Occupancy Rate</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold">
                   {data.occupancyRate.toFixed(1)}%
-                </div>
-                <div className="text-sm text-gray-600">Overall Occupancy</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">
-                  {data.totalBeds}
-                </div>
-                <div className="text-sm text-gray-600">Total Beds</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-orange-600">
-                  {data.occupiedBeds}
-                </div>
-                <div className="text-sm text-gray-600">Occupied Beds</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-purple-600">
-                  {data.totalDormitories}
-                </div>
-                <div className="text-sm text-gray-600">Dormitories</div>
-              </CardContent>
-            </Card>
+                </span>
+                <Badge variant={getOccupancyBadgeColor(data.occupancyRate)}>
+                  {getOccupancyLabel(data.occupancyRate)}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Bed className="h-4 w-4" />
+                <span>Total Beds</span>
+              </div>
+              <div className="text-2xl font-bold">{data.totalBeds}</div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Bed className="h-4 w-4" />
+                <span>Occupied Beds</span>
+              </div>
+              <div className="text-2xl font-bold text-destructive">
+                {data.occupiedBeds}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Home className="h-4 w-4" />
+                <span>Dormitories</span>
+              </div>
+              <div className="text-2xl font-bold">{data.totalDormitories}</div>
+            </div>
           </div>
 
-          {/* Dormitory Summary Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Dormitory Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Separator />
+
+          {/* Dormitory Summary */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold">Dormitory Summary</h3>
+              <p className="text-sm text-muted-foreground">
+                Occupancy breakdown by dormitory
+              </p>
+            </div>
+
+            <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Dormitory Name</TableHead>
                     <TableHead className="text-center">Total Beds</TableHead>
-                    <TableHead className="text-center">Occupied Beds</TableHead>
-                    <TableHead className="text-center">Occupancy Rate</TableHead>
+                    <TableHead className="text-center">Occupied</TableHead>
+                    <TableHead className="text-center">
+                      Occupancy Rate
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -134,7 +156,11 @@ export function DormitoryOccupancyDetailsDialog({
                         {dormitory.occupiedBeds}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge className={getOccupancyBadgeColor(dormitory.occupancyRate)}>
+                        <Badge
+                          variant={getOccupancyBadgeColor(
+                            dormitory.occupancyRate,
+                          )}
+                        >
                           {dormitory.occupancyRate.toFixed(1)}%
                         </Badge>
                       </TableCell>
@@ -142,21 +168,29 @@ export function DormitoryOccupancyDetailsDialog({
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Occupied Beds Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Occupied Beds Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {data.occupiedBedDetails.length > 0 ? (
+          <Separator />
+
+          {/* Occupied Beds Details */}
+          {data.occupiedBedDetails.length > 0 ? (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Occupied Beds</h3>
+                <p className="text-sm text-muted-foreground">
+                  {data.occupiedBedDetails.length} bed
+                  {data.occupiedBedDetails.length !== 1 ? 's' : ''} currently
+                  occupied
+                </p>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Dormitory</TableHead>
-                      <TableHead>Bed Number</TableHead>
+                      <TableHead className="w-[120px]">Bed Number</TableHead>
                       <TableHead>Guest Name</TableHead>
                       <TableHead>Check-in</TableHead>
                       <TableHead>Check-out</TableHead>
@@ -170,23 +204,26 @@ export function DormitoryOccupancyDetailsDialog({
                         </TableCell>
                         <TableCell>{bed.bedNumber}</TableCell>
                         <TableCell>{bed.guestName}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(bed.checkIn), 'MMM d, yyyy')}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(bed.checkOut), 'MMM d, yyyy')}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No occupied beds for this date.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground border rounded-lg bg-muted/20">
+              <Bed className="h-12 w-12 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium">
+                No beds are occupied on this date
+              </p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

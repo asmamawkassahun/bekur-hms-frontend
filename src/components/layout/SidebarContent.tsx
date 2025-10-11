@@ -85,12 +85,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       permission: 'guest:read',
     },
     {
-      label: 'Dormitories',
-      icon: Home,
-      href: '/dashboard/dormitories',
-      permission: 'dormitory:read',
-    },
-    {
       label: 'Beds',
       icon: BedDouble,
       href: '/dashboard/beds',
@@ -117,6 +111,28 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       icon: Plus,
       href: undefined,
       permission: 'room:create',
+    },
+    {
+      label: 'Occupancy Calendar',
+      icon: Calendar,
+      href: '/dashboard/rooms/occupancy-calendar',
+      permission: 'room:read',
+    },
+  ];
+
+  // Dormitories submenu items
+  const dormitoriesSubmenu = [
+    {
+      label: 'Dormitories',
+      icon: Home,
+      href: '/dashboard/dormitories',
+      permission: 'dormitory:read',
+    },
+    {
+      label: 'Occupancy Calendar',
+      icon: Calendar,
+      href: '/dashboard/dormitories/occupancy-calendar',
+      permission: 'dormitory:read',
     },
   ];
 
@@ -220,6 +236,10 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const hasAnyRoomPermission = roomsSubmenu.some((item) =>
     hasPermission(item.permission),
   );
+  // Check if dormitories section should be visible
+  const hasAnyDormitoryPermission = dormitoriesSubmenu.some((item) =>
+    hasPermission(item.permission),
+  );
   // Check if reservations section should be visible
   const hasAnyReservationPermission = reservationSubmenu.some((item) =>
     hasPermission(item.permission),
@@ -244,91 +264,148 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         {mainNavItems
           .filter((item) => hasPermission(item.permission))
           .map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
+            const Icon = item.icon;
+            const active = isActive(item.href);
 
-          return (
-            <Button
-              key={item.href}
-              variant="ghost"
-              className={cn(
-                'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
-                active && 'bg-sidebar-accent text-sidebar-accent-foreground',
-              )}
-              asChild
-            >
-              <Link href={item.href} onClick={handleNavigation}>
-                <Icon className="h-4 w-4 mr-3" />
-                <span className="truncate">{item.label}</span>
-              </Link>
-            </Button>
-          );
-        })}
+            return (
+              <Button
+                key={item.href}
+                variant="ghost"
+                className={cn(
+                  'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
+                  active && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                )}
+                asChild
+              >
+                <Link href={item.href} onClick={handleNavigation}>
+                  <Icon className="h-4 w-4 mr-3" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              </Button>
+            );
+          })}
 
         {/* Expandable Rooms Section */}
         {hasAnyRoomPermission && (
           <>
-        <button
-          onClick={() => setRoomsExpanded(!roomsExpanded)}
-          className={cn(
-            'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
-            pathname.startsWith('/dashboard/rooms')
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-          )}
-        >
-          <div className="flex items-center">
-            <Bed className="mr-3 h-4 w-4" />
-            <span>Rooms</span>
-          </div>
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 transition-transform',
-              roomsExpanded && 'rotate-180',
-            )}
-          />
-        </button>
+            <button
+              onClick={() => setRoomsExpanded(!roomsExpanded)}
+              className={cn(
+                'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                pathname.startsWith('/dashboard/rooms')
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              )}
+            >
+              <div className="flex items-center">
+                <Bed className="mr-3 h-4 w-4" />
+                <span>Rooms</span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform',
+                  roomsExpanded && 'rotate-180',
+                )}
+              />
+            </button>
 
-        {roomsExpanded && (
-          <div className="ml-4 mt-1 space-y-1">
+            {roomsExpanded && (
+              <div className="ml-4 mt-1 space-y-1">
                 {roomsSubmenu
                   .filter((item) => hasPermission(item.permission))
                   .map((item) => {
-              const Icon = item.icon;
-              const active = item.href ? isActive(item.href) : false;
+                    const Icon = item.icon;
+                    const active = item.href ? isActive(item.href) : false;
 
-              return item.href ? (
+                    return item.href ? (
                       <Link
                         key={item.label}
                         href={item.href}
                         onClick={handleNavigation}
                       >
-                  <div
-                    className={cn(
-                      'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
-                      active
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                        : 'hover:bg-sidebar-accent/50',
-                    )}
-                  >
-                    <Icon className="mr-3 h-4 w-4" />
-                    <span>{item.label}</span>
-                  </div>
-                </Link>
-              ) : (
-                <button
-                  key={item.label}
-                  className={cn(
+                        <div
+                          className={cn(
+                            'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
+                            active
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                              : 'hover:bg-sidebar-accent/50',
+                          )}
+                        >
+                          <Icon className="mr-3 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      <button
+                        key={item.label}
+                        className={cn(
                           'w-full flex items-center px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-sidebar-accent/50',
-                  )}
-                  onClick={() => dispatch(openModal('addRoom'))}
-                >
-                  <Icon className="mr-3 h-4 w-4" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                        )}
+                        onClick={() => dispatch(openModal('addRoom'))}
+                      >
+                        <Icon className="mr-3 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Expandable Dormitories Section */}
+        {hasAnyDormitoryPermission && (
+          <>
+            <button
+              onClick={() => setDormitoriesExpanded(!dormitoriesExpanded)}
+              className={cn(
+                'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                pathname.startsWith('/dashboard/dormitories')
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              )}
+            >
+              <div className="flex items-center">
+                <Home className="mr-3 h-4 w-4" />
+                <span>Dormitories</span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform',
+                  dormitoriesExpanded && 'rotate-180',
+                )}
+              />
+            </button>
+
+            {dormitoriesExpanded && (
+              <div className="ml-4 mt-1 space-y-1">
+                {dormitoriesSubmenu
+                  .filter((item) => hasPermission(item.permission))
+                  .map((item) => {
+                    const Icon = item.icon;
+                    const active = item.href ? isActive(item.href) : false;
+
+                    return (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={handleNavigation}
+                      >
+                        <div
+                          className={cn(
+                            'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
+                            active
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                              : 'hover:bg-sidebar-accent/50',
+                          )}
+                        >
+                          <Icon className="mr-3 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+              </div>
             )}
           </>
         )}
@@ -336,56 +413,56 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
         {/* Expandable Reservations Section */}
         {hasAnyReservationPermission && (
           <>
-        <button
-          onClick={() => setReservationsExpanded(!reservationsExpanded)}
-          className={cn(
-            'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
-            pathname.startsWith('/dashboard/reservations')
-              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-              : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-          )}
-        >
-          <div className="flex items-center">
-            <Calendar className="mr-3 h-4 w-4" />
-            <span>Reservations</span>
-          </div>
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 transition-transform',
-              reservationsExpanded && 'rotate-180',
-            )}
-          />
-        </button>
+            <button
+              onClick={() => setReservationsExpanded(!reservationsExpanded)}
+              className={cn(
+                'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+                pathname.startsWith('/dashboard/reservations')
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              )}
+            >
+              <div className="flex items-center">
+                <Calendar className="mr-3 h-4 w-4" />
+                <span>Reservations</span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform',
+                  reservationsExpanded && 'rotate-180',
+                )}
+              />
+            </button>
 
-        {reservationsExpanded && (
-          <div className="ml-4 mt-1 space-y-1">
+            {reservationsExpanded && (
+              <div className="ml-4 mt-1 space-y-1">
                 {reservationSubmenu
                   .filter((item) => hasPermission(item.permission))
                   .map((item) => {
-              const Icon = item.icon;
-              const active = item.href ? isActive(item.href) : false;
+                    const Icon = item.icon;
+                    const active = item.href ? isActive(item.href) : false;
 
-              return item.href ? (
+                    return item.href ? (
                       <Link
                         key={item.label}
                         href={item.href}
                         onClick={handleNavigation}
                       >
-                  <div
-                    className={cn(
-                      'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
-                      active
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                        : 'hover:bg-sidebar-accent/50',
-                    )}
-                  >
-                    <Icon className="mr-3 h-4 w-4" />
-                    <span>{item.label}</span>
-                  </div>
-                </Link>
-              ) : null;
-            })}
-          </div>
+                        <div
+                          className={cn(
+                            'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
+                            active
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                              : 'hover:bg-sidebar-accent/50',
+                          )}
+                        >
+                          <Icon className="mr-3 h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </Link>
+                    ) : null;
+                  })}
+              </div>
             )}
           </>
         )}
@@ -402,27 +479,27 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
             {hotelItems
               .filter((item) => hasPermission(item.permission))
               .map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
+                const Icon = item.icon;
+                const active = isActive(item.href);
 
-              return (
-                <Button
-                  key={item.href}
-                  variant="ghost"
-                  className={cn(
-                    'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
-                    active &&
-                    'bg-sidebar-accent text-sidebar-accent-foreground',
-                  )}
-                  asChild
-                >
-                  <Link href={item.href} onClick={handleNavigation}>
-                    <Icon className="h-4 w-4 mr-3" />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                </Button>
-              );
-            })}
+                return (
+                  <Button
+                    key={item.href}
+                    variant="ghost"
+                    className={cn(
+                      'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
+                      active &&
+                        'bg-sidebar-accent text-sidebar-accent-foreground',
+                    )}
+                    asChild
+                  >
+                    <Link href={item.href} onClick={handleNavigation}>
+                      <Icon className="h-4 w-4 mr-3" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  </Button>
+                );
+              })}
           </nav>
         </div>
       </div>
@@ -433,27 +510,27 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
           {bottomNavItems
             .filter((item) => hasPermission(item.permission))
             .map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
+              const Icon = item.icon;
+              const active = isActive(item.href);
 
-            return (
-              <Button
-                key={item.href}
-                variant="ghost"
-                className={cn(
-                  'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
+              return (
+                <Button
+                  key={item.href}
+                  variant="ghost"
+                  className={cn(
+                    'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                     active &&
                       'bg-sidebar-accent text-sidebar-accent-foreground',
-                )}
-                asChild
-              >
-                <Link href={item.href} onClick={handleNavigation}>
-                  <Icon className="h-4 w-4 mr-3" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              </Button>
-            );
-          })}
+                  )}
+                  asChild
+                >
+                  <Link href={item.href} onClick={handleNavigation}>
+                    <Icon className="h-4 w-4 mr-3" />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                </Button>
+              );
+            })}
         </nav>
       </div>
 

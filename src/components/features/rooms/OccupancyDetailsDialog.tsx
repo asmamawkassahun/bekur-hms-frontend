@@ -8,8 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -19,6 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Building2, Bed, Calendar } from 'lucide-react';
 
 interface OccupancyDetailsDialogProps {
   isOpen: boolean;
@@ -33,98 +35,112 @@ export function OccupancyDetailsDialog({
   data,
   date,
 }: OccupancyDetailsDialogProps) {
+  const getOccupancyBadgeColor = (occupancyRate: number) => {
+    if (occupancyRate >= 80) return 'destructive';
+    if (occupancyRate >= 60) return 'default';
+    return 'secondary';
+  };
+
+  const getOccupancyLabel = (occupancyRate: number) => {
+    if (occupancyRate >= 80) return 'High';
+    if (occupancyRate >= 60) return 'Medium';
+    return 'Low';
+  };
+
   if (!data) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {format(date, 'EEEE, MMMM d, yyyy')}
-            </DialogTitle>
+            <DialogTitle>{format(date, 'EEEE, MMMM d, yyyy')}</DialogTitle>
+            <DialogDescription>Occupancy details</DialogDescription>
           </DialogHeader>
           <div className="text-center py-8">
-            <p className="text-gray-500">No occupancy data available for this date.</p>
+            <p className="text-sm text-muted-foreground">
+              No occupancy data available for this date.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  const getOccupancyBadgeColor = (occupancyRate: number) => {
-    if (occupancyRate <= 40) {
-      return 'bg-emerald-100 text-emerald-800';
-    } else if (occupancyRate <= 70) {
-      return 'bg-amber-100 text-amber-800';
-    } else {
-      return 'bg-rose-100 text-rose-800';
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {format(date, 'EEEE, MMMM d, yyyy')}
-          </DialogTitle>
+          <DialogTitle>{format(date, 'EEEE, MMMM d, yyyy')}</DialogTitle>
+          <DialogDescription>
+            Room occupancy details and guest information
+          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {/* Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Rooms</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data.totalRooms}</div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Occupied</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-rose-600">{data.occupiedRooms}</div>
-              </CardContent>
-            </Card>
+        <div className="space-y-6 pt-4">
+          {/* Summary Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Building2 className="h-4 w-4" />
+                <span>Total Rooms</span>
+              </div>
+              <div className="text-2xl font-bold">{data.totalRooms}</div>
+            </div>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Available</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-emerald-600">{data.availableRooms}</div>
-              </CardContent>
-            </Card>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Bed className="h-4 w-4" />
+                <span>Occupied</span>
+              </div>
+              <div className="text-2xl font-bold text-destructive">
+                {data.occupiedRooms}
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Occupancy Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <div className="text-2xl font-bold">{data.occupancyRate.toFixed(1)}%</div>
-                  <Badge className={getOccupancyBadgeColor(data.occupancyRate)}>
-                    {data.occupancyRate <= 40 ? 'Low' : data.occupancyRate <= 70 ? 'Medium' : 'High'}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Bed className="h-4 w-4" />
+                <span>Available</span>
+              </div>
+              <div className="text-2xl font-bold text-green-600">
+                {data.availableRooms}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>Occupancy Rate</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold">
+                  {data.occupancyRate.toFixed(1)}%
+                </span>
+                <Badge variant={getOccupancyBadgeColor(data.occupancyRate)}>
+                  {getOccupancyLabel(data.occupancyRate)}
+                </Badge>
+              </div>
+            </div>
           </div>
+
+          <Separator />
 
           {/* Occupied Rooms Table */}
           {data.occupiedRoomDetails.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Occupied Rooms ({data.occupiedRoomDetails.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Occupied Rooms</h3>
+                <p className="text-sm text-muted-foreground">
+                  {data.occupiedRoomDetails.length} room
+                  {data.occupiedRoomDetails.length !== 1 ? 's' : ''} currently
+                  occupied
+                </p>
+              </div>
+
+              <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Room Number</TableHead>
+                      <TableHead className="w-[120px]">Room Number</TableHead>
                       <TableHead>Room Type</TableHead>
                       <TableHead>Guest Name</TableHead>
                       <TableHead>Check-in</TableHead>
@@ -134,29 +150,33 @@ export function OccupancyDetailsDialog({
                   <TableBody>
                     {data.occupiedRoomDetails.map((room, index) => (
                       <TableRow key={index}>
-                        <TableCell className="font-medium">{room.roomNumber}</TableCell>
+                        <TableCell className="font-medium">
+                          {room.roomNumber}
+                        </TableCell>
                         <TableCell>{room.roomTypeName}</TableCell>
                         <TableCell>{room.guestName}</TableCell>
-                        <TableCell>{format(new Date(room.checkIn), 'MMM d, yyyy')}</TableCell>
-                        <TableCell>{format(new Date(room.checkOut), 'MMM d, yyyy')}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(room.checkIn), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(room.checkOut), 'MMM d, yyyy')}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-gray-500">
-                  <p>No rooms are occupied on this date.</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="text-center py-12 text-muted-foreground border rounded-lg bg-muted/20">
+              <Bed className="h-12 w-12 mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium">
+                No rooms are occupied on this date
+              </p>
+            </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

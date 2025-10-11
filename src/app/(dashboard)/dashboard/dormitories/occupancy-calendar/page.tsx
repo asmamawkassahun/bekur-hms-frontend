@@ -11,7 +11,13 @@ import { ChevronLeft, ChevronRight, Calendar, Building } from 'lucide-react';
 
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DormitoryOccupancyCalendarGrid } from '@/components/features/dormitories/DormitoryOccupancyCalendarGrid';
 import { DormitoryOccupancyDetailsDialog } from '@/components/features/dormitories/DormitoryOccupancyDetailsDialog';
 import { LoadingState } from '@/components/shared/LoadingState';
@@ -19,15 +25,20 @@ import { EmptyState } from '@/components/shared/EmptyState';
 
 export default function DormitoryOccupancyCalendarPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { properties, loading: propertiesLoading } = useSelector((state: RootState) => state.property);
+  const { properties, loading: propertiesLoading } = useSelector(
+    (state: RootState) => state.property,
+  );
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [occupancyData, setOccupancyData] = useState<DailyDormitoryOccupancy[]>([]);
+  const [occupancyData, setOccupancyData] = useState<DailyDormitoryOccupancy[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedOccupancyData, setSelectedOccupancyData] = useState<DailyDormitoryOccupancy | null>(null);
+  const [selectedOccupancyData, setSelectedOccupancyData] =
+    useState<DailyDormitoryOccupancy | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Load properties on component mount
@@ -61,10 +72,13 @@ export default function DormitoryOccupancyCalendarPage() {
       if (response.data.success) {
         setOccupancyData(response.data.data || []);
       } else {
-        setError(response.data.error?.message || 'Failed to fetch occupancy data');
+        setError(
+          response.data.error?.message || 'Failed to fetch occupancy data',
+        );
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -81,14 +95,17 @@ export default function DormitoryOccupancyCalendarPage() {
   };
 
   const handlePreviousMonth = () => {
-    setCurrentDate(prev => subMonths(prev, 1));
+    setCurrentDate((prev) => subMonths(prev, 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
+    setCurrentDate((prev) => addMonths(prev, 1));
   };
 
-  const handleCellClick = (data: DailyDormitoryOccupancy | null, date: Date) => {
+  const handleCellClick = (
+    data: DailyDormitoryOccupancy | null,
+    date: Date,
+  ) => {
     setSelectedDate(date);
     setSelectedOccupancyData(data);
     setIsDialogOpen(true);
@@ -119,55 +136,67 @@ export default function DormitoryOccupancyCalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
         title="Dormitory Occupancy Calendar"
-        description="View dormitory occupancy rates by bed across all dormitories"
+        description="View dormitory occupancy rates and bed availability"
       />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="min-w-[200px]">
-            <Select value={selectedPropertyId} onValueChange={handlePropertyChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select property" />
-              </SelectTrigger>
-              <SelectContent>
-                {properties.map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
-                    {property.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Filters Card */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card border rounded-lg p-4">
+        <div className="flex items-center gap-2 flex-1">
+          <Building className="h-4 w-4 text-muted-foreground" />
+          <Select
+            value={selectedPropertyId}
+            onValueChange={handlePropertyChange}
+          >
+            <SelectTrigger className="w-full sm:w-[280px]">
+              <SelectValue placeholder="Select property" />
+            </SelectTrigger>
+            <SelectContent>
+              {properties.map((property) => (
+                <SelectItem key={property.id} value={property.id}>
+                  {property.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={handlePreviousMonth}
             disabled={loading}
+            className="h-9 w-9 cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="text-lg font-semibold min-w-[150px] text-center">
-            {format(currentDate, 'MMMM yyyy')}
-          </div>
+
           <Button
             variant="outline"
             size="sm"
+            disabled
+            className="min-w-[140px] font-medium"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            {format(currentDate, 'MMM yyyy')}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
             onClick={handleNextMonth}
             disabled={loading}
+            className="h-9 w-9 cursor-pointer"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
+      {/* Calendar Card */}
       {loading ? (
         <LoadingState />
       ) : (
