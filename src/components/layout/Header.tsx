@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { logout } from '@/store/slices/authSlice';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+// import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,14 +15,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+// import {
+//   Popover,
+//   PopoverContent,
+//   PopoverTrigger,
+// } from '@/components/ui/popover';
 import {
   Menu,
-  Bell,
+  // Bell,
   Search,
   Settings,
   LogOut,
@@ -96,7 +96,7 @@ export function Header({ sidebarOpen, onToggle, onMobileMenuToggle, loading = fa
         <ThemeToggle />
 
         {/* Notifications */}
-        <Popover>
+        {/* <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
@@ -137,7 +137,7 @@ export function Header({ sidebarOpen, onToggle, onMobileMenuToggle, loading = fa
               </div>
             </div>
           </PopoverContent>
-        </Popover>
+        </Popover> */}
 
         {/* User Menu */}
         <DropdownMenu>
