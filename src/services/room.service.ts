@@ -69,8 +69,24 @@ export const roomService = {
   /**
    * Get occupancy calendar for a property and month
    */
-  getOccupancyCalendar: (params: { propertyId: string; year: number; month: number }) =>
-    apiClient.get<ApiResponse<DailyOccupancy[]>>('/rooms/occupancy-calendar', { params }),
+  getOccupancyCalendar: (params: {
+    propertyId: string;
+    year: number;
+    month: number;
+  }) =>
+    apiClient.get<ApiResponse<DailyOccupancy[]>>('/rooms/occupancy-calendar', {
+      params,
+    }),
+
+  /**
+   * Get available rooms for a specific period (period-based availability)
+   */
+  getAvailable: (params: {
+    propertyId: string;
+    checkIn: string;
+    checkOut: string;
+    roomTypeId?: string;
+  }) => apiClient.get<ApiResponse<Room[]>>('/rooms/available', { params }),
 };
 
 export const dormitoryService = {
@@ -155,4 +171,14 @@ export const bedService = {
     apiClient.get<ApiResponse<Bed[]>>('/beds/search', {
       params: { q: query, ...params },
     }),
+
+  /**
+   * Get available beds for a specific period (period-based availability)
+   */
+  getAvailable: (params: {
+    propertyId: string;
+    checkIn: string;
+    checkOut: string;
+    dormitoryId: string;
+  }) => apiClient.get<ApiResponse<Bed[]>>('/beds/available', { params }),
 };

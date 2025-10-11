@@ -22,6 +22,10 @@ interface BedState {
   searchCache: Record<string, Bed[]>;
   lastSearchTerm: string;
   isSearching: boolean;
+  // Period-based availability
+  availableBeds: Bed[];
+  availableBedsLoading: boolean;
+  availableBedsError: string | null;
 }
 
 const initialState: BedState = {
@@ -39,6 +43,10 @@ const initialState: BedState = {
   searchCache: {},
   lastSearchTerm: '',
   isSearching: false,
+  // Period-based availability
+  availableBeds: [],
+  availableBedsLoading: false,
+  availableBedsError: null,
 };
 
 // Async thunks
@@ -142,6 +150,31 @@ export const searchBeds = createAsyncThunk(
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to search beds';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+// Fetch available beds for a specific period
+export const fetchAvailableBeds = createAsyncThunk(
+  'bed/fetchAvailableBeds',
+  async (
+    params: {
+      propertyId: string;
+      checkIn: string;
+      checkOut: string;
+      dormitoryId: string;
+    },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await bedService.getAvailable(params);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch available beds';
       return rejectWithValue(errorMessage);
     }
   },
@@ -345,6 +378,21 @@ const bedSlice = createSlice({
       .addCase(searchBeds.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      // Fetch Available Beds (period-based)
+      .addCase(fetchAvailableBeds.pending, (state) => {
+        state.availableBedsLoading = true;
+        state.availableBedsError = null;
+      })
+      .addCase(fetchAvailableBeds.fulfilled, (state, action) => {
+        state.availableBedsLoading = false;
+        // Extract data from response (can be direct array or nested in data property)
+        const payloadData = action.payload?.data || action.payload;
+        state.availableBeds = Array.isArray(payloadData) ? payloadData : [];
+      })
+      .addCase(fetchAvailableBeds.rejected, (state, action) => {
+        state.availableBedsLoading = false;
+        state.availableBedsError = action.payload as string;
       });
   },
 });
