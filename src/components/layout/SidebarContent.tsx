@@ -27,6 +27,7 @@ import {
   CreditCard,
   UserCog,
   ChevronDown,
+  BarChart,
 } from 'lucide-react';
 
 interface SidebarContentProps {
@@ -74,6 +75,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     { label: 'Payments', icon: CreditCard, href: '/dashboard/payments' },
     { label: 'Invoices', icon: FileText, href: '/dashboard/invoices' },
     { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
+    { label: 'Night Audit', icon: BarChart, href: '/dashboard/night-audit' },
     { label: 'Staff', icon: UserCog, href: '/dashboard/staff' },
     { label: 'Rate Management', icon: Settings, href: '/dashboard/rate-management' },
     { label: 'Settings', icon: Settings, href: '/dashboard/settings' },

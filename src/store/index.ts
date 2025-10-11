@@ -15,6 +15,7 @@ import roomTypeReducer from './slices/roomTypeSlice';
 import bedTypeReducer from './slices/bedTypeSlice';
 import rateManagementReducer from './slices/rateManagementSlice';
 import uiReducer from './slices/uiSlice';
+import nightAuditReducer from './slices/nightAuditSlice';
 
 export const store = configureStore({
   reducer: {
@@ -33,6 +34,7 @@ export const store = configureStore({
     roomType: roomTypeReducer,
     bedType: bedTypeReducer,
     rateManagement: rateManagementReducer,
+    nightAudit: nightAuditReducer,
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>

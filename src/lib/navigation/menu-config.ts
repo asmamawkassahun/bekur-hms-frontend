@@ -150,6 +150,12 @@ export const menuItems: Record<UserRole, MenuItem[]> = {
       permission: 'report:operational',
     },
     {
+      label: 'Night Audit',
+      icon: BarChart,
+      href: '/dashboard/night-audit',
+      permission: 'night-audit:read',
+    },
+    {
       label: 'Staff',
       icon: UserCog,
       href: '/dashboard/staff',
