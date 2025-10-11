@@ -41,6 +41,8 @@ export interface RoomType {
   amenities: string[];
   images?: string[];
   reserveCondition?: string;
+  roomCode?: string; // Aiosell room code
+  ratePlanCodes?: string[]; // Aiosell rate plan codes
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -59,6 +61,8 @@ export interface CreateRoomTypeData {
   amenities: string[];
   images?: string[];
   reserveCondition?: string;
+  roomCode?: string; // Aiosell room code
+  ratePlanCodes?: string[]; // Aiosell rate plan codes
   beds: Array<{ bedTypeId: string; quantity: number }>;
 }
 

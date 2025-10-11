@@ -80,6 +80,26 @@ export interface BookingGuest {
   guest?: Guest;
 }
 
+// Payment Summary Interface
+export interface PaymentSummary {
+  id: string;
+  bookingId: string;
+  totalAmount: string;
+  paidAmount: string;
+  unpaidAmount: string;
+  lastPaymentAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Payment Status Interface
+export interface PaymentStatus {
+  totalAmount: number;
+  paidAmount: number;
+  unpaidAmount: number;
+  lastPaymentAt?: string;
+}
+
 // Reservation Types
 export interface Reservation {
   id: string;
@@ -138,6 +158,10 @@ export interface Reservation {
     number: string;
   };
   staff?: unknown;
+
+  // Payment Information
+  paymentSummary?: PaymentSummary;
+  paymentStatus?: PaymentStatus;
 
   // Backward compatibility
   guestId?: string;
@@ -239,4 +263,14 @@ export interface BookingSource {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CalculatePriceData {
+  propertyId: string;
+  accommodationType: string;
+  accommodationId: string;
+  checkIn?: string;
+  checkOut?: string;
+  guestId: string; // Single guest ID (UUID string), not array
+  bookingSourceId?: string;
 }

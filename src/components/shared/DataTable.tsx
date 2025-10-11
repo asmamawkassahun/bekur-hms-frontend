@@ -299,7 +299,7 @@ export function DataTable<T extends Record<string, any>>({
 
         {/* Table */}
         <div className="rounded-md border overflow-x-auto" ref={tableContainerRef}>
-          <Table className="table-fixed w-full min-w-[600px]">
+          <Table className="w-full min-w-[1200px]">
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
@@ -316,20 +316,18 @@ export function DataTable<T extends Record<string, any>>({
                       {column.sortable && (
                         <div className="flex flex-col">
                           <ChevronUp
-                            className={`h-3 w-3 ${
-                              sortColumn === column.key &&
-                              sortDirection === 'asc'
+                            className={`h-3 w-3 ${sortColumn === column.key &&
+                                sortDirection === 'asc'
                                 ? 'text-primary'
                                 : 'text-muted-foreground'
-                            }`}
+                              }`}
                           />
                           <ChevronDown
-                            className={`h-3 w-3 -mt-1 ${
-                              sortColumn === column.key &&
-                              sortDirection === 'desc'
+                            className={`h-3 w-3 -mt-1 ${sortColumn === column.key &&
+                                sortDirection === 'desc'
                                 ? 'text-primary'
                                 : 'text-muted-foreground'
-                            }`}
+                              }`}
                           />
                         </div>
                       )}

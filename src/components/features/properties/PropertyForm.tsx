@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -14,11 +15,13 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Globe, Info } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -85,15 +88,20 @@ const propertySchema = z.object({
   country: z.string().min(1, 'Country is required'),
   postalCode: z.string().optional(),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email').optional(),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
   timezone: z.string().min(1, 'Timezone is required'),
   currency: z.string().min(1, 'Currency is required'),
+  taxRate: z.number().min(0).max(100).default(15),
+  hotelCode: z
+    .string()
+    .optional()
+    .refine(
+      (code) => !code || /^[A-Z0-9-]+$/.test(code),
+      'Hotel code must be uppercase letters, numbers, and hyphens only',
+    ),
   description: z.string().optional(),
-  amenities: z.array(z.string()).optional(),
   policies: z.string().optional(),
-  checkInTime: z.string().optional(),
-  checkOutTime: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -127,11 +135,10 @@ export function PropertyForm({
           website: property.website,
           timezone: property.timezone,
           currency: property.currency,
+          taxRate: property.taxRate || 15,
+          hotelCode: property.hotelCode || '',
           description: property.description,
-          amenities: property.amenities || [],
           policies: property.policies,
-          checkInTime: property.checkInTime,
-          checkOutTime: property.checkOutTime,
           isActive: property.isActive,
         }
       : {
@@ -145,22 +152,17 @@ export function PropertyForm({
           email: '',
           website: '',
           timezone: 'Africa/Addis_Ababa',
-          currency: 'USD',
+          currency: 'ETB',
+          taxRate: 15,
+          hotelCode: '',
           description: '',
-          amenities: [],
           policies: '',
-          checkInTime: '15:00',
-          checkOutTime: '11:00',
           isActive: true,
         },
   });
 
   const handleSubmit = (values: PropertyFormData) => {
-    const payload = {
-      ...values,
-      amenities: values.amenities?.join(', '),
-    };
-    onSubmit(payload as PropertyFormData);
+    onSubmit(values);
   };
 
   return (
@@ -360,31 +362,67 @@ export function PropertyForm({
           />
           <FormField
             control={form.control}
-            name="checkInTime"
+            name="taxRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Check-in Time</FormLabel>
+                <FormLabel>Tax Rate (%)</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="checkOutTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Check-out Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="15"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
+
+        {/* Channel Manager Integration */}
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Globe className="h-4 w-4 text-blue-600" />
+              Channel Manager Integration
+              <Info className="h-3.5 w-3.5 text-blue-600/70" />
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Connect to Aiosell to distribute inventory across Booking.com,
+              Expedia, Agoda, and other OTAs
+            </p>
+          </CardHeader>
+          <CardContent>
+            <FormField
+              control={form.control}
+              name="hotelCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hotel Code (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., BEKUR-MAIN"
+                      className="font-mono uppercase"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(e.target.value.toUpperCase())
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs">
+                    Enter the hotel code from your Aiosell dashboard. Leave
+                    empty if not using channel manager.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
 
         {/* Description and Policies */}
         <FormField

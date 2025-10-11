@@ -6,6 +6,8 @@ export * from './room.types';
 export * from './dormitory.types';
 export * from './guest.types';
 export * from './reservation.types';
+export * from './payment.types';
+export * from './aiosell.types';
 
 // Common Types
 export interface BaseEntity {
@@ -22,13 +24,6 @@ export type ReservationStatus =
   | 'CHECKED_OUT'
   | 'CANCELLED'
   | 'NO_SHOW';
-
-export type PaymentStatus =
-  | 'PENDING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'REFUNDED'
-  | 'PARTIALLY_REFUNDED';
 
 export type RoomStatus =
   | 'AVAILABLE'
@@ -49,13 +44,13 @@ export interface FormFieldProps {
   name: string;
   label: string;
   type?:
-  | 'text'
-  | 'email'
-  | 'password'
-  | 'number'
-  | 'date'
-  | 'select'
-  | 'textarea';
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'date'
+    | 'select'
+    | 'textarea';
   placeholder?: string;
   options?: { value: string; label: string }[];
   required?: boolean;
