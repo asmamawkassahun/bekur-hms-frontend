@@ -109,6 +109,7 @@ export function DormitoryEditForm({
     const [batchCurrency, setBatchCurrency] = useState<string>('USD');
     const [batchStatus, setBatchStatus] = useState<(typeof BED_STATUSES)[number]>('AVAILABLE');
     const [batchIsActive, setBatchIsActive] = useState<boolean>(true);
+    const [batchBedTypeId, setBatchBedTypeId] = useState<string>('');
 
     // Map server type values to UI enum values
     const mapDormitoryType = (t: Dormitory['type']): 'MIXED' | 'MALE' | 'FEMALE' => {
@@ -138,6 +139,13 @@ export function DormitoryEditForm({
         dispatch(fetchBedTypes({ page: 1, limit: 100 }));
     }, [dispatch]);
 
+    // Default bed type for batch when bed types are loaded
+    useEffect(() => {
+        if (!batchBedTypeId && (bedTypes || []).length > 0) {
+            setBatchBedTypeId((bedTypes[0] as BedType).id);
+        }
+    }, [bedTypes, batchBedTypeId]);
+
     // Fetch existing beds for this dormitory when beds tab is active
     useEffect(() => {
         if (activeTab === 'beds' && dormitory.id) {
@@ -152,7 +160,7 @@ export function DormitoryEditForm({
             : dormitory.basePrice || 0;
         const initialBeds: BedFormData[] = [{
             number: '',
-            typeId: '',
+            typeId: batchBedTypeId || '',
             price: dormitoryPrice,
             currency: 'USD',
             status: 'AVAILABLE',
@@ -188,7 +196,7 @@ export function DormitoryEditForm({
     const handleAddBed = () => {
         const newBed: BedFormData = {
             number: '',
-            typeId: '',
+            typeId: batchBedTypeId || '',
             price: form.getValues('pricePerBed'),
             currency: 'USD',
             status: 'AVAILABLE',
@@ -216,7 +224,7 @@ export function DormitoryEditForm({
             const number = `${batchPrefix}-${seq}`;
             return {
                 number,
-                typeId: '',
+                typeId: batchBedTypeId || '',
                 price: batchPrice,
                 currency: batchCurrency,
                 status: batchStatus,
@@ -242,7 +250,7 @@ export function DormitoryEditForm({
             const number = `${effectivePrefix}-${seq}`;
             return {
                 number,
-                typeId: '',
+                typeId: batchBedTypeId || '',
                 price: batchPrice,
                 currency: batchCurrency,
                 status: batchStatus,
@@ -294,6 +302,7 @@ export function DormitoryEditForm({
                     dormitoryId: dormitory.id,
                     number: bedData.number,
                     basePrice: Number(bedData.price) || 0,
+                    bedTypeId: bedData.typeId,
                     status: bedData.status,
                     isActive: bedData.isActive,
                 };
@@ -326,10 +335,10 @@ export function DormitoryEditForm({
     };
 
     // Existing beds editing helpers
-    const [editRows, setEditRows] = useState<Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean }>>({});
+    const [editRows, setEditRows] = useState<Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean; bedTypeId: string }>>({});
 
     useEffect(() => {
-        const init: Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean }> = {};
+        const init: Record<string, { number: string; basePrice: number; status: BedStatus; isActive: boolean; bedTypeId: string }> = {};
         (storeBeds || [])
             .filter((b) => b.dormitoryId === dormitory.id)
             .forEach((b) => {
@@ -338,12 +347,13 @@ export function DormitoryEditForm({
                     basePrice: typeof b.basePrice === 'string' ? Number(b.basePrice) : b.basePrice,
                     status: b.status as BedStatus,
                     isActive: b.isActive,
+                    bedTypeId: (b as any)?.bedTypeId || (b as any)?.bedType?.id || '',
                 };
             });
         setEditRows(init);
     }, [storeBeds, dormitory.id]);
 
-    const handleEditRowChange = (id: string, field: 'number' | 'basePrice' | 'status' | 'isActive', value: any) => {
+    const handleEditRowChange = (id: string, field: 'number' | 'basePrice' | 'status' | 'isActive' | 'bedTypeId', value: any) => {
         setEditRows((prev) => ({
             ...prev,
             [id]: { ...prev[id], [field]: value },
@@ -362,6 +372,7 @@ export function DormitoryEditForm({
                         number: current.number,
                         basePrice: Number(current.basePrice) || 0,
                         isActive: current.isActive,
+                        bedTypeId: current.bedTypeId || undefined,
                     },
                 } as any),
             ).unwrap();
@@ -626,6 +637,25 @@ export function DormitoryEditForm({
                                 />
                             </div>
                             <div>
+                                <label className="text-xs font-medium">Bed Type</label>
+                                <Select
+                                    value={batchBedTypeId}
+                                    onValueChange={(val) => setBatchBedTypeId(val)}
+                                    disabled={isCreatingBeds || loading}
+                                >
+                                    <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Select bed type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(bedTypes || []).map((bt: BedType) => (
+                                            <SelectItem key={bt.id} value={bt.id}>
+                                                {bt.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
                                 <label className="text-xs font-medium">Price</label>
                                 <Input
                                     type="number"
@@ -734,6 +764,25 @@ export function DormitoryEditForm({
                                                                 className="h-8"
                                                                 disabled={isCreatingBeds || loading}
                                                             />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-medium">Bed Type</label>
+                                                            <Select
+                                                                value={editRows[b.id]?.bedTypeId ?? ((b as any)?.bedTypeId || (b as any)?.bedType?.id || '')}
+                                                                onValueChange={(val) => handleEditRowChange(b.id, 'bedTypeId', val)}
+                                                                disabled={isCreatingBeds || loading}
+                                                            >
+                                                                <SelectTrigger className="h-8">
+                                                                    <SelectValue placeholder="Select bed type" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {(bedTypes || []).map((bt: BedType) => (
+                                                                        <SelectItem key={bt.id} value={bt.id}>
+                                                                            {bt.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
                                                         </div>
                                                         <div>
                                                             <label className="text-xs font-medium">Price</label>

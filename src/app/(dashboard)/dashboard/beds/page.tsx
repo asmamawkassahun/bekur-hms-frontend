@@ -86,7 +86,7 @@ export default function BedsPage() {
         const allBeds = response.data || [];
 
         setStatsData({
-          totalBeds: response.pagination?.total || 0,
+          totalBeds: (response.meta?.total as number) || (allBeds.length || 0),
           availableBeds: allBeds.filter((b) => b.status === 'AVAILABLE').length,
           occupiedBeds: allBeds.filter((b) => b.status === 'OCCUPIED').length,
           maintenanceBeds: allBeds.filter((b) => b.status === 'MAINTENANCE')
@@ -215,6 +215,7 @@ export default function BedsPage() {
   const columns = [
     { key: 'bed', label: 'Bed', width: 'w-[200px]' },
     { key: 'dormitory', label: 'Dormitory', width: 'w-[150px]' },
+    { key: 'type', label: 'Bed Type', width: 'w-[150px]' },
     { key: 'price', label: 'Price', width: 'w-[120px]' },
     { key: 'status', label: 'Status', width: 'w-[120px]' },
     { key: 'amenities', label: 'Amenities', width: 'w-[200px]' },

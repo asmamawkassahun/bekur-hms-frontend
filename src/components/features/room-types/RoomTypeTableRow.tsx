@@ -29,6 +29,7 @@ export function RoomTypeTableRow({
     // This would need to be passed from parent or fetched
     return `Property ${propertyId}`;
   };
+  const propertyName = (roomType as any)?.property?.name || getPropertyName(roomType.propertyId);
   console.log("roomType: ", roomType);
 
   return (
@@ -41,10 +42,7 @@ export function RoomTypeTableRow({
       </TableCell>
       <TableCell>
         <div className="text-sm">
-          <div>{roomType.adultCapacity} adults</div>
-          <div className="text-muted-foreground">
-            {roomType.childCapacity} children
-          </div>
+          {propertyName}
         </div>
       </TableCell>
       <TableCell>

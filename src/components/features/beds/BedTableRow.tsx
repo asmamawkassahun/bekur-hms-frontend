@@ -39,10 +39,10 @@ export function BedTableRow({
     );
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: 'USD',
     }).format(amount);
   };
 
@@ -55,9 +55,6 @@ export function BedTableRow({
           </div>
           <div className="min-w-0">
             <div className="font-medium truncate">{bed.number}</div>
-            <div className="text-sm text-muted-foreground">
-              {bed.type?.name || 'Standard'}
-            </div>
           </div>
         </div>
       </TableCell>
@@ -65,19 +62,17 @@ export function BedTableRow({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Home className="h-3 w-3 text-muted-foreground" />
-            <span>{bed.dormitory?.name || 'N/A'}</span>
+            <span>{(bed as any)?.dormitory?.name || 'N/A'}</span>
           </div>
-          {bed.dormitory?.floor && (
-            <div className="text-sm text-muted-foreground">
-              Floor {bed.dormitory.floor}
-            </div>
-          )}
         </div>
+      </TableCell>
+      <TableCell>
+        <div className="text-sm">{(bed as any)?.bedType?.name || (bed as any)?.type?.name || 'Standard'}</div>
       </TableCell>
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(bed.basePrice, bed.currency)}
+            {formatCurrency((bed as any).basePrice ?? (bed as any).price ?? 0)}
           </div>
           <div className="text-sm text-muted-foreground">per night</div>
         </div>
@@ -85,10 +80,10 @@ export function BedTableRow({
       <TableCell>{getStatusBadge(bed.status)}</TableCell>
       <TableCell>
         <div className="space-y-1">
-          {bed.amenities && bed.amenities.length > 0 && (
+          {((bed as any)?.amenities && (bed as any)?.amenities.length > 0) && (
             <div className="text-sm">
-              {bed.amenities.slice(0, 2).join(', ')}
-              {bed.amenities.length > 2 && ` +${bed.amenities.length - 2} more`}
+              {(bed as any).amenities.slice(0, 2).join(', ')}
+              {(bed as any).amenities.length > 2 && ` +${(bed as any).amenities.length - 2} more`}
             </div>
           )}
         </div>

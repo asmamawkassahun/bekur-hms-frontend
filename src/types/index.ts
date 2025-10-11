@@ -8,6 +8,7 @@ export * from './guest.types';
 export * from './reservation.types';
 export * from './payment.types';
 export * from './aiosell.types';
+export * from './rate-management.types';
 
 // Common Types
 export interface BaseEntity {

@@ -177,14 +177,25 @@ export interface Bed {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Optional relational/extended fields
+  bedTypeId?: string;
+  bedType?: BedType;
+  dormitory?: Dormitory;
+  currency?: string;
+  amenities?: string[];
+  description?: string;
 }
 
 export interface CreateBedData {
   dormitoryId: string;
   number: string;
   basePrice: number;
+  bedTypeId?: string;
   status: BedStatus;
   isActive: boolean;
+  description?: string;
+  amenities?: string[];
+  currency?: string;
 }
 
 export interface UpdateBedData {
@@ -192,6 +203,10 @@ export interface UpdateBedData {
   number?: string;
   basePrice?: number;
   isActive?: boolean;
+  bedTypeId?: string;
+  description?: string;
+  amenities?: string[];
+  currency?: string;
 }
 
 export interface UpdateBedStatusData {

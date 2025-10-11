@@ -108,6 +108,7 @@ export function DormitoryWizardFormCompact({
   const [batchCurrency, setBatchCurrency] = useState<string>('USD');
   const [batchStatus, setBatchStatus] = useState<(typeof BED_STATUSES)[number]>('AVAILABLE');
   const [batchIsActive, setBatchIsActive] = useState<boolean>(true);
+  const [batchBedTypeId, setBatchBedTypeId] = useState<string>('');
 
   // Dormitory form
   const dormitoryForm = useForm<DormitoryFormData>({
@@ -144,6 +145,12 @@ export function DormitoryWizardFormCompact({
     dispatch(fetchBedTypes({ page: 1, limit: 100 }));
   }, [dispatch]);
 
+  useEffect(() => {
+    if (!batchBedTypeId && (bedTypes || []).length > 0) {
+      setBatchBedTypeId((bedTypes[0] as BedType).id);
+    }
+  }, [bedTypes, batchBedTypeId]);
+
   // Initialize generator defaults when dormitory is created
   useEffect(() => {
     if (createdDormitory) {
@@ -166,7 +173,7 @@ export function DormitoryWizardFormCompact({
       const number = `${batchPrefix}-${seq}`;
       return {
         number,
-        typeId: '',
+        typeId: batchBedTypeId || '',
         price: batchPrice,
         currency: batchCurrency,
         status: batchStatus,
@@ -225,7 +232,7 @@ export function DormitoryWizardFormCompact({
   const handleAddBed = () => {
     const newBed: BedFormData = {
       number: '',
-      typeId: '',
+      typeId: batchBedTypeId || '',
       price: dormitoryForm.getValues('pricePerBed'),
       currency: 'USD',
       status: 'AVAILABLE',
@@ -254,12 +261,13 @@ export function DormitoryWizardFormCompact({
       const createdBeds: Bed[] = [];
 
       for (const bedData of beds) {
-        // Backend only accepts: dormitoryId, number, basePrice, isActive
+        // Backend only accepts: dormitoryId, number, basePrice, bedTypeId, isActive
         // We configure the full form but only send what the API accepts
         const payload = {
           dormitoryId: createdDormitory.id,
           number: bedData.number,
           basePrice: Number(bedData.price) || 0,
+          bedTypeId: bedData.typeId,
           status: bedData.status,
           isActive: bedData.isActive,
         };
@@ -496,27 +504,27 @@ export function DormitoryWizardFormCompact({
 
 
           <div>
-                                <label className="text-xs font-medium">Prefix</label>
-                                <Input
-                                    value={batchPrefix}
-                                    onChange={(e) => setBatchPrefix(e.target.value)}
-                                    className="h-8"
-                                    disabled={isCreatingBeds || loading}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium">Start #</label>
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    value={batchStart}
-                                    onChange={(e) => setBatchStart(Number(e.target.value))}
-                                    className="h-8"
-                                    disabled={isCreatingBeds || loading}
-                                />
-                            </div>
+            <label className="text-xs font-medium">Prefix</label>
+            <Input
+              value={batchPrefix}
+              onChange={(e) => setBatchPrefix(e.target.value)}
+              className="h-8"
+              disabled={isCreatingBeds || loading}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium">Start #</label>
+            <Input
+              type="number"
+              min={1}
+              value={batchStart}
+              onChange={(e) => setBatchStart(Number(e.target.value))}
+              className="h-8"
+              disabled={isCreatingBeds || loading}
+            />
+          </div>
 
-          
+
           <div>
             <label className="text-xs font-medium">Price</label>
             <Input
@@ -529,7 +537,27 @@ export function DormitoryWizardFormCompact({
               disabled={isCreatingBeds || loading}
             />
           </div>
-          
+
+          <div>
+            <label className="text-xs font-medium">Bed Type</label>
+            <Select
+              value={batchBedTypeId}
+              onValueChange={(value) => setBatchBedTypeId(value)}
+              disabled={isCreatingBeds || loading}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select bed type" />
+              </SelectTrigger>
+              <SelectContent>
+                {(bedTypes || []).map((bt: BedType) => (
+                  <SelectItem key={bt.id} value={bt.id}>
+                    {bt.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <label className="text-xs font-medium">Status</label>
             <Select
@@ -562,7 +590,13 @@ export function DormitoryWizardFormCompact({
             type="button"
             onClick={generateBedsBatch}
             className="cursor-pointer"
-            disabled={isCreatingBeds || loading || !createdDormitory || batchCount <= 0}
+            disabled={
+              isCreatingBeds ||
+              loading ||
+              !createdDormitory ||
+              batchCount <= 0 ||
+              !batchBedTypeId
+            }
           >
             Generate Beds
           </Button>
@@ -604,7 +638,7 @@ export function DormitoryWizardFormCompact({
                   />
                 </div>
 
-                {/* <div>
+                <div>
                   <label className="text-xs font-medium">Bed Type</label>
                   <Select
                     value={bed.typeId}
@@ -622,7 +656,7 @@ export function DormitoryWizardFormCompact({
                       ))}
                     </SelectContent>
                   </Select>
-                </div> */}
+                </div>
 
                 <div>
                   <label className="text-xs font-medium">Price</label>
