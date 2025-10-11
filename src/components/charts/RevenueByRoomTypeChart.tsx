@@ -8,26 +8,23 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
+  RadialBarChart,
+  RadialBar,
   ResponsiveContainer,
 } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface RevenueByRoomTypeChartProps {
-  data: Array<{ name: string; amount: number }>;
+  data: Array<{ name: string; amount: number; percentage: number; fill: string }>;
   currency?: string;
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-];
+const chartConfig = {
+  percentage: {
+    label: 'Percentage',
+    color: 'hsl(var(--chart-1))',
+  },
+};
 
 export function RevenueByRoomTypeChart({
   data,
@@ -41,44 +38,68 @@ export function RevenueByRoomTypeChart({
     }).format(value);
   };
 
+  // Transform data for RadialBarChart
+  const chartData = data.map((item) => ({
+    name: item.name,
+    percentage: item.percentage,
+    value: item.amount,
+    fill: item.fill,
+  }));
+
   return (
-    <Card className="bg-card border-0 shadow-sm">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>Revenue by Room Type</CardTitle>
-        <CardDescription>
-          Revenue distribution across room categories
+        <CardTitle className="text-foreground">Revenue by Room Type</CardTitle>
+        <CardDescription className="text-muted-foreground">
+          Distribution of revenue across room categories
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={(props: unknown) => {
-                const { name, percent } = props as {
-                  name: string;
-                  percent: number;
-                };
-                return `${name}: ${(percent * 100).toFixed(0)}%`;
-              }}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="amount"
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
+        <div className="space-y-3">
+          {data.map((item, index) => (
+            <div key={item.name} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                <span className="text-sm font-medium text-foreground">{item.name}</span>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-foreground">{formatCurrency(item.amount)}</div>
+                <div className="text-xs text-muted-foreground">{item.percentage}%</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <ChartContainer config={chartConfig} className="h-[280px] mt-4">
+          <RadialBarChart
+            cx="50%"
+            cy="50%"
+            innerRadius="20%"
+            outerRadius="90%"
+            barSize={20}
+            data={chartData}
+            startAngle={90}
+            endAngle={-270}
+          >
+            <RadialBar
+              minAngle={15}
+              background={{ fill: "hsl(var(--muted))" }}
+              clockWise
+              dataKey="percentage"
+              cornerRadius={10}
+              label={{ position: "insideStart", fill: "#fff", fontSize: 14, fontWeight: "bold" }}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value: number, name: string, props: any) => [
+                    `${formatCurrency(props.payload.value)} (${value}%)`,
+                    props.payload.name,
+                  ]}
                 />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+              }
+            />
+          </RadialBarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

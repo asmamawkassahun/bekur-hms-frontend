@@ -19,26 +19,28 @@ export function GuestStatsCards({ stats }: GuestStatsCardsProps) {
         value={stats.totalGuests}
         description="All registered guests"
         icon={Users}
+        gradient="blue"
       />
       <StatsCard
         title="VIP Guests"
         value={stats.vipGuests}
         description="Platinum members"
         icon={Star}
-        className="[&>div>div>svg]:text-purple-600"
+        gradient="rose"
       />
       <StatsCard
         title="New This Month"
         value={stats.newThisMonth}
         description="New registrations"
         icon={Users}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
       <StatsCard
         title="Active Guests"
         value={stats.activeGuests}
         description="Currently active"
         icon={Users}
+        gradient="violet"
       />
     </div>
   );

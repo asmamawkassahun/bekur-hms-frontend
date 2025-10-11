@@ -1,40 +1,66 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface GuestDemographicsChartProps {
-  data: Array<{ nationality: string; count: number }>;
+  data: Array<{ country: string; guests: number }>;
 }
 
+const chartConfig = {
+  guests: {
+    label: 'Guests',
+    color: 'hsl(var(--chart-1))',
+  },
+};
+
 export function GuestDemographicsChart({ data }: GuestDemographicsChartProps) {
-  // Sort by count and take top 10
-  const topNationalities = [...data]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+  // Sort by count and take top 6
+  const topCountries = [...data]
+    .sort((a, b) => b.guests - a.guests)
+    .slice(0, 6);
 
   return (
-    <Card className="bg-card border-0 shadow-sm">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>Top Guest Nationalities</CardTitle>
-        <CardDescription>Guest distribution by country of origin</CardDescription>
+        <CardTitle className="text-foreground">Guest Demographics</CardTitle>
+        <CardDescription className="text-muted-foreground">Guest distribution by country</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={topNationalities} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis type="number" className="text-xs" />
-            <YAxis dataKey="nationality" type="category" className="text-xs" width={80} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-              }}
+        <ChartContainer config={chartConfig} className="h-[300px]">
+          <BarChart data={topCountries} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} horizontal={false} />
+            <XAxis
+              type="number"
+              className="stroke-muted-foreground"
+              style={{ fontSize: "12px" }}
             />
-            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+            <YAxis
+              dataKey="country"
+              type="category"
+              className="stroke-muted-foreground"
+              width={80}
+              style={{ fontSize: "12px" }}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value: number) => [value, "Guests"]}
+                />
+              }
+            />
+            <Bar dataKey="guests" fill="#60a5fa" radius={[0, 8, 8, 0]}>
+              <LabelList
+                dataKey="guests"
+                position="right"
+                className="fill-foreground"
+                fontSize={12}
+                fontWeight="bold"
+              />
+            </Bar>
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

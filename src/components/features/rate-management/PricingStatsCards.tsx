@@ -22,24 +22,28 @@ export function PricingStatsCards({ rules }: PricingStatsCardsProps) {
         value={totalRules}
         description="All pricing rules"
         icon={Layers3}
+        gradient="blue"
       />
       <StatsCard
         title="Active Rules"
         value={activeRules}
         description="Currently applied"
         icon={Power}
+        gradient="green"
       />
       <StatsCard
         title="Seasonal"
         value={seasonalRules}
         description="Season multipliers"
         icon={CalendarRange}
+        gradient="violet"
       />
       <StatsCard
         title="Discount Rules"
         value={discountRules}
         description="Promo & deals"
         icon={BadgePercent}
+        gradient="rose"
       />
     </div>
   );
