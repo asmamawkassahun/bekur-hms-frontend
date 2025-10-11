@@ -3,7 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Eye, Edit, Trash2, MapPin, Phone, Mail, Building } from 'lucide-react';
+import {
+  Eye,
+  Edit,
+  Trash2,
+  MapPin,
+  Phone,
+  Mail,
+  Building,
+  Globe,
+} from 'lucide-react';
 import type { Property } from '@/types';
 
 interface PropertyTableRowProps {
@@ -66,6 +75,18 @@ export function PropertyTableRow({
             </div>
           )}
         </div>
+      </TableCell>
+      <TableCell>
+        {property.hotelCode ? (
+          <div className="flex items-center gap-1.5">
+            <Globe className="h-3.5 w-3.5 text-green-600" />
+            <Badge variant="outline" className="font-mono text-xs">
+              {property.hotelCode}
+            </Badge>
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
       </TableCell>
       <TableCell>
         <Badge variant={property.isActive ? 'default' : 'secondary'}>

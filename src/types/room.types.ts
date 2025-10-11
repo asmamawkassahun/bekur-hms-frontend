@@ -41,6 +41,8 @@ export interface RoomType {
   amenities: string[];
   images?: string[];
   reserveCondition?: string;
+  roomCode?: string; // Aiosell room code
+  ratePlanCodes?: string[]; // Aiosell rate plan codes
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -59,6 +61,8 @@ export interface CreateRoomTypeData {
   amenities: string[];
   images?: string[];
   reserveCondition?: string;
+  roomCode?: string; // Aiosell room code
+  ratePlanCodes?: string[]; // Aiosell rate plan codes
   beds: Array<{ bedTypeId: string; quantity: number }>;
 }
 
@@ -173,14 +177,25 @@ export interface Bed {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Optional relational/extended fields
+  bedTypeId?: string;
+  bedType?: BedType;
+  dormitory?: Dormitory;
+  currency?: string;
+  amenities?: string[];
+  description?: string;
 }
 
 export interface CreateBedData {
   dormitoryId: string;
   number: string;
   basePrice: number;
+  bedTypeId?: string;
   status: BedStatus;
   isActive: boolean;
+  description?: string;
+  amenities?: string[];
+  currency?: string;
 }
 
 export interface UpdateBedData {
@@ -188,6 +203,10 @@ export interface UpdateBedData {
   number?: string;
   basePrice?: number;
   isActive?: boolean;
+  bedTypeId?: string;
+  description?: string;
+  amenities?: string[];
+  currency?: string;
 }
 
 export interface UpdateBedStatusData {
@@ -201,3 +220,22 @@ export type BedStatus =
   | 'CLEANING'
   | 'MAINTENANCE'
   | 'OUT_OF_ORDER';
+
+// Occupancy Calendar Types
+export interface OccupiedRoomDetail {
+  roomId: string;
+  roomNumber: string;
+  roomTypeName: string;
+  guestName: string;
+  checkIn: string;
+  checkOut: string;
+}
+
+export interface DailyOccupancy {
+  date: string; // YYYY-MM-DD format
+  occupancyRate: number; // Percentage (0-100)
+  totalRooms: number;
+  occupiedRooms: number;
+  availableRooms: number;
+  occupiedRoomDetails: OccupiedRoomDetail[];
+}

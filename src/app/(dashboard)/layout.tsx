@@ -121,14 +121,14 @@ export default function DashboardLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen md:ml-64">
+        <div className="flex-1 flex flex-col min-h-screen md:ml-64 overflow-x-hidden">
           <Header
             sidebarOpen={sidebarOpen}
             onToggle={() => setSidebarOpen(!sidebarOpen)}
             onMobileMenuToggle={() => setMobileSidebarOpen(true)}
             loading={loading || !hasInitialized}
           />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 overflow-x-hidden">{children}</main>
           <AddRoomDialog />
         </div>
       </div>

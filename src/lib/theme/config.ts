@@ -2,7 +2,7 @@ import { ThemeConfig } from '@/types';
 
 export const themeConfig: ThemeConfig = {
   brand: {
-    name: process.env.NEXT_PUBLIC_BRAND_NAME || 'Bekur HMS',
+    name: process.env.NEXT_PUBLIC_BRAND_NAME || 'Automata HMS',
     logo: process.env.NEXT_PUBLIC_BRAND_LOGO || '/logo.svg',
   },
   colors: {

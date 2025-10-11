@@ -28,7 +28,7 @@ import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
-import type { Bed } from '@/types';
+import type { Bed, CreateBedData, UpdateBedData } from '@/types';
 
 // Import extracted components
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -86,7 +86,7 @@ export default function BedsPage() {
         const allBeds = response.data || [];
 
         setStatsData({
-          totalBeds: response.pagination?.total || 0,
+          totalBeds: (response.meta?.total as number) || allBeds.length || 0,
           availableBeds: allBeds.filter((b) => b.status === 'AVAILABLE').length,
           occupiedBeds: allBeds.filter((b) => b.status === 'OCCUPIED').length,
           maintenanceBeds: allBeds.filter((b) => b.status === 'MAINTENANCE')
@@ -145,8 +145,18 @@ export default function BedsPage() {
     lastSearchTerm,
   ]);
 
-  const handleCreateBed = async (data: any) => {
+  const handleCreateBed = async (formData: { number: string; dormitoryId: string; bedTypeId: string; basePrice: number; status: string; isActive: boolean; description?: string; amenities?: string }) => {
     try {
+      const data: CreateBedData = {
+        number: formData.number,
+        dormitoryId: formData.dormitoryId,
+        bedTypeId: formData.bedTypeId,
+        basePrice: formData.basePrice,
+        status: formData.status as 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'OUT_OF_ORDER',
+        isActive: formData.isActive,
+        description: formData.description,
+        amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : undefined,
+      };
       await dispatch(createBed(data)).unwrap();
       success('Bed created');
       setOpenCreate(false);
@@ -166,9 +176,18 @@ export default function BedsPage() {
     }
   };
 
-  const handleEditBed = async (data: any) => {
+  const handleEditBed = async (formData: { number: string; dormitoryId: string; bedTypeId: string; basePrice: number; status: string; isActive: boolean; description?: string; amenities?: string }) => {
     if (!selectedBed) return;
     try {
+      const data: UpdateBedData = {
+        number: formData.number,
+        dormitoryId: formData.dormitoryId,
+        bedTypeId: formData.bedTypeId,
+        basePrice: formData.basePrice,
+        isActive: formData.isActive,
+        description: formData.description,
+        amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : undefined,
+      };
       // await dispatch(updateBed({ id: selectedBed.id, data })).unwrap();
       success('Bed updated');
       setOpenEdit(false);
@@ -215,6 +234,7 @@ export default function BedsPage() {
   const columns = [
     { key: 'bed', label: 'Bed', width: 'w-[200px]' },
     { key: 'dormitory', label: 'Dormitory', width: 'w-[150px]' },
+    { key: 'type', label: 'Bed Type', width: 'w-[150px]' },
     { key: 'price', label: 'Price', width: 'w-[120px]' },
     { key: 'status', label: 'Status', width: 'w-[120px]' },
     { key: 'amenities', label: 'Amenities', width: 'w-[200px]' },

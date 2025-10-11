@@ -10,6 +10,7 @@ import {
   BookingType,
   BookingSource,
   PaymentDetailsData,
+  CalculatePriceData,
 } from '@/types';
 
 interface ReservationState {
@@ -74,7 +75,13 @@ export const fetchReservations = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await reservationService.getAll(params);
+      // Flatten filters to top-level query params
+      const { filters, ...rest } = params;
+      const flatParams = {
+        ...rest,
+        ...(filters || {}),
+      };
+      const response = await reservationService.getAll(flatParams);
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -129,6 +136,20 @@ export const deleteReservation = createAsyncThunk(
   },
 );
 
+export const confirmReservation = createAsyncThunk(
+  'reservation/confirmReservation',
+  async (reservationId: string, { rejectWithValue }) => {
+    try {
+      const response = await reservationService.confirm(reservationId);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to confirm reservation';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const checkInGuest = createAsyncThunk(
   'reservation/checkInGuest',
   async (data: CheckInData, { rejectWithValue }) => {
@@ -149,9 +170,17 @@ export const checkOutGuest = createAsyncThunk(
     try {
       const response = await reservationService.checkOut(data);
       return response.data;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to check out guest';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      // Extract error message from API response
+      let errorMessage = 'Failed to check out guest';
+
+      if (error?.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       return rejectWithValue(errorMessage);
     }
   },
@@ -250,6 +279,20 @@ export const addPaymentDetails = createAsyncThunk(
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to add payment details';
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const calculatePrice = createAsyncThunk(
+  'reservation/calculatePrice',
+  async (data: CalculatePriceData, { rejectWithValue }) => {
+    try {
+      const res = await reservationService.calculate(data);
+      return res.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to calculate price';
       return rejectWithValue(errorMessage);
     }
   },
@@ -377,6 +420,29 @@ const reservationSlice = createSlice({
         }
       })
       .addCase(deleteReservation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Confirm Reservation
+      .addCase(confirmReservation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(confirmReservation.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.data) {
+          const index = state.reservations.findIndex(
+            (r) => r.id === action.payload.data?.id,
+          );
+          if (index !== -1) {
+            state.reservations[index] = action.payload.data!;
+          }
+          if (state.currentReservation?.id === action.payload.data?.id) {
+            state.currentReservation = action.payload.data!;
+          }
+        }
+      })
+      .addCase(confirmReservation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

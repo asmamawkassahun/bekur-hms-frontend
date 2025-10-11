@@ -12,7 +12,7 @@ export type PaymentMethod =
   | 'CARD'
   | 'BANK_TRANSFER'
   | 'MOBILE_MONEY'
-  | 'ONLINE_GATEWAY';
+  | 'CRYPTO';
 
 export interface Payment {
   id: string;

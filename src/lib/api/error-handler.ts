@@ -2,16 +2,21 @@ import { AxiosError } from 'axios';
 import { ApiError } from '@/types';
 
 export function handleApiError(error: AxiosError): ApiError {
-  const response = error.response?.data as
-    | { error?: { message?: string; details?: Record<string, unknown> } }
-    | undefined;
+  const responseData = error.response?.data as any;
+
+  // Try to extract a useful message from various common response shapes
+  const extractedMessage =
+    responseData?.error?.message ||
+    responseData?.message ||
+    (Array.isArray(responseData?.errors) && responseData.errors[0]?.message) ||
+    (typeof responseData === 'string' ? responseData : undefined);
 
   switch (error.response?.status) {
     case 400:
       return {
-        message: response?.error?.message || 'Bad request',
+        message: extractedMessage || 'Bad request',
         type: 'validation',
-        details: response?.error?.details,
+        details: responseData?.error?.details,
       };
     case 401:
       return {
@@ -29,11 +34,22 @@ export function handleApiError(error: AxiosError): ApiError {
         message: 'Resource not found',
         type: 'notFound',
       };
+    case 409:
+      return {
+        message: extractedMessage || 'Resource conflict',
+        type: 'validation',
+        details: responseData?.error?.details,
+      };
     case 422:
       return {
-        message: response?.error?.message || 'Validation failed',
+        message: extractedMessage || 'Validation failed',
         type: 'validation',
-        details: response?.error?.details,
+        details: responseData?.error?.details,
+      };
+    case 429:
+      return {
+        message: extractedMessage || 'Too many requests. Please slow down.',
+        type: 'unknown',
       };
     case 500:
       return {
@@ -42,7 +58,7 @@ export function handleApiError(error: AxiosError): ApiError {
       };
     default:
       return {
-        message: response?.error?.message || 'An unexpected error occurred',
+        message: extractedMessage || 'An unexpected error occurred',
         type: 'unknown',
       };
   }

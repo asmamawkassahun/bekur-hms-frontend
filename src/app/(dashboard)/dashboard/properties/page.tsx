@@ -6,6 +6,8 @@ import { AppDispatch, RootState } from '@/store';
 import {
   fetchProperties,
   createProperty,
+  updateProperty,
+  deleteProperty,
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/propertySlice';
@@ -28,7 +30,7 @@ import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
-import type { Property } from '@/types';
+import type { Property, CreatePropertyData, UpdatePropertyData } from '@/types';
 
 // Import extracted components
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -56,6 +58,7 @@ export default function PropertiesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null,
@@ -80,20 +83,15 @@ export default function PropertiesPage() {
             page: 1,
             limit: 1000, // Get all properties for stats calculation
             search: undefined,
-            type: undefined,
-            isActive: undefined,
           }),
         ).unwrap();
 
         const allProperties = response.data || [];
 
         setStatsData({
-          totalProperties: response.pagination?.total || 0,
+          totalProperties: response.meta?.total || 0,
           activeProperties: allProperties.filter((p) => p.isActive).length,
-          totalRooms: allProperties.reduce(
-            (sum, p) => sum + (p.rooms?.length || 0),
-            0,
-          ),
+          totalRooms: 0, // Rooms count would need a separate API call
           totalRevenue: 0, // This would need to be calculated from reservations
         });
       } catch (e) {
@@ -135,9 +133,6 @@ export default function PropertiesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     }
@@ -150,8 +145,26 @@ export default function PropertiesPage() {
     lastSearchTerm,
   ]);
 
-  const handleCreateProperty = async (data: any) => {
+  const handleCreateProperty = async (formData: Partial<CreatePropertyData> & Pick<CreatePropertyData, 'name' | 'type' | 'address' | 'city' | 'country' | 'timezone' | 'currency'>) => {
     try {
+      const data: CreatePropertyData = {
+        name: formData.name,
+        type: formData.type,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        timezone: formData.timezone,
+        currency: formData.currency,
+        taxRate: formData.taxRate || 0,
+        phone: formData.phone ?? undefined,
+        email: formData.email ?? undefined,
+        postalCode: formData.postalCode ?? undefined,
+        description: formData.description ?? undefined,
+        isActive: formData.isActive !== undefined ? formData.isActive : true,
+        policies: formData.policies ?? undefined,
+        website: formData.website ?? undefined,
+        hotelCode: formData.hotelCode ?? undefined,
+      };
       await dispatch(createProperty(data)).unwrap();
       success('Property created');
       setOpenCreate(false);
@@ -161,9 +174,6 @@ export default function PropertiesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     } catch (e) {
@@ -172,10 +182,19 @@ export default function PropertiesPage() {
     }
   };
 
-  const handleEditProperty = async (data: any) => {
+  const handleEditProperty = async (formData: UpdatePropertyData) => {
     if (!selectedProperty) return;
     try {
-      // await dispatch(updateProperty({ id: selectedProperty.id, data })).unwrap();
+      // Ensure all fields are properly sent to backend
+      const data: UpdatePropertyData = {
+        ...formData,
+        website: formData.website ?? undefined,
+        policies: formData.policies ?? undefined,
+        hotelCode: formData.hotelCode ?? undefined,
+        taxRate: typeof formData.taxRate === 'string' ? Number(formData.taxRate) : formData.taxRate,
+      };
+
+      await dispatch(updateProperty({ id: selectedProperty.id, data })).unwrap();
       success('Property updated');
       setOpenEdit(false);
       setSelectedProperty(null);
@@ -185,9 +204,6 @@ export default function PropertiesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     } catch (e) {
@@ -199,7 +215,7 @@ export default function PropertiesPage() {
   const handleDeleteProperty = async () => {
     if (!selectedProperty) return;
     try {
-      // await dispatch(deleteProperty(selectedProperty.id)).unwrap();
+      await dispatch(deleteProperty(selectedProperty.id)).unwrap();
       success('Property deleted');
       setOpenDelete(false);
       setSelectedProperty(null);
@@ -209,9 +225,6 @@ export default function PropertiesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     } catch (e) {
@@ -235,7 +248,7 @@ export default function PropertiesPage() {
       property={property}
       onView={(p) => {
         setSelectedProperty(p);
-        // setOpenView(true);
+        setOpenView(true);
       }}
       onEdit={(p) => {
         setSelectedProperty(p);
@@ -333,6 +346,98 @@ export default function PropertiesPage() {
         renderRow={renderPropertyRow}
       />
 
+      {/* View Property Dialog */}
+      <Dialog
+        open={openView}
+        onOpenChange={(open) => {
+          setOpenView(open);
+          if (!open) setSelectedProperty(null);
+        }}
+      >
+        <DialogContent className="!w-[90vw] !max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Property Details</DialogTitle>
+          </DialogHeader>
+          {selectedProperty && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-medium">{selectedProperty.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <p className="font-medium">{selectedProperty.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-medium">{selectedProperty.address}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">City</p>
+                  <p className="font-medium">{selectedProperty.city}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Country</p>
+                  <p className="font-medium">{selectedProperty.country}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{selectedProperty.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{selectedProperty.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Website</p>
+                  <p className="font-medium">{selectedProperty.website || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Timezone</p>
+                  <p className="font-medium">{selectedProperty.timezone}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Currency</p>
+                  <p className="font-medium">{selectedProperty.currency}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tax Rate</p>
+                  <p className="font-medium">{selectedProperty.taxRate}%</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Hotel Code</p>
+                  <p className="font-medium">{selectedProperty.hotelCode || 'N/A'}</p>
+                </div>
+              </div>
+              {selectedProperty.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Description</p>
+                  <p className="font-medium">{selectedProperty.description}</p>
+                </div>
+              )}
+              {selectedProperty.policies && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Policies</p>
+                  <p className="font-medium whitespace-pre-wrap">{selectedProperty.policies}</p>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setOpenView(false)}>
+                  Close
+                </Button>
+                <Button onClick={() => {
+                  setOpenView(false);
+                  setOpenEdit(true);
+                }}>
+                  Edit Property
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Property Dialog */}
       <Dialog
         open={openEdit}
@@ -364,9 +469,8 @@ export default function PropertiesPage() {
           if (!open) setSelectedProperty(null);
         }}
         title="Delete Property"
-        description={`Are you sure you want to delete ${
-          selectedProperty ? selectedProperty.name : 'this property'
-        }? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${selectedProperty ? selectedProperty.name : 'this property'
+          }? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
         onConfirm={handleDeleteProperty}

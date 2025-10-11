@@ -13,7 +13,12 @@ import dormitoryReducer from './slices/dormitorySlice';
 import bedReducer from './slices/bedSlice';
 import roomTypeReducer from './slices/roomTypeSlice';
 import bedTypeReducer from './slices/bedTypeSlice';
+import bookingTypeReducer from './slices/bookingTypeSlice';
+import bookingSourceReducer from './slices/bookingSourceSlice';
 import uiReducer from './slices/uiSlice';
+import dashboardReducer from './slices/dashboardSlice';
+import nightAuditReducer from './slices/nightAuditSlice';
+import rateManagementReducer from './slices/rateManagementSlice';
 
 export const store = configureStore({
   reducer: {
@@ -31,7 +36,12 @@ export const store = configureStore({
     bed: bedReducer,
     roomType: roomTypeReducer,
     bedType: bedTypeReducer,
+    bookingType: bookingTypeReducer,
+    bookingSource: bookingSourceReducer,
     ui: uiReducer,
+    dashboard: dashboardReducer,
+    nightAudit: nightAuditReducer,
+    rateManagement: rateManagementReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -48,5 +58,6 @@ export type AppDispatch = typeof store.dispatch;
 
 // Expose store globally for axios interceptor
 if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).__REDUX_STORE__ = store;
 }

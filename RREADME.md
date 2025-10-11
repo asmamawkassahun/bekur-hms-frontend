@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Report & Analytics Module provides comprehensive reporting capabilities for the Bekur HMS backend. It generates detailed reports on occupancy, revenue, operational metrics, financial performance, and guest analytics to help property managers make data-driven decisions.
+The Report & Analytics Module provides comprehensive reporting capabilities for the Automata HMS backend. It generates detailed reports on occupancy, revenue, operational metrics, financial performance, and guest analytics to help property managers make data-driven decisions.
 
 ## Features
 

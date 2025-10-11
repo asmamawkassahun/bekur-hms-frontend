@@ -5,11 +5,13 @@ import * as z from 'zod';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -43,6 +45,14 @@ const createRoomTypeSchema = z.object({
   amenities: z.array(z.string()).default([]),
   images: z.array(z.string()).default([]),
   reserveCondition: z.string().optional(),
+  roomCode: z
+    .string()
+    .optional()
+    .refine(
+      (code) => !code || /^[A-Z0-9-]+$/.test(code),
+      'Room code must be uppercase letters, numbers, and hyphens',
+    ),
+  ratePlanCodes: z.array(z.string()).optional(),
   beds: z
     .array(
       z.object({
@@ -81,15 +91,17 @@ export function RoomTypeForm({
     defaultValues: {
       propertyId: roomType?.propertyId || '',
       name: roomType?.name || '',
-      description: roomType?.description || '',
-      roomSize: roomType?.roomSize || undefined,
+      description: roomType?.description ?? '',
+      roomSize: roomType?.roomSize ?? 0,
       sizeUnit: roomType?.sizeUnit || 'SQ_FT',
       adultCapacity: roomType?.adultCapacity || 1,
       childCapacity: roomType?.childCapacity || 0,
       basePrice: roomType?.basePrice || 0,
       amenities: roomType?.amenities || [],
       images: roomType?.images || [],
-      reserveCondition: roomType?.reserveCondition || '',
+      reserveCondition: roomType?.reserveCondition ?? '',
+      roomCode: roomType?.roomCode ?? '',
+      ratePlanCodes: roomType?.ratePlanCodes || [],
       beds:
         roomType?.beds?.map((bed) => ({
           bedTypeId: bed.bedTypeId,
@@ -100,6 +112,19 @@ export function RoomTypeForm({
 
   const handleSubmit = (data: CreateRoomTypeData | UpdateRoomTypeData) => {
     onSubmit(data);
+  };
+
+  // Get selected property to check for hotelCode
+  const selectedPropertyId = form.watch('propertyId');
+  const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
+
+  // Helper function to add rate plan codes
+  const addRatePlan = (occupancy: 'S' | 'D' | 'T') => {
+    const roomCode = form.getValues('roomCode')?.toUpperCase() || 'ROOM';
+    const existing = form.getValues('ratePlanCodes') || [];
+    const number = existing.length + 1;
+    const code = `${roomCode}-${occupancy}-${String(number).padStart(3, '0')}`;
+    form.setValue('ratePlanCodes', [...existing, code]);
   };
 
   return (
@@ -158,8 +183,8 @@ export function RoomTypeForm({
                   <Input
                     type="number"
                     placeholder="Room size"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -288,7 +313,7 @@ export function RoomTypeForm({
               <FormControl>
                 <TagInput
                   placeholder="Add amenities..."
-                  value={field.value}
+                  value={field.value || []}
                   onChange={field.onChange}
                 />
               </FormControl>
@@ -305,9 +330,9 @@ export function RoomTypeForm({
               <FormLabel>Images</FormLabel>
               <FormControl>
                 <ImageUpload
-                  value={field.value}
+                  value={field.value || []}
                   onChange={field.onChange}
-                  maxFiles={5}
+                  maxImages={5}
                 />
               </FormControl>
               <FormMessage />
@@ -320,6 +345,102 @@ export function RoomTypeForm({
           bedTypes={bedTypes}
           onChange={(beds) => form.setValue('beds', beds)}
         />
+
+        {/* Channel Manager Codes - Only show if property has hotelCode */}
+        {selectedProperty?.hotelCode && (
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">
+                Channel Manager Codes (Optional)
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Configure for Aiosell distribution
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="roomCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room Code</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., SUITE, DELUXE, STANDARD"
+                        className="font-mono uppercase"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.toUpperCase())
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Unique identifier (uppercase, alphanumeric)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ratePlanCodes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rate Plan Codes</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        placeholder="e.g., SUITE-S-101"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Add one per occupancy type. Press Enter after each.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Quick add buttons */}
+              {form.watch('roomCode') && (
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Quick add:
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => addRatePlan('S')}
+                  >
+                    + Single
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => addRatePlan('D')}
+                  >
+                    + Double
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => addRatePlan('T')}
+                  >
+                    + Triple
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={onCancel}>

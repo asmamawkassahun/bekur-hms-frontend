@@ -1,6 +1,13 @@
 import React from 'react';
 import { StatsCard } from '@/components/shared/StatsCard';
-import { Calendar, CheckCircle, Clock, DollarSign } from 'lucide-react';
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  CreditCard,
+  AlertCircle,
+} from 'lucide-react';
 
 interface ReservationStatsCardsProps {
   stats: {
@@ -9,11 +16,15 @@ interface ReservationStatsCardsProps {
     checkedInReservations: number;
     pendingReservations: number;
     totalRevenue: number;
+    totalPaidAmount: number;
+    totalUnpaidAmount: number;
+    paidReservations: number;
+    currency: string;
   };
 }
 
 export function ReservationStatsCards({ stats }: ReservationStatsCardsProps) {
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  const formatCurrency = (amount: number, currency: string = 'ETB') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
@@ -21,7 +32,7 @@ export function ReservationStatsCards({ stats }: ReservationStatsCardsProps) {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       <StatsCard
         title="Total Reservations"
         value={stats.totalReservations}
@@ -43,11 +54,25 @@ export function ReservationStatsCards({ stats }: ReservationStatsCardsProps) {
         className="[&>div>div>svg]:text-yellow-600"
       />
       <StatsCard
-        title="Revenue"
-        value={formatCurrency(stats.totalRevenue)}
-        description="Total revenue"
+        title="Total Revenue"
+        value={formatCurrency(stats.totalRevenue, stats.currency)}
+        description="Total booking value"
         icon={DollarSign}
         className="[&>div>div>svg]:text-green-600"
+      />
+      <StatsCard
+        title="Paid Amount"
+        value={formatCurrency(stats.totalPaidAmount, stats.currency)}
+        description={`${stats.paidReservations} reservations paid`}
+        icon={CreditCard}
+        className="[&>div>div>svg]:text-blue-600"
+      />
+      <StatsCard
+        title="Unpaid Amount"
+        value={formatCurrency(stats.totalUnpaidAmount, stats.currency)}
+        description="Outstanding payments"
+        icon={AlertCircle}
+        className="[&>div>div>svg]:text-red-600"
       />
     </div>
   );

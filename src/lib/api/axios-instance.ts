@@ -60,6 +60,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // For non-401 errors, reject with the error immediately
+    if (error.response?.status !== 401) {
+      return Promise.reject(error);
+    }
+
     // Handle 401 errors (unauthorized) - only refresh, don't logout
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -179,7 +184,7 @@ apiClient.interceptors.response.use(
           console.error('🚫 Server rejected refresh token - may be invalid or revoked');
         } else if (error.response?.status === 403) {
           console.error('🚫 Access forbidden - refresh token may be blacklisted');
-        } else if (error.response?.status >= 500) {
+        } else if (error.response?.status && error.response.status >= 500) {
           console.error('🔧 Server error during refresh - please try again later');
         } else if (error.code === 'NETWORK_ERROR') {
           console.error('🌐 Network error - please check connection');
@@ -241,5 +246,8 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
       }
     }
+
+    // For any other errors (network errors, etc.), reject immediately
+    return Promise.reject(error);
   },
 );

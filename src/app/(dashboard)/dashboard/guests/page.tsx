@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/store';
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import {
   fetchGuests,
   createGuest,
@@ -13,38 +13,38 @@ import {
   fetchGuestDocuments,
   updateSearchCache,
   setLastSearchTerm,
-} from '@/store/slices/guestSlice';
-import { Button } from '@/components/ui/button';
+} from "@/store/slices/guestSlice";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Plus, Filter } from 'lucide-react';
-import { useNotification } from '@/hooks/useNotification';
-import type { AxiosError } from 'axios';
-import { handleApiError } from '@/lib/api/error-handler';
-import type { Guest } from '@/types';
-import { FileType } from '@/types';
+} from "@/components/ui/dialog";
+import { Plus, Filter } from "lucide-react";
+import { useNotification } from "@/hooks/useNotification";
+import type { AxiosError } from "axios";
+import { handleApiError } from "@/lib/api/error-handler";
+import type { Guest, CreateGuestData, UpdateGuestData } from "@/types";
+import { FileType } from "@/types";
 
 // Import extracted components
-import { PageHeader } from '@/components/shared/PageHeader';
-import { SearchBar } from '@/components/shared/SearchBar';
-import { DataTable } from '@/components/shared/DataTable';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { GuestStatsCards } from '@/components/features/guests/GuestStatsCards';
-import { GuestTableRow } from '@/components/features/guests/GuestTableRow';
-import { GuestForm } from '@/components/features/guests/GuestForm';
-import { GuestDetailsDialog } from '@/components/features/guests/GuestDetailsDialog';
+import { PageHeader } from "@/components/shared/PageHeader";
+import { SearchBar } from "@/components/shared/SearchBar";
+import { DataTable } from "@/components/shared/DataTable";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { GuestStatsCards } from "@/components/features/guests/GuestStatsCards";
+import { GuestTableRow } from "@/components/features/guests/GuestTableRow";
+import { GuestForm } from "@/components/features/guests/GuestForm";
+import { GuestDetailsDialog } from "@/components/features/guests/GuestDetailsDialog";
 
 export default function GuestsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -57,9 +57,9 @@ export default function GuestsPage() {
     isSearching,
   } = useSelector((state: RootState) => state.guest);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [loyaltyFilter, setLoyaltyFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [loyaltyFilter, setLoyaltyFilter] = useState("all");
   const [openCreate, setOpenCreate] = useState(false);
   const [openView, setOpenView] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
@@ -76,40 +76,46 @@ export default function GuestsPage() {
 
   const { success, error } = useNotification();
 
-  // Fetch overall stats data (not affected by search)
+  // Function to fetch and update stats
+  const fetchStatsData = async () => {
+    try {
+      const response = await dispatch(
+        fetchGuests({
+          page: 1,
+          limit: 1000, // Get all guests for stats calculation
+          search: undefined,
+          loyaltyTier: undefined,
+        })
+      ).unwrap();
+
+      const responseData = response as unknown as {
+        data?: { guests?: Guest[] };
+      };
+      const allGuests = Array.isArray(responseData?.data?.guests)
+        ? responseData.data.guests
+        : [];
+      const now = new Date();
+
+      setStatsData({
+        totalGuests: allGuests.length,
+        vipGuests: allGuests.filter((g: Guest) => g.loyaltyTier === "PLATINUM")
+          .length,
+        newThisMonth: allGuests.filter((g: Guest) => {
+          const created = new Date(g.createdAt);
+          return (
+            created.getMonth() === now.getMonth() &&
+            created.getFullYear() === now.getFullYear()
+          );
+        }).length,
+        activeGuests: allGuests.filter((g: Guest) => g.isActive).length,
+      });
+    } catch (e) {
+      console.error("Failed to fetch stats data:", e);
+    }
+  };
+
+  // Fetch overall stats data on mount
   useEffect(() => {
-    const fetchStatsData = async () => {
-      try {
-        const response = await dispatch(
-          fetchGuests({
-            page: 1,
-            limit: 1000, // Get all guests for stats calculation
-            search: undefined,
-            loyaltyTier: undefined,
-          }),
-        ).unwrap();
-
-        const allGuests = Array.isArray((response as any)?.data?.guests) ? (response as any).data.guests : [];
-        const now = new Date();
-
-        setStatsData({
-          totalGuests: allGuests.length,
-          vipGuests: allGuests.filter((g: any) => g.loyaltyTier === 'PLATINUM')
-            .length,
-          newThisMonth: allGuests.filter((g: any) => {
-            const created = new Date(g.createdAt);
-            return (
-              created.getMonth() === now.getMonth() &&
-              created.getFullYear() === now.getFullYear()
-            );
-          }).length,
-          activeGuests: allGuests.filter((g: any) => g.isActive).length,
-        });
-      } catch (e) {
-        console.error('Failed to fetch stats data:', e);
-      }
-    };
-
     fetchStatsData();
   }, [dispatch]);
 
@@ -120,7 +126,7 @@ export default function GuestsPage() {
         updateSearchCache({
           term: searchTerm,
           results: searchCache[searchTerm],
-        }),
+        })
       );
       dispatch(setLastSearchTerm(searchTerm));
     }
@@ -144,68 +150,79 @@ export default function GuestsPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          loyaltyTier: loyaltyFilter === 'all' ? undefined : loyaltyFilter,
-        }),
+          loyaltyTier: loyaltyFilter === "all" ? undefined : loyaltyFilter,
+        })
       );
     }
   }, [dispatch, debouncedSearch, loyaltyFilter, searchCache, lastSearchTerm]);
 
-  const handleCreateGuest = async (data: any) => {
+  const handleCreateGuest = async (
+    data: CreateGuestData & { documents?: { front?: File; back?: File } }
+  ) => {
     try {
       // Extract documents from form data
       const { documents, ...guestData } = data;
-      
+
       // Create guest first
       const createResult = await dispatch(createGuest(guestData)).unwrap();
       const guestId = createResult.data?.id;
-      
+
       if (!guestId) {
-        throw new Error('Failed to create guest');
+        throw new Error("Failed to create guest");
       }
-      
+
       // Upload documents if provided
       if (documents && documents.front && documents.back) {
         try {
           // Upload front ID card
-          await dispatch(uploadDocument({
-            id: guestId,
-            data: {
-              file: documents.front,
-              fileType: FileType.ID_CARD,
-              description: 'ID Card Front',
-            },
-          })).unwrap();
-          
+          await dispatch(
+            uploadDocument({
+              id: guestId,
+              data: {
+                file: documents.front,
+                fileType: FileType.ID_CARD,
+                description: "ID Card Front",
+              },
+            })
+          ).unwrap();
+
           // Upload back ID card
-          await dispatch(uploadDocument({
-            id: guestId,
-            data: {
-              file: documents.back,
-              fileType: FileType.ID_CARD,
-              description: 'ID Card Back',
-            },
-          })).unwrap();
-          
-          success('Guest created with documents uploaded successfully');
+          await dispatch(
+            uploadDocument({
+              id: guestId,
+              data: {
+                file: documents.back,
+                fileType: FileType.ID_CARD,
+                description: "ID Card Back",
+              },
+            })
+          ).unwrap();
+
+          success("Guest created with documents uploaded successfully");
         } catch (uploadError) {
           // If document upload fails, show error but guest was created
           const uploadApiErr = handleApiError(uploadError as AxiosError);
-          error(`Guest created but document upload failed: ${uploadApiErr.message}`);
+          error(
+            `Guest created but document upload failed: ${uploadApiErr.message}`
+          );
         }
       } else {
-      success('Guest created');
+        success("Guest created");
       }
-      
+
       setOpenCreate(false);
-      
+
+      // Refresh stats immediately
+      fetchStatsData();
+
       // refetch with current search term
       dispatch(
         fetchGuests({
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          loyaltyTier: loyaltyFilter === 'all' ? undefined : loyaltyFilter,
-        }),
+          loyaltyTier: loyaltyFilter === "all" ? undefined : loyaltyFilter,
+        })
       );
     } catch (e) {
       const apiErr = handleApiError(e as AxiosError);
@@ -213,21 +230,25 @@ export default function GuestsPage() {
     }
   };
 
-  const handleEditGuest = async (data: any) => {
+  const handleEditGuest = async (data: UpdateGuestData) => {
     if (!selectedGuest) return;
     try {
       await dispatch(updateGuest({ id: selectedGuest.id, data })).unwrap();
-      success('Guest updated');
+      success("Guest updated");
       setOpenEdit(false);
       setSelectedGuest(null);
+
+      // Refresh stats immediately (in case loyalty tier or active status changed)
+      fetchStatsData();
+
       // refetch with current search term
       dispatch(
         fetchGuests({
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          loyaltyTier: loyaltyFilter === 'all' ? undefined : loyaltyFilter,
-        }),
+          loyaltyTier: loyaltyFilter === "all" ? undefined : loyaltyFilter,
+        })
       );
     } catch (e) {
       const apiErr = handleApiError(e as AxiosError);
@@ -240,7 +261,9 @@ export default function GuestsPage() {
     try {
       // First, get guest documents to delete them
       try {
-        const documentsResponse = await dispatch(fetchGuestDocuments(selectedGuest.id)).unwrap();
+        const documentsResponse = await dispatch(
+          fetchGuestDocuments(selectedGuest.id)
+        ).unwrap();
         // Delete all documents
         if (Array.isArray(documentsResponse)) {
           for (const doc of documentsResponse) {
@@ -249,22 +272,26 @@ export default function GuestsPage() {
         }
       } catch (docError) {
         // Log error but continue with guest deletion
-        console.error('Failed to delete some documents:', docError);
+        console.error("Failed to delete some documents:", docError);
       }
 
       // Then delete the guest
       await dispatch(deleteGuest(selectedGuest.id)).unwrap();
-      success('Guest and associated documents deleted');
+      success("Guest and associated documents deleted");
       setOpenDelete(false);
       setSelectedGuest(null);
+
+      // Refresh stats immediately
+      fetchStatsData();
+
       // refetch with current search term
       dispatch(
         fetchGuests({
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          loyaltyTier: loyaltyFilter === 'all' ? undefined : loyaltyFilter,
-        }),
+          loyaltyTier: loyaltyFilter === "all" ? undefined : loyaltyFilter,
+        })
       );
     } catch (e) {
       const apiErr = handleApiError(e as AxiosError);
@@ -273,13 +300,13 @@ export default function GuestsPage() {
   };
 
   const columns = [
-    { key: 'guest', label: 'Guest', width: 'w-[200px]' },
-    { key: 'contact', label: 'Contact', width: 'w-[180px]' },
-    { key: 'location', label: 'Location', width: 'w-[150px]' },
-    { key: 'loyaltyTier', label: 'Loyalty Tier', width: 'w-[120px]' },
-    { key: 'createdAt', label: 'Member Since', width: 'w-[120px]' },
-    { key: 'isActive', label: 'Status', width: 'w-[100px]' },
-    { key: 'actions', label: 'Actions', width: 'w-[120px]', sortable: false },
+    { key: "guest", label: "Guest", width: "w-[200px]" },
+    { key: "contact", label: "Contact", width: "w-[180px]" },
+    { key: "location", label: "Location", width: "w-[150px]" },
+    { key: "loyaltyTier", label: "Loyalty Tier", width: "w-[120px]" },
+    { key: "createdAt", label: "Member Since", width: "w-[120px]" },
+    { key: "isActive", label: "Status", width: "w-[100px]" },
+    { key: "actions", label: "Actions", width: "w-[120px]", sortable: false },
   ];
 
   const renderGuestRow = (guest: Guest) => (
@@ -413,11 +440,10 @@ export default function GuestsPage() {
           if (!open) setSelectedGuest(null);
         }}
         title="Delete Guest"
-        description={`Are you sure you want to delete ${
-          selectedGuest
-            ? `${selectedGuest.firstName} ${selectedGuest.lastName}`
-            : 'this guest'
-        }? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${selectedGuest
+          ? `${selectedGuest.firstName} ${selectedGuest.lastName}`
+          : "this guest"
+          }? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
         onConfirm={handleDeleteGuest}
