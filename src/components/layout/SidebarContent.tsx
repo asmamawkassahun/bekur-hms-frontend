@@ -38,6 +38,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const [roomsExpanded, setRoomsExpanded] = useState(false);
+  const [dormitoriesExpanded, setDormitoriesExpanded] = useState(false);
   const [reservationsExpanded, setReservationsExpanded] = useState(false);
 
   const isActive = (href: string) => {
@@ -57,7 +58,6 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const mainNavItems = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'Guests', icon: Users, href: '/dashboard/guests' },
-    { label: 'Dormitories', icon: Home, href: '/dashboard/dormitories' },
     { label: 'Beds', icon: BedDouble, href: '/dashboard/beds' },
     { label: 'Properties', icon: Building, href: '/dashboard/properties' },
   ];
@@ -66,7 +66,15 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const roomsSubmenu = [
     { label: 'Room Types', icon: BedDouble, href: '/dashboard/rooms/types' },
     { label: 'Rooms List', icon: Bed, href: '/dashboard/rooms/list' },
+    { label: 'Occupancy Calendar', icon: Calendar, href: '/dashboard/rooms/occupancy-calendar' },
     { label: 'Add Room', icon: Plus, href: undefined },
+  ];
+
+  // Dormitories submenu items
+  const dormitoriesSubmenu = [
+    { label: 'Dormitories List', icon: Home, href: '/dashboard/dormitories' },
+    { label: 'Occupancy Calendar', icon: Calendar, href: '/dashboard/dormitories/occupancy-calendar' },
+    { label: 'Add Dormitory', icon: Plus, href: undefined },
   ];
 
   //Reservation submenu items
@@ -188,6 +196,64 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                     'w-full flex items-center px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-sidebar-accent/50'
                   )}
                   onClick={() => dispatch(openModal('addRoom'))}
+                >
+                  <Icon className="mr-3 h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Expandable Dormitories Section */}
+        <button
+          onClick={() => setDormitoriesExpanded(!dormitoriesExpanded)}
+          className={cn(
+            'w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer',
+            pathname.startsWith('/dashboard/dormitories')
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          )}
+        >
+          <div className="flex items-center">
+            <Home className="mr-3 h-4 w-4" />
+            <span>Dormitories</span>
+          </div>
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform',
+              dormitoriesExpanded && 'rotate-180',
+            )}
+          />
+        </button>
+
+        {dormitoriesExpanded && (
+          <div className="ml-4 mt-1 space-y-1">
+            {dormitoriesSubmenu.map((item) => {
+              const Icon = item.icon;
+              const active = item.href ? isActive(item.href) : false;
+
+              return item.href ? (
+                <Link key={item.label} href={item.href} onClick={handleNavigation}>
+                  <div
+                    className={cn(
+                      'flex items-center px-3 py-2 rounded-md text-sm cursor-pointer',
+                      active
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                        : 'hover:bg-sidebar-accent/50',
+                    )}
+                  >
+                    <Icon className="mr-3 h-4 w-4" />
+                    <span>{item.label}</span>
+                  </div>
+                </Link>
+              ) : (
+                <button
+                  key={item.label}
+                  className={cn(
+                    'w-full flex items-center px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-sidebar-accent/50'
+                  )}
+                  onClick={() => dispatch(openModal('addDormitory'))}
                 >
                   <Icon className="mr-3 h-4 w-4" />
                   <span>{item.label}</span>

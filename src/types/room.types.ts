@@ -201,3 +201,22 @@ export type BedStatus =
   | 'CLEANING'
   | 'MAINTENANCE'
   | 'OUT_OF_ORDER';
+
+// Occupancy Calendar Types
+export interface OccupiedRoomDetail {
+  roomId: string;
+  roomNumber: string;
+  roomTypeName: string;
+  guestName: string;
+  checkIn: string;
+  checkOut: string;
+}
+
+export interface DailyOccupancy {
+  date: string; // YYYY-MM-DD format
+  occupancyRate: number; // Percentage (0-100)
+  totalRooms: number;
+  occupiedRooms: number;
+  availableRooms: number;
+  occupiedRoomDetails: OccupiedRoomDetail[];
+}

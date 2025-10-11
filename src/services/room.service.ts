@@ -12,6 +12,7 @@ import {
   UpdateBedData,
   UpdateBedStatusData,
   BulkCreateRoomsData,
+  DailyOccupancy,
   ApiResponse,
   QueryParams,
 } from '@/types';
@@ -64,6 +65,12 @@ export const roomService = {
     apiClient.get<ApiResponse<Room[]>>('/rooms/search', {
       params: { q: query, ...params },
     }),
+
+  /**
+   * Get occupancy calendar for a property and month
+   */
+  getOccupancyCalendar: (params: { propertyId: string; year: number; month: number }) =>
+    apiClient.get<ApiResponse<DailyOccupancy[]>>('/rooms/occupancy-calendar', { params }),
 };
 
 export const dormitoryService = {
