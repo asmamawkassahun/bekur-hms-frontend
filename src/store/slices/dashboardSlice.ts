@@ -8,7 +8,7 @@ interface DashboardState {
   overview: DashboardOverview | null;
   loading: boolean;
   error: string | null;
-  selectedPeriod: 'today' | 'week' | 'month' | 'quarter' | 'year';
+  selectedPeriod: 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR';
   selectedPropertyId: string | null;
 }
 
@@ -16,7 +16,7 @@ const initialState: DashboardState = {
   overview: null,
   loading: false,
   error: null,
-  selectedPeriod: 'month',
+  selectedPeriod: 'MONTH',
   selectedPropertyId: null,
 };
 
