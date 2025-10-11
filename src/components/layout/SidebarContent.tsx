@@ -84,12 +84,12 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       href: '/dashboard/guests',
       permission: 'guest:read',
     },
-    {
-      label: 'Beds',
-      icon: BedDouble,
-      href: '/dashboard/beds',
-      permission: 'bed:read',
-    },
+    // {
+    //   label: 'Beds',
+    //   icon: BedDouble,
+    //   href: '/dashboard/beds',
+    //   permission: 'bed:read',
+    // },
   ];
 
   // Rooms submenu items
@@ -184,18 +184,18 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       href: '/dashboard/aiosell',
       permission: 'aiosell:view-logs',
     },
-    {
-      label: 'Payments',
-      icon: CreditCard,
-      href: '/dashboard/payments',
-      permission: 'payment:read',
-    },
-    {
-      label: 'Invoices',
-      icon: FileText,
-      href: '/dashboard/invoices',
-      permission: 'invoice:read',
-    },
+    // {
+    //   label: 'Payments',
+    //   icon: CreditCard,
+    //   href: '/dashboard/payments',
+    //   permission: 'payment:read',
+    // },
+    // {
+    //   label: 'Invoices',
+    //   icon: FileText,
+    //   href: '/dashboard/invoices',
+    //   permission: 'invoice:read',
+    // },
     {
       label: 'Reports',
       icon: BarChart3,
