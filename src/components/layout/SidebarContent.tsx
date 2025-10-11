@@ -28,6 +28,7 @@ import {
   ChevronDown,
   Globe,
   LucideBarChart3,
+  DollarSign,
 } from 'lucide-react';
 
 interface SidebarContentProps {
@@ -196,6 +197,12 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     //   href: '/dashboard/invoices',
     //   permission: 'invoice:read',
     // },
+    {
+      label: 'Rate Management',
+      icon: DollarSign,
+      href: '/dashboard/rate-management',
+      permission: 'pricing:manage',
+    },
     {
       label: 'Reports',
       icon: BarChart3,
