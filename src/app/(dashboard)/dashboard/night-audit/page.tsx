@@ -39,6 +39,9 @@ export default function NightAuditTopLevelPage() {
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [showSettingsForm, setShowSettingsForm] = useState(false);
+
+  const { settings } = useSelector((s: RootState) => s.nightAudit);
 
   // Load properties once on mount
   useEffect(() => {
@@ -171,8 +174,55 @@ export default function NightAuditTopLevelPage() {
       />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Property Settings</h3>
-        <SettingsForm propertyId={propertyId || null} />
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Property Settings</h3>
+          {settings && settings.propertyId === propertyId && !showSettingsForm && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSettingsForm(true)}
+              className="cursor-pointer"
+            >
+              Edit Settings
+            </Button>
+          )}
+        </div>
+
+        {(!settings || settings.propertyId !== propertyId || showSettingsForm) && (
+          <SettingsForm
+            propertyId={propertyId || null}
+            onSaveSuccess={() => setShowSettingsForm(false)}
+          />
+        )}
+
+        {settings && settings.propertyId === propertyId && !showSettingsForm && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30">
+            <div>
+              <p className="text-sm text-muted-foreground">Day Open Time</p>
+              <p className="font-medium">{settings.dayOpenTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Day Close Time</p>
+              <p className="font-medium">{settings.dayCloseTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Night Audit Time</p>
+              <p className="font-medium">{settings.nightAuditTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Check-In Time</p>
+              <p className="font-medium">{settings.defaultCheckInTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Check-Out Time</p>
+              <p className="font-medium">{settings.defaultCheckOutTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Auto Run Audit</p>
+              <p className="font-medium">{settings.autoRunNightAudit ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <RunNightAuditDialog

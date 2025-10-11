@@ -147,7 +147,9 @@ const rateManagementSlice = createSlice({
           | undefined;
 
         const rawItems = Array.isArray(apiData) ? apiData : apiData?.items || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const items = rawItems.filter((r: any) => !r?.deletedAt);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state.rules = items as any;
 
         const searchTerm = (action.meta.arg.search as string) || '';

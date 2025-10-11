@@ -96,7 +96,15 @@ export default function SearchPage() {
     setLoading(true);
     try {
       const data = await globalSearch(q, modules, 10);
-      setResults(data as any);
+      // Ensure all properties are arrays
+      setResults({
+        guests: Array.isArray(data.guests) ? data.guests : [],
+        reservations: Array.isArray(data.reservations) ? data.reservations : [],
+        rooms: Array.isArray(data.rooms) ? data.rooms : [],
+        properties: Array.isArray(data.properties) ? data.properties : [],
+        beds: Array.isArray(data.beds) ? data.beds : [],
+        dormitories: Array.isArray(data.dormitories) ? data.dormitories : [],
+      });
     } catch (e) {
       const apiErr = handleApiError(e as AxiosError);
       error(apiErr.message);
@@ -146,10 +154,10 @@ export default function SearchPage() {
             </div>
             {q &&
               suggestions.guests.length +
-                suggestions.rooms.length +
-                suggestions.reservations.length +
-                suggestions.properties.length >
-                0 && (
+              suggestions.rooms.length +
+              suggestions.reservations.length +
+              suggestions.properties.length >
+              0 && (
                 <div className="mt-2 rounded-md border p-2 text-xs text-muted-foreground">
                   <div className="mb-1 font-medium text-foreground">
                     Suggestions
@@ -320,16 +328,19 @@ function ResultSection<T>({
   items: T[];
   render: (item: T) => JSX.Element;
 }) {
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
+
   return (
     <div>
       <div className="mb-2 text-sm font-semibold text-foreground">{title}</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {items.map((it, idx) => (
+        {safeItems.map((it, idx) => (
           <div key={idx} className="rounded-md border p-3">
             {render(it)}
           </div>
         ))}
-        {items.length === 0 && (
+        {safeItems.length === 0 && (
           <div className="text-xs text-muted-foreground">No results</div>
         )}
       </div>

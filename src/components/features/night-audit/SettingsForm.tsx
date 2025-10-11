@@ -10,9 +10,10 @@ import { fetchSettings, updateSettings } from '@/store/slices/nightAuditSlice';
 
 interface SettingsFormProps {
   propertyId: string | null;
+  onSaveSuccess?: () => void;
 }
 
-export function SettingsForm({ propertyId }: SettingsFormProps) {
+export function SettingsForm({ propertyId, onSaveSuccess }: SettingsFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { success, error } = useNotification();
   const { settings, loading } = useSelector((s: RootState) => s.nightAudit);
@@ -75,6 +76,10 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
     try {
       await dispatch(updateSettings({ propertyId, data: form })).unwrap();
       success('Settings updated');
+      // Call callback to hide form after successful save
+      if (onSaveSuccess) {
+        onSaveSuccess();
+      }
     } catch (e) {
       const apiErr = handleApiError(e as any);
       error(apiErr.message);
@@ -129,8 +134,20 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
         </label>
       </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={!propertyId || loading['updateSettings']} className="cursor-pointer">Save</Button>
+      <div className="flex justify-end gap-2">
+        {onSaveSuccess && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onSaveSuccess()}
+            className="cursor-pointer"
+          >
+            Cancel
+          </Button>
+        )}
+        <Button onClick={handleSubmit} disabled={!propertyId || loading['updateSettings']} className="cursor-pointer">
+          Save Settings
+        </Button>
       </div>
     </div>
   );

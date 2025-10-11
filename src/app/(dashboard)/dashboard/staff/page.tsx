@@ -247,11 +247,14 @@ export default function StaffPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {s.roles.map((r) => (
-                            <Badge key={r} variant="outline">
-                              {r.replace('_', ' ')}
-                            </Badge>
-                          ))}
+                          {(s.roles || []).map((r, idx) => {
+                            const roleName = typeof r === 'string' ? r : (r as any)?.role?.name || (r as any)?.name || 'UNKNOWN';
+                            return (
+                              <Badge key={idx} variant="outline">
+                                {roleName.replace(/_/g, ' ')}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -541,11 +544,14 @@ export default function StaffPage() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Roles</p>
                 <div className="flex flex-wrap gap-2">
-                  {viewing.roles.map((r: string) => (
-                    <Badge key={r} variant="outline">
-                      {r.replace('_', ' ')}
-                    </Badge>
-                  ))}
+                  {(viewing.roles || []).map((r: any, idx: number) => {
+                    const roleName = typeof r === 'string' ? r : r?.role?.name || r?.name || 'UNKNOWN';
+                    return (
+                      <Badge key={idx} variant="outline">
+                        {roleName.replace(/_/g, ' ')}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
             </div>

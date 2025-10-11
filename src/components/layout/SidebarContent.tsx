@@ -24,10 +24,10 @@ import {
   Home,
   BedDouble,
   Building,
-  CreditCard,
-  UserCog,
+    UserCog,
   ChevronDown,
   Globe,
+  LucideBarChart3,
 } from 'lucide-react';
 
 interface SidebarContentProps {
@@ -201,6 +201,12 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       icon: BarChart3,
       href: '/dashboard/reports',
       permission: 'report:operational',
+    },
+    {
+      label: 'Night Audit',
+      icon: LucideBarChart3,
+      href: '/dashboard/night-audit',
+      permission: 'night-audit:read',
     },
     {
       label: 'Staff',
@@ -489,7 +495,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                     className={cn(
                       'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                       active &&
-                        'bg-sidebar-accent text-sidebar-accent-foreground',
+                      'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                     asChild
                   >
@@ -520,7 +526,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   className={cn(
                     'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                     active &&
-                      'bg-sidebar-accent text-sidebar-accent-foreground',
+                    'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   asChild
                 >

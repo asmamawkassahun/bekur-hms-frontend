@@ -7,6 +7,7 @@ import {
   UpdateGuestData,
   UpdateLoyaltyTierData,
   UploadDocumentData,
+  FileType,
 } from '@/types';
 
 interface GuestState {

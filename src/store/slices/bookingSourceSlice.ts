@@ -190,7 +190,12 @@ const bookingSourceSlice = createSlice({
       .addCase(fetchBookingSources.fulfilled, (state, action) => {
         state.loading = false;
         state.bookingSources = action.payload.data || [];
-        state.pagination = action.payload.meta || initialState.pagination;
+        state.pagination = {
+          page: action.payload.meta?.page ?? 1,
+          limit: action.payload.meta?.limit ?? 10,
+          total: action.payload.meta?.total ?? 0,
+          totalPages: action.payload.meta?.totalPages ?? 0,
+        };
       })
       .addCase(fetchBookingSources.rejected, (state, action) => {
         state.loading = false;
@@ -203,7 +208,7 @@ const bookingSourceSlice = createSlice({
       })
       .addCase(fetchBookingSource.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentBookingSource = action.payload.data;
+        state.currentBookingSource = action.payload.data ?? null;
       })
       .addCase(fetchBookingSource.rejected, (state, action) => {
         state.loading = false;
@@ -216,7 +221,9 @@ const bookingSourceSlice = createSlice({
       })
       .addCase(createBookingSource.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookingSources.unshift(action.payload.data);
+        if (action.payload.data) {
+          state.bookingSources.unshift(action.payload.data);
+        }
       })
       .addCase(createBookingSource.rejected, (state, action) => {
         state.loading = false;
@@ -229,11 +236,13 @@ const bookingSourceSlice = createSlice({
       })
       .addCase(updateBookingSource.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.bookingSources.findIndex(
-          (bs) => bs.id === action.payload.data.id,
-        );
-        if (index !== -1) {
-          state.bookingSources[index] = action.payload.data;
+        if (action.payload.data) {
+          const index = state.bookingSources.findIndex(
+            (bs) => bs.id === action.payload.data!.id,
+          );
+          if (index !== -1) {
+            state.bookingSources[index] = action.payload.data;
+          }
         }
       })
       .addCase(updateBookingSource.rejected, (state, action) => {
@@ -247,9 +256,11 @@ const bookingSourceSlice = createSlice({
       })
       .addCase(deleteBookingSource.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookingSources = state.bookingSources.filter(
-          (bs) => bs.id !== action.payload.data.id,
-        );
+        if (action.payload.data) {
+          state.bookingSources = state.bookingSources.filter(
+            (bs) => bs.id !== action.payload.data!.id,
+          );
+        }
       })
       .addCase(deleteBookingSource.rejected, (state, action) => {
         state.loading = false;
@@ -262,11 +273,13 @@ const bookingSourceSlice = createSlice({
       })
       .addCase(toggleBookingSourceStatus.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.bookingSources.findIndex(
-          (bs) => bs.id === action.payload.data.id,
-        );
-        if (index !== -1) {
-          state.bookingSources[index] = action.payload.data;
+        if (action.payload.data) {
+          const index = state.bookingSources.findIndex(
+            (bs) => bs.id === action.payload.data!.id,
+          );
+          if (index !== -1) {
+            state.bookingSources[index] = action.payload.data;
+          }
         }
       })
       .addCase(toggleBookingSourceStatus.rejected, (state, action) => {

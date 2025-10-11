@@ -22,7 +22,7 @@ const initialState: DashboardState = {
 
 export const fetchDashboardOverview = createAsyncThunk(
   'dashboard/fetchOverview',
-  async (params: { propertyId?: string; period?: string }) => {
+  async (params: { propertyId?: string; period?: 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR' }) => {
     const response = await dashboardService.getOverview(params);
     return response.data.data;
   },
@@ -47,7 +47,7 @@ const dashboardSlice = createSlice({
       })
       .addCase(fetchDashboardOverview.fulfilled, (state, action) => {
         state.loading = false;
-        state.overview = action.payload;
+        state.overview = action.payload ?? null;
       })
       .addCase(fetchDashboardOverview.rejected, (state, action) => {
         state.loading = false;

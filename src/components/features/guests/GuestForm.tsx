@@ -21,7 +21,7 @@ import { TagInput } from '@/components/ui/tag-input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Guest, FileType, GuestDocument } from '@/types';
+import type { Guest, GuestDocument } from '@/types';
 import { DocumentUpload } from './DocumentUpload';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
@@ -107,46 +107,46 @@ export function GuestForm({
     resolver: zodResolver(guestSchema),
     defaultValues: guest
       ? {
-          firstName: guest.firstName,
-          lastName: guest.lastName,
-          email: guest.email,
-          phone: guest.phone,
-          nationality: guest.nationality,
-          dateOfBirth: guest.dateOfBirth,
-          address: guest.address,
-          city: guest.city,
-          country: guest.country,
-          postalCode: guest.postalCode,
-          loyaltyTier: guest.loyaltyTier,
-          preferences: guest.preferences || [],
-          specialRequests: guest.specialRequests || [],
-          notes: guest.notes,
-          tags: guest.tags || [],
-          isActive: guest.isActive,
-          documents: undefined, // No documents for editing
-        }
+        firstName: guest.firstName || '',
+        lastName: guest.lastName || '',
+        email: guest.email || '',
+        phone: guest.phone ?? '',
+        nationality: guest.nationality ?? '',
+        dateOfBirth: guest.dateOfBirth ?? '',
+        address: guest.address ?? '',
+        city: guest.city ?? '',
+        country: guest.country ?? '',
+        postalCode: guest.postalCode ?? '',
+        loyaltyTier: guest.loyaltyTier,
+        preferences: guest.preferences || [],
+        specialRequests: guest.specialRequests || [],
+        notes: guest.notes ?? '',
+        tags: guest.tags || [],
+        isActive: guest.isActive,
+        documents: undefined, // No documents for editing
+      }
       : {
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          nationality: '',
-          dateOfBirth: '',
-          address: '',
-          city: '',
-          country: '',
-          postalCode: '',
-          loyaltyTier: undefined,
-          preferences: [],
-          specialRequests: [],
-          notes: '',
-          tags: [],
-          isActive: true,
-          documents: {
-            front: undefined,
-            back: undefined,
-          },
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        nationality: '',
+        dateOfBirth: '',
+        address: '',
+        city: '',
+        country: '',
+        postalCode: '',
+        loyaltyTier: undefined,
+        preferences: [],
+        specialRequests: [],
+        notes: '',
+        tags: [],
+        isActive: true,
+        documents: {
+          front: undefined,
+          back: undefined,
         },
+      },
   });
 
   const handleSubmit = (values: GuestFormData) => {
