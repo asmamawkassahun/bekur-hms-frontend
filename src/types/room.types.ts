@@ -191,8 +191,7 @@ export interface CreateBedData {
   number: string;
   basePrice: number;
   bedTypeId?: string;
-  status: BedStatus;
-  isActive: boolean;
+  isActive?: boolean;
   description?: string;
   amenities?: string[];
   currency?: string;
