@@ -18,18 +18,21 @@ export function BookingTypeStatsCards({ stats }: BookingTypeStatsCardsProps) {
         value={stats.total}
         description="All booking types"
         icon={FileText}
+        gradient="blue"
       />
       <StatsCard
         title="Active"
         value={stats.active}
         description="Currently active"
         icon={CheckCircle}
+        gradient="green"
       />
       <StatsCard
         title="Inactive"
         value={stats.inactive}
         description="Deactivated"
         icon={XCircle}
+        gradient="rose"
       />
     </div>
   );

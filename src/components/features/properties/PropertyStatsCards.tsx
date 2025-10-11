@@ -26,27 +26,28 @@ export function PropertyStatsCards({ stats }: PropertyStatsCardsProps) {
         value={stats.totalProperties}
         description="All registered properties"
         icon={Building}
+        gradient="blue"
       />
       <StatsCard
         title="Active Properties"
         value={stats.activeProperties}
         description="Currently operational"
         icon={MapPin}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
       <StatsCard
         title="Total Rooms"
         value={stats.totalRooms}
         description="Across all properties"
         icon={Users}
-        className="[&>div>div>svg]:text-blue-600"
+        gradient="violet"
       />
       <StatsCard
         title="Total Revenue"
         value={formatCurrency(stats.totalRevenue)}
         description="All time revenue"
         icon={Star}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
     </div>
   );

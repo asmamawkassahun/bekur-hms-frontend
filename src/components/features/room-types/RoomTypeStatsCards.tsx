@@ -26,24 +26,28 @@ export function RoomTypeStatsCards({ stats }: RoomTypeStatsCardsProps) {
         value={stats.totalRoomTypes}
         description="All room types"
         icon={Home}
+        gradient="blue"
       />
       <StatsCard
         title="Active Room Types"
         value={stats.activeRoomTypes}
         description="Currently active"
         icon={CheckCircle}
+        gradient="green"
       />
       <StatsCard
         title="Average Price"
         value={formatCurrency(stats.averagePrice)}
         description="Per room type"
         icon={DollarSign}
+        gradient="green"
       />
       <StatsCard
         title="Total Rooms"
         value={stats.totalRooms}
         description="All rooms"
         icon={Users}
+        gradient="violet"
       />
     </div>
   );
