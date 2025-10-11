@@ -98,7 +98,7 @@ export default function DashboardPage() {
   const handlePeriodChange = (period: string) => {
     dispatch(
       setSelectedPeriod(
-        period as 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR',
+        period as 'today' | 'week' | 'month' | 'quarter' | 'year',
       ),
     );
   };
@@ -187,11 +187,11 @@ export default function DashboardPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="TODAY">Today</SelectItem>
-              <SelectItem value="WEEK">This Week</SelectItem>
-              <SelectItem value="MONTH">This Month</SelectItem>
-              <SelectItem value="QUARTER">This Quarter</SelectItem>
-              <SelectItem value="YEAR">This Year</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="quarter">This Quarter</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
             </SelectContent>
           </Select>
 
@@ -245,13 +245,13 @@ export default function DashboardPage() {
         <StatsCard
           title="Total Revenue"
           value={formatCurrency(totalRevenue, kpis.revenue.currency)}
-          description={`${selectedPeriod === 'TODAY' ? 'Today' : selectedPeriod === 'WEEK' ? 'This week' : selectedPeriod === 'MONTH' ? 'This month' : selectedPeriod === 'QUARTER' ? 'This quarter' : 'This year'}`}
+          description={`${selectedPeriod === 'today' ? 'Today' : selectedPeriod === 'week' ? 'This week' : selectedPeriod === 'month' ? 'This month' : selectedPeriod === 'quarter' ? 'This quarter' : 'This year'}`}
           icon={TrendingUp}
         />
         <StatsCard
           title="Total Bookings"
           value={trends?.revenue?.length || 0}
-          description={`${selectedPeriod === 'TODAY' ? 'Today' : selectedPeriod === 'WEEK' ? 'This week' : selectedPeriod === 'MONTH' ? 'This month' : selectedPeriod === 'QUARTER' ? 'This quarter' : 'This year'}`}
+          description={`${selectedPeriod === 'today' ? 'Today' : selectedPeriod === 'week' ? 'This week' : selectedPeriod === 'month' ? 'This month' : selectedPeriod === 'quarter' ? 'This quarter' : 'This year'}`}
           icon={Calendar}
         />
         <StatsCard
