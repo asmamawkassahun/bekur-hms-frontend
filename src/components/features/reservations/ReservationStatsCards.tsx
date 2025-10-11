@@ -1,6 +1,13 @@
 import React from 'react';
 import { StatsCard } from '@/components/shared/StatsCard';
-import { Calendar, CheckCircle, Clock, DollarSign, CreditCard, AlertCircle } from 'lucide-react';
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  CreditCard,
+  AlertCircle,
+} from 'lucide-react';
 
 interface ReservationStatsCardsProps {
   stats: {
@@ -25,7 +32,7 @@ export function ReservationStatsCards({ stats }: ReservationStatsCardsProps) {
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       <StatsCard
         title="Total Reservations"
         value={stats.totalReservations}

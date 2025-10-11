@@ -13,7 +13,10 @@ import dormitoryReducer from './slices/dormitorySlice';
 import bedReducer from './slices/bedSlice';
 import roomTypeReducer from './slices/roomTypeSlice';
 import bedTypeReducer from './slices/bedTypeSlice';
+import bookingTypeReducer from './slices/bookingTypeSlice';
+import bookingSourceReducer from './slices/bookingSourceSlice';
 import uiReducer from './slices/uiSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -31,7 +34,10 @@ export const store = configureStore({
     bed: bedReducer,
     roomType: roomTypeReducer,
     bedType: bedTypeReducer,
+    bookingType: bookingTypeReducer,
+    bookingSource: bookingSourceReducer,
     ui: uiReducer,
+    dashboard: dashboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
@@ -24,30 +25,30 @@ import {
   Building,
   User,
   Users,
-  Baby,
   Trash2,
   Plus,
-  Plane,
-  Eye,
-  MessageSquare,
   CreditCard,
   DollarSign,
-  Filter,
-  ChevronsUpDown,
-  ChevronUp,
-  ChevronDown,
   UserPlus,
   Search,
+  ChevronDown,
 } from 'lucide-react';
-import { fetchBookingTypes, fetchBookingSources, createReservation, calculatePrice } from '@/store/slices/reservationSlice';
+import {
+  fetchBookingTypes,
+  createReservation,
+  calculatePrice,
+} from '@/store/slices/reservationSlice';
+import { fetchBookingSources } from '@/store/slices/bookingSourceSlice';
 import { createPayment } from '@/store/slices/paymentSlice';
 import { fetchRoomTypes } from '@/store/slices/roomTypeSlice';
 import { fetchRooms } from '@/store/slices/roomSlice';
 import { fetchGuests } from '@/store/slices/guestSlice';
 import { fetchProperties } from '@/store/slices/propertySlice';
 import { fetchBeds } from '@/store/slices/bedSlice';
+import { fetchDormitories } from '@/store/slices/dormitorySlice';
 import { GuestSelectionDialog } from '@/components/features/reservations/GuestSelectionDialog';
 import { CreateGuestDialog } from '@/components/features/reservations/CreateGuestDialog';
+import { PricingBreakdown } from '@/components/features/reservations/PricingBreakdown';
 import { useNotification } from '@/hooks/useNotification';
 import type { RootState, AppDispatch } from '@/store';
 import type { Guest } from '@/types';
@@ -62,33 +63,46 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { success, error: showError } = useNotification();
 
+  const { bookingTypes, bookingTypesLoading, bookingTypesError } = useSelector(
+    (state: RootState) => state.reservation,
+  );
+
   const {
-    bookingTypes,
-    bookingTypesLoading,
-    bookingTypesError,
     bookingSources,
-    bookingSourcesLoading,
-    bookingSourcesError
-  } = useSelector((state: RootState) => state.reservation);
+    loading: bookingSourcesLoading,
+    error: bookingSourcesError,
+  } = useSelector((state: RootState) => state.bookingSource);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Booking Types State:', {
+      bookingTypes,
+      bookingTypesLoading,
+      bookingTypesError,
+      count: bookingTypes.length,
+    });
+  }, [bookingTypes, bookingTypesLoading, bookingTypesError]);
 
   const { roomTypes, loading: roomTypesLoading } = useSelector(
-    (state: RootState) => state.roomType
+    (state: RootState) => state.roomType,
   );
 
   const { rooms, loading: roomsLoading } = useSelector(
-    (state: RootState) => state.room
+    (state: RootState) => state.room,
   );
 
   const { guests, loading: guestsLoading } = useSelector(
-    (state: RootState) => state.guest
+    (state: RootState) => state.guest,
   );
 
-  const { properties } = useSelector(
-    (state: RootState) => state.property
-  );
+  const { properties } = useSelector((state: RootState) => state.property);
 
   const { beds, loading: bedsLoading } = useSelector(
-    (state: RootState) => state.bed
+    (state: RootState) => state.bed,
+  );
+
+  const { dormitories, loading: dormitoriesLoading } = useSelector(
+    (state: RootState) => state.dormitory,
   );
 
   // Helper functions for date/time
@@ -125,15 +139,23 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  const formatCurrency = (amount: number) => {
+    const currency =
+      properties.find((p) => p.id === selectedPropertyId)?.currency || 'ETB';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   // State
   const [checkIn, setCheckIn] = useState(getDefaultCheckIn());
   const [checkOut, setCheckOut] = useState(getDefaultCheckOut());
   const [bookingReference, setBookingReference] = useState('');
   const [bookingRefNo, setBookingRefNo] = useState('');
-  const [arrivalFrom, setArrivalFrom] = useState('');
-  const [purposeOfVisit, setPurposeOfVisit] = useState('');
   const [bookingType, setBookingType] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [notes, setNotes] = useState('');
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [roomType, setRoomType] = useState('');
   const [roomNo, setRoomNo] = useState('');
@@ -144,25 +166,32 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   const [selectedGuests, setSelectedGuests] = useState<Guest[]>([]);
   const [guestSearchLoading, setGuestSearchLoading] = useState(false);
   const [lastGuestSearch, setLastGuestSearch] = useState('');
-  const [accommodationType, setAccommodationType] = useState("ROOM");
-  const [paymentMode, setPaymentMode] = useState('');
-  const [advanceRemarks, setAdvanceRemarks] = useState('');
+  const [accommodationType, setAccommodationType] = useState('ROOM');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [externalTransactionId, setExternalTransactionId] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
   const [advanceAmount, setAdvanceAmount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [pricingData, setPricingData] = useState<any>(null);
-
-  // Pricing fields
-  const [discountReason, setDiscountReason] = useState('');
-  const [discountPercentage, setDiscountPercentage] = useState(0);
-  const [commissionRate, setCommissionRate] = useState(0);
-  const [commissionAmount, setCommissionAmount] = useState(0);
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
 
   // Fetch initial data
   useEffect(() => {
-    dispatch(fetchBookingTypes({ page: 1, limit: 100, isActive: true }));
+    console.log('Fetching booking types...');
+    dispatch(fetchBookingTypes({ page: 1, limit: 100, isActive: true }))
+      .unwrap()
+      .then((response) => {
+        console.log('Booking types fetched successfully:', response);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch booking types:', error);
+      });
+
     dispatch(fetchProperties({ page: 1, limit: 100 }));
     dispatch(fetchRoomTypes({ page: 1, limit: 100 }));
     dispatch(fetchBeds({ page: 1, limit: 100 }));
+    dispatch(fetchDormitories({ page: 1, limit: 100 }));
   }, [dispatch]);
 
   // Auto-select first property
@@ -182,34 +211,17 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   // Fetch booking sources when booking type changes
   useEffect(() => {
     if (bookingType) {
-      const selectedType = bookingTypes.find(type => type.id === bookingType);
-      if (selectedType) {
-        let sourceTypeValue = selectedType.sourceType;
-        if (!sourceTypeValue) {
-          const nameUpper = selectedType.name.toUpperCase();
-          if (nameUpper.includes('WALK') || nameUpper.includes('DIRECT')) {
-            sourceTypeValue = 'DIRECT';
-          } else if (nameUpper.includes('OTA') || nameUpper.includes('ONLINE')) {
-            sourceTypeValue = 'OTA';
-          } else if (nameUpper.includes('CORPORATE') || nameUpper.includes('COMPANY')) {
-            sourceTypeValue = 'CORPORATE';
-          } else if (nameUpper.includes('AGENT') || nameUpper.includes('TRAVEL')) {
-            sourceTypeValue = 'AGENT';
-          } else if (nameUpper.includes('CHANNEL')) {
-            sourceTypeValue = 'CHANNEL_MANAGER';
-          } else {
-            sourceTypeValue = 'DIRECT';
-          }
-        }
-        dispatch(fetchBookingSources({
+      // Fetch booking sources filtered by the selected booking type
+      dispatch(
+        fetchBookingSources({
           page: 1,
           limit: 100,
-          sourceType: sourceTypeValue,
-          isActive: true
-        }));
-      }
+          bookingTypeId: bookingType,
+          isActive: true,
+        }),
+      );
     }
-  }, [bookingType, bookingTypes, dispatch]);
+  }, [bookingType, dispatch]);
 
   // Fetch rooms when room type changes
   useEffect(() => {
@@ -222,7 +234,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   // Update capacity when room is selected
   useEffect(() => {
     if (roomNo) {
-      const selectedRoom = rooms.find(room => room.id === roomNo);
+      const selectedRoom = rooms.find((room) => room.id === roomNo);
       if (selectedRoom && selectedRoom.roomType) {
         setAdults(Math.min(adults, selectedRoom.roomType.adultCapacity));
         setChildren(Math.min(children, selectedRoom.roomType.childCapacity));
@@ -231,16 +243,25 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   }, [roomNo, rooms]);
 
   const handleSelecteAccommodation = () => {
-    if (accommodationType === "ROOM") {
-      setAccommodationType("BED");
+    if (accommodationType === 'ROOM') {
+      setAccommodationType('BED');
     } else {
-      setAccommodationType("ROOM");
+      setAccommodationType('ROOM');
     }
   };
 
   // Calculate price when room/bed is selected
   useEffect(() => {
-    if (roomNo && selectedPropertyId && selectedGuests.length > 0 && checkIn && checkOut) {
+    if (
+      roomNo &&
+      selectedPropertyId &&
+      selectedGuests.length > 0 &&
+      checkIn &&
+      checkOut
+    ) {
+      setPricingLoading(true);
+      setPricingError(null);
+
       // Format dates to ISO string
       const formatToISO = (dateTimeLocal: string): string => {
         if (!dateTimeLocal) return '';
@@ -268,40 +289,47 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
           // Store the complete pricing data
           if (response.data) {
             setPricingData(response.data);
-
-            // Populate form fields with API response
-            const responseData = response.data as any;
-            const pricing = responseData.pricing;
-            const commission = responseData.commission;
-
-            if (pricing) {
-              setDiscountPercentage(pricing.discount || 0);
-              setAdvanceAmount(pricing.finalPrice || 0);
-            }
-
-            if (commission) {
-              setCommissionRate(commission.commissionRate || 0);
-              setCommissionAmount(commission.commissionAmount || 0);
-            }
+            // Set advance amount to final price by default
+            setAdvanceAmount(response.data.pricing?.finalPrice || 0);
           }
+          setPricingLoading(false);
         })
         .catch((err) => {
           console.error('Failed to calculate price:', err);
+          setPricingError(err.message || 'Failed to calculate price');
+          setPricingLoading(false);
+          showError('Failed to calculate price. Please try again.');
         });
+    } else {
+      // Reset pricing when requirements not met
+      setPricingData(null);
+      setPricingError(null);
     }
-  }, [roomNo, selectedPropertyId, bookingReference, selectedGuests, checkIn, checkOut, accommodationType, dispatch]);
+  }, [
+    roomNo,
+    selectedPropertyId,
+    bookingReference,
+    selectedGuests,
+    checkIn,
+    checkOut,
+    accommodationType,
+    dispatch,
+    showError,
+  ]);
 
   const handleGuestSearch = (searchTerm: string) => {
     if (searchTerm === lastGuestSearch) return;
     setGuestSearchLoading(true);
     setLastGuestSearch(searchTerm);
-    dispatch(fetchGuests({ page: 1, limit: 50, search: searchTerm || undefined }));
+    dispatch(
+      fetchGuests({ page: 1, limit: 50, search: searchTerm || undefined }),
+    );
   };
 
   const handleGuestSelect = (guest: Guest) => {
-    const isAlreadySelected = selectedGuests.some(g => g.id === guest.id);
+    const isAlreadySelected = selectedGuests.some((g) => g.id === guest.id);
     if (isAlreadySelected) {
-      setSelectedGuests(selectedGuests.filter(g => g.id !== guest.id));
+      setSelectedGuests(selectedGuests.filter((g) => g.id !== guest.id));
     } else {
       setSelectedGuests([...selectedGuests, guest]);
     }
@@ -335,7 +363,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
   };
 
   const removeGuest = (id: string) => {
-    setSelectedGuests(selectedGuests.filter(guest => guest.id !== id));
+    setSelectedGuests(selectedGuests.filter((guest) => guest.id !== id));
   };
 
   const handleSave = async () => {
@@ -357,10 +385,16 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
 
     // For direct check-in, payment is required
     if (mode === 'direct-checkin') {
-      if (!paymentMode || advanceAmount <= 0) {
+      if (!paymentMethod || advanceAmount <= 0) {
         showError('Payment details are required for direct check-in');
         return;
       }
+    }
+
+    // For advance payment (booking mode), validate payment method if amount > 0
+    if (mode === 'booking' && advanceAmount > 0 && !paymentMethod) {
+      showError('Please select a payment method for advance payment');
+      return;
     }
 
     // Validate dates
@@ -389,69 +423,64 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
 
       const reservationData = {
         propertyId: selectedPropertyId,
-        guestIds: selectedGuests.map(guest => guest.id),
+        guestIds: selectedGuests.map((guest) => guest.id), // Array of guest IDs (first is primary)
         bookingTypeId: bookingType,
         bookingSourceId: bookingReference,
         accommodationType: accommodationType as 'ROOM' | 'BED',
         ...(accommodationType === 'ROOM'
           ? { roomId: roomNo }
-          : { bedId: roomNo }
-        ),
+          : { bedId: roomNo }),
         checkIn: formatToISO(checkIn),
         checkOut: formatToISO(checkOut),
         adults: adults,
         children: children,
-        specialRequests: purposeOfVisit ? [purposeOfVisit] : [],
-        notes: remarks
+        specialRequests: remarks ? [remarks] : undefined, // Convert remarks to array for specialRequests
+        notes: notes || undefined, // General notes
+        externalBookingReference: bookingRefNo || undefined, // External booking reference number
       };
 
       console.log('Creating reservation...', reservationData);
 
       // Step 1: Create the reservation
-      const reservationResult = await dispatch(createReservation(reservationData)).unwrap();
+      const reservationResult = await dispatch(
+        createReservation(reservationData),
+      ).unwrap();
 
       console.log('Reservation created successfully:', reservationResult);
       success('Reservation created successfully');
 
-      // Step 2: Create payment
-      // For direct check-in: payment is required and marks as COMPLETED
-      // For regular booking: payment is optional (advance payment)
-      const shouldCreatePayment = mode === 'direct-checkin' || (advanceAmount > 0 && paymentMode);
-
-      if (shouldCreatePayment && reservationResult.data) {
-        const bookingId = reservationResult.data.id;
-        const primaryGuestId = selectedGuests[0]?.id;
-
-        if (!primaryGuestId) {
-          showError('No guest selected for payment');
+      // Step 2: Create payment (only if amount > 0)
+      if (advanceAmount > 0 && reservationResult.data) {
+        if (!paymentMethod) {
+          showError('Please select a payment method');
+          setIsSaving(false);
           return;
         }
 
-        const paymentMethodMap: Record<string, 'CASH' | 'CARD' | 'BANK_TRANSFER' | 'MOBILE_MONEY' | 'CRYPTO'> = {
-          'cash': 'CASH',
-          'card': 'CARD',
-          'bank': 'BANK_TRANSFER',
-          'upi': 'MOBILE_MONEY',
-          'crypto': 'CRYPTO',
-        };
+        const bookingId = reservationResult.data.id;
+        const selectedPropertyCurrency =
+          properties.find((p) => p.id === selectedPropertyId)?.currency ||
+          'ETB';
 
         const paymentData = {
           bookingId: bookingId,
-          guestId: primaryGuestId,
+          guestId: selectedGuests[0].id,
           amount: advanceAmount,
-          method: paymentMethodMap[paymentMode] || 'CASH',
-          currency: 'ETB',
-          notes: mode === 'direct-checkin'
-            ? `Full payment for direct check-in ${bookingId}`
-            : (advanceRemarks || `Advance payment for reservation ${bookingId}`),
+          method: paymentMethod, // Already using backend enum values (CASH, CARD, etc.)
+          currency: selectedPropertyCurrency,
+          status: mode === 'direct-checkin' ? 'COMPLETED' : 'PENDING',
+          externalTransactionId: externalTransactionId || undefined,
+          notes: paymentNotes || undefined,
         };
 
         console.log('Creating payment...', paymentData);
 
-        const paymentResult = await dispatch(createPayment(paymentData)).unwrap();
+        await dispatch(createPayment(paymentData)).unwrap();
 
-        console.log('Payment created successfully:', paymentResult);
-        success(mode === 'direct-checkin' ? 'Payment completed successfully' : 'Payment processed successfully');
+        console.log('Payment created successfully');
+        success('Booking and payment created successfully');
+      } else {
+        success('Booking created successfully');
       }
 
       console.log('Booking and payment process completed successfully');
@@ -460,24 +489,28 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
       if (onSuccess) {
         onSuccess();
       }
-
     } catch (err: unknown) {
       console.error('Error during booking/payment:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create booking';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create booking';
       showError(errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const pageTitle = mode === 'direct-checkin' ? 'Direct Check-In' : 'New Reservation';
-  const pageDescription = mode === 'direct-checkin'
-    ? 'Check-in a guest with immediate payment'
-    : 'Create a new hotel reservation';
-  const backLink = mode === 'direct-checkin'
-    ? '/dashboard/reservations/check-in'
-    : '/dashboard/reservations/list';
-  const backLinkText = mode === 'direct-checkin' ? 'Check-In List' : 'Book List';
+  const pageTitle =
+    mode === 'direct-checkin' ? 'Direct Check-In' : 'New Reservation';
+  const pageDescription =
+    mode === 'direct-checkin'
+      ? 'Check-in a guest with immediate payment'
+      : 'Create a new hotel reservation';
+  const backLink =
+    mode === 'direct-checkin'
+      ? '/dashboard/reservations/check-in'
+      : '/dashboard/reservations/list';
+  const backLinkText =
+    mode === 'direct-checkin' ? 'Check-In List' : 'Book List';
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -488,7 +521,10 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
             <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
             <p className="text-gray-600">{pageDescription}</p>
           </div>
-          <Link href={backLink} className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
+          <Link
+            href={backLink}
+            className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer"
+          >
             <Plus className="mr-2 h-4 w-4" />
             {backLinkText}
           </Link>
@@ -503,9 +539,9 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                 Reservation Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-8">
-              {/* First Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+            <CardContent className="space-y-6">
+              {/* First Row: Check In, Check Out, Booking Type */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                 <div className="space-y-2">
                   <Label htmlFor="checkIn" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
@@ -522,11 +558,22 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                         const newCheckInDate = new Date(newCheckIn);
                         newCheckInDate.setDate(newCheckInDate.getDate() + 1);
                         const year = newCheckInDate.getFullYear();
-                        const month = String(newCheckInDate.getMonth() + 1).padStart(2, '0');
-                        const day = String(newCheckInDate.getDate()).padStart(2, '0');
-                        const hours = String(newCheckInDate.getHours()).padStart(2, '0');
-                        const minutes = String(newCheckInDate.getMinutes()).padStart(2, '0');
-                        setCheckOut(`${year}-${month}-${day}T${hours}:${minutes}`);
+                        const month = String(
+                          newCheckInDate.getMonth() + 1,
+                        ).padStart(2, '0');
+                        const day = String(newCheckInDate.getDate()).padStart(
+                          2,
+                          '0',
+                        );
+                        const hours = String(
+                          newCheckInDate.getHours(),
+                        ).padStart(2, '0');
+                        const minutes = String(
+                          newCheckInDate.getMinutes(),
+                        ).padStart(2, '0');
+                        setCheckOut(
+                          `${year}-${month}-${day}T${hours}:${minutes}`,
+                        );
                       }
                     }}
                     className="w-full"
@@ -550,37 +597,35 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="arrivalFrom" className="flex items-center gap-2">
-                    <Plane className="h-4 w-4" />
-                    Arrival From
-                  </Label>
-                  <Input
-                    id="arrivalFrom"
-                    value={arrivalFrom}
-                    onChange={(e) => setArrivalFrom(e.target.value)}
-                    placeholder="Arrival From"
-                    className="pl-10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bookingType" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="bookingType"
+                    className="flex items-center gap-2"
+                  >
                     <Building className="h-4 w-4" />
-                    Booking Type
+                    Booking Type*
                   </Label>
                   <Select value={bookingType} onValueChange={setBookingType}>
-                    <SelectTrigger className="pl-10">
+                    <SelectTrigger>
                       <SelectValue placeholder="Choose Booking Type" />
                     </SelectTrigger>
                     <SelectContent>
                       {bookingTypesLoading ? (
-                        <SelectItem value="loading" disabled>Loading booking types...</SelectItem>
+                        <SelectItem value="loading" disabled>
+                          Loading booking types...
+                        </SelectItem>
                       ) : bookingTypesError ? (
-                        <SelectItem value="error" disabled>Error loading booking types</SelectItem>
+                        <SelectItem value="error" disabled>
+                          Error: {bookingTypesError}
+                        </SelectItem>
                       ) : bookingTypes.length === 0 ? (
-                        <SelectItem value="empty" disabled>No booking types available</SelectItem>
+                        <SelectItem value="empty" disabled>
+                          No booking types found. Please create one first.
+                        </SelectItem>
                       ) : (
                         bookingTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
                         ))
                       )}
                     </SelectContent>
@@ -588,528 +633,545 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
                 </div>
               </div>
 
-              {/* Second Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
+              {/* Second Row: Booking Reference fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 <div className="space-y-2">
-                  <Label htmlFor="bookingReference" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="bookingReference"
+                    className="flex items-center gap-2"
+                  >
                     <Building className="h-4 w-4" />
-                    Choose Booking Reference
+                    Choose Booking Source
                   </Label>
-                  <Select value={bookingReference} onValueChange={setBookingReference}>
-                    <SelectTrigger className="pl-10">
-                      <SelectValue placeholder="Choose Booking Reference" />
+                  <Select
+                    value={bookingReference}
+                    onValueChange={setBookingReference}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose Booking Source" />
                     </SelectTrigger>
                     <SelectContent>
                       {bookingSourcesLoading ? (
-                        <SelectItem value="loading" disabled>Loading booking sources...</SelectItem>
+                        <SelectItem value="loading" disabled>
+                          Loading booking sources...
+                        </SelectItem>
                       ) : bookingSourcesError ? (
-                        <SelectItem value="error" disabled>Error loading booking sources</SelectItem>
+                        <SelectItem value="error" disabled>
+                          Error loading booking sources
+                        </SelectItem>
                       ) : bookingSources.length === 0 ? (
-                        <SelectItem value="empty" disabled>No booking sources available</SelectItem>
+                        <SelectItem value="empty" disabled>
+                          No booking sources available
+                        </SelectItem>
                       ) : (
                         bookingSources.map((source) => (
-                          <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
+                          <SelectItem key={source.id} value={source.id}>
+                            {source.name}
+                          </SelectItem>
                         ))
                       )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bookingRefNo">Booking Reference No</Label>
+                  <Label htmlFor="bookingRefNo">
+                    External Booking Reference No
+                  </Label>
                   <Input
                     id="bookingRefNo"
                     value={bookingRefNo}
                     onChange={(e) => setBookingRefNo(e.target.value)}
-                    placeholder="Booking Reference No."
+                    placeholder="External booking reference number"
+                  />
+                </div>
+              </div>
+
+              {/* Third Row: Notes and Special Requests as textareas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="General notes about the booking"
+                    rows={4}
+                    className="resize-none"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purposeOfVisit" className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    Purpose of Visit
-                  </Label>
-                  <Input
-                    id="purposeOfVisit"
-                    value={purposeOfVisit}
-                    onChange={(e) => setPurposeOfVisit(e.target.value)}
-                    placeholder="Purpose of Visit"
-                    className="pl-10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="remarks" className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Remarks
-                  </Label>
-                  <Input
+                  <Label htmlFor="remarks">Special Requests</Label>
+                  <Textarea
                     id="remarks"
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    placeholder="Remarks"
-                    className="pl-10"
+                    placeholder="Any special requests from guest"
+                    rows={4}
+                    className="resize-none"
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Room Details - Continuing in next message due to length... */}
+          {/* Accommodation Selection */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
-                Room Details
+                Accommodation Selection
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-8">
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900">Room Info</h3>
-                  <div className="grid grid-cols-12 gap-4 items-end">
-                    <div className="col-span-10 space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="property" className="flex items-center gap-2">
-                            <Building className="h-4 w-4" />
-                            Property*
-                          </Label>
-                          <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
-                            <SelectTrigger className="pl-10">
-                              <SelectValue placeholder="Choose Property" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {properties.length === 0 ? (
-                                <SelectItem value="empty" disabled>No properties available</SelectItem>
-                              ) : (
-                                properties.map((property) => (
-                                  <SelectItem key={property.id} value={property.id}>{property.name}</SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className='space-y-2'>
-                          <Label htmlFor="accommodationType" className="flex items-center gap-2">
-                            <Building className="h-4 w-4" />
-                            Accommodation Type
-                          </Label>
-                          <Select value={accommodationType} onValueChange={handleSelecteAccommodation}>
-                            <SelectTrigger className="pl-10">
-                              <SelectValue placeholder="Choose Accommodation Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ROOM">Room</SelectItem>
-                              <SelectItem value="BED">Bed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="roomType" className="flex items-center gap-2">
-                            <Filter className="h-4 w-4" />
-                            {accommodationType === "ROOM" ? "Room Type*" : "Bed Type*"}
-                          </Label>
-                          <Select value={roomType} onValueChange={setRoomType}>
-                            <SelectTrigger className="pl-10">
-                              <SelectValue placeholder={accommodationType === "ROOM" ? "Choose Room Type" : "Choose Bed Type"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roomTypesLoading ? (
-                                <SelectItem value="loading" disabled>
-                                  Loading {accommodationType === "ROOM" ? "room types" : "bed types"}...
-                                </SelectItem>
-                              ) : roomTypes.length === 0 ? (
-                                <SelectItem value="empty" disabled>
-                                  No {accommodationType === "ROOM" ? "room types" : "bed types"} available
-                                </SelectItem>
-                              ) : (
-                                roomTypes.map((type) => (
-                                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="roomNo" className="flex items-center gap-2">
-                            <ChevronsUpDown className="h-4 w-4" />
-                            {accommodationType === "ROOM" ? "Room No.*" : "Bed No.*"}
-                          </Label>
-                          <Select value={roomNo} onValueChange={setRoomNo} disabled={!roomType}>
-                            <SelectTrigger className="pl-10">
-                              <SelectValue placeholder={!roomType ? "Select type first" : accommodationType === "ROOM" ? "Choose Room No." : "Choose Bed No."} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(accommodationType === "ROOM" ? roomsLoading : bedsLoading) ? (
-                                <SelectItem value="loading" disabled>
-                                  Loading {accommodationType === "ROOM" ? "rooms" : "beds"}...
-                                </SelectItem>
-                              ) : !roomType ? (
-                                <SelectItem value="no-type" disabled>
-                                  Please select {accommodationType === "ROOM" ? "room type" : "bed type"} first
-                                </SelectItem>
-                              ) : accommodationType === "ROOM" ? (
-                                rooms.filter(room => room.roomTypeId === roomType && room.status === 'AVAILABLE').length === 0 ? (
-                                  <SelectItem value="empty" disabled>No available rooms for this type</SelectItem>
-                                ) : (
-                                  rooms
-                                    .filter(room => room.roomTypeId === roomType && room.status === 'AVAILABLE')
-                                    .map((room: any) => (
-                                      <SelectItem key={room.id} value={room.id}>{room.number}</SelectItem>
-                                    ))
-                                )
-                              ) : (
-                                beds.filter(bed => bed.isActive && bed.status === 'AVAILABLE').length === 0 ? (
-                                  <SelectItem value="empty" disabled>No available beds for this type</SelectItem>
-                                ) : (
-                                  beds
-                                    .filter(bed => bed.isActive && bed.status === 'AVAILABLE')
-                                    .map((bed: any) => (
-                                      <SelectItem key={bed.id} value={bed.id}>{bed.number}</SelectItem>
-                                    ))
-                                )
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="adults" className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            #Adults {roomNo && accommodationType === "ROOM" ? (rooms.find(r => r.id === roomNo) as any)?.roomType && `(Max: ${(rooms.find(r => r.id === roomNo) as any)?.roomType?.adultCapacity})` : ''}
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              id="adults"
-                              type="number"
-                              value={adults}
-                              onChange={(e) => {
-                                const maxAdults = accommodationType === "ROOM"
-                                  ? (rooms.find(r => r.id === roomNo) as any)?.roomType?.adultCapacity || 10
-                                  : 1;
-                                const value = Math.min(Number(e.target.value), maxAdults);
-                                setAdults(Math.max(1, value));
-                              }}
-                              placeholder="Adults"
-                              className="pl-10 pr-10"
-                              min={1}
-                              max={roomNo && accommodationType === "ROOM" ? (rooms.find(r => r.id === roomNo) as any)?.roomType?.adultCapacity : 1}
-                            />
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col">
-                              <ChevronUp
-                                className="h-3 w-3 cursor-pointer hover:text-blue-600"
-                                onClick={() => {
-                                  const maxAdults = accommodationType === "ROOM"
-                                    ? (rooms.find(r => r.id === roomNo) as any)?.roomType?.adultCapacity || 10
-                                    : 1;
-                                  setAdults(prev => Math.min(prev + 1, maxAdults));
-                                }}
-                              />
-                              <ChevronDown className="h-3 w-3 cursor-pointer hover:text-blue-600" onClick={() => setAdults(prev => Math.max(1, prev - 1))} />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="children" className="flex items-center gap-2">
-                            <Baby className="h-4 w-4" />
-                            #Children {roomNo && accommodationType === "ROOM" ? (rooms.find(r => r.id === roomNo) as any)?.roomType && `(Max: ${(rooms.find(r => r.id === roomNo) as any)?.roomType?.childCapacity})` : ''}
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              id="children"
-                              type="number"
-                              value={children}
-                              onChange={(e) => {
-                                const maxChildren = accommodationType === "ROOM"
-                                  ? (rooms.find(r => r.id === roomNo) as any)?.roomType?.childCapacity || 5
-                                  : 0;
-                                const value = Math.min(Number(e.target.value), maxChildren);
-                                setChildren(Math.max(0, value));
-                              }}
-                              placeholder="0"
-                              className="pl-10 pr-10"
-                              min={0}
-                              max={roomNo && accommodationType === "ROOM" ? (rooms.find(r => r.id === roomNo) as any)?.roomType?.childCapacity : 0}
-                            />
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col">
-                              <ChevronUp
-                                className="h-3 w-3 cursor-pointer hover:text-blue-600"
-                                onClick={() => {
-                                  const maxChildren = accommodationType === "ROOM"
-                                    ? (rooms.find(r => r.id === roomNo) as any)?.roomType?.childCapacity || 5
-                                    : 0;
-                                  setChildren(prev => Math.min(prev + 1, maxChildren));
-                                }}
-                              />
-                              <ChevronDown className="h-3 w-3 cursor-pointer hover:text-blue-600" onClick={() => setChildren(prev => Math.max(0, prev - 1))} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <CardContent className="space-y-4">
+              {/* Row 1: Property and Accommodation Type */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="property">Property*</Label>
+                  <Select
+                    value={selectedPropertyId}
+                    onValueChange={(value) => {
+                      setSelectedPropertyId(value);
+                      setRoomType('');
+                      setRoomNo('');
+                      setPricingData(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select property" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {properties.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No properties available
+                        </SelectItem>
+                      ) : (
+                        properties.map((property) => (
+                          <SelectItem key={property.id} value={property.id}>
+                            {property.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Guest Info */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-900">Selected Guests</h3>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Guest
-                          <ChevronDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                          onClick={addOldGuest}
-                          className="cursor-pointer"
-                        >
-                          <Search className="mr-2 h-4 w-4" />
-                          Select Existing Guest
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={addNewGuest}
-                          className="cursor-pointer"
-                        >
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Create New Guest
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {selectedGuests.length === 0 ? (
-                    <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
-                      <User className="mx-auto h-12 w-12 text-gray-400" />
-                      <p className="mt-2 text-sm text-gray-500">No guests selected</p>
-                      <p className="text-xs text-gray-400">Click "Add Guest" to select guests for this booking</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {selectedGuests.map((guest) => (
-                        <div
-                          key={guest.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                        >
-                          <div className="flex items-center gap-3">
-                            <User className="h-5 w-5 text-gray-500" />
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {guest.firstName} {guest.lastName}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {guest.email} {guest.phone && `• ${guest.phone}`}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeGuest(guest.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payment Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Payment Details Section */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">Payment Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="discountReason" className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Discount Reason
-                    </Label>
-                    <Input
-                      id="discountReason"
-                      value={discountReason}
-                      onChange={(e) => setDiscountReason(e.target.value)}
-                      placeholder="Discount Reason"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="discountPercentage" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Discount (Max-100%)
-                    </Label>
-                    <Input
-                      id="discountPercentage"
-                      type="number"
-                      value={discountPercentage}
-                      onChange={(e) => setDiscountPercentage(Number(e.target.value))}
-                      placeholder="0"
-                      min="0"
-                      max="100"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="commissionRate" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Commission (%)
-                    </Label>
-                    <Input
-                      id="commissionRate"
-                      type="number"
-                      value={commissionRate}
-                      onChange={(e) => setCommissionRate(Number(e.target.value))}
-                      placeholder="Commission rate"
-                      min="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="commissionAmount" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Commission Amount
-                    </Label>
-                    <Input
-                      id="commissionAmount"
-                      type="number"
-                      value={commissionAmount}
-                      onChange={(e) => setCommissionAmount(Number(e.target.value))}
-                      placeholder="Commission amount"
-                      min="0"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accommodationType">Accommodation Type*</Label>
+                  <Select
+                    value={accommodationType}
+                    onValueChange={(value) => {
+                      setAccommodationType(value);
+                      setRoomType('');
+                      setRoomNo('');
+                      setPricingData(null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select accommodation type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ROOM">Room</SelectItem>
+                      <SelectItem value="BED">Bed (Dormitory)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              {/* Billing Details Section */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">Billing Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Row 2: Room Type/Dormitory and Room/Bed */}
+              {selectedPropertyId && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Booking Charge</Label>
-                    <div className="p-2 bg-gray-50 rounded border text-center">
-                      {pricingData?.pricing?.subtotal || 0}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-600">Tax</Label>
-                    <div className="p-2 bg-gray-50 rounded border text-center">
-                      {pricingData?.pricing?.taxAmount || 0}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-600">Service Charge</Label>
-                    <div className="p-2 bg-gray-50 rounded border text-center">
-                      0
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-600">Total</Label>
-                    <div className="p-2 bg-gray-50 rounded border text-center font-semibold">
-                      {pricingData?.pricing?.totalPrice || 0}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Advance Details Section */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">Advance Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMode" className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      Payment Mode{mode === 'direct-checkin' && '*'}
+                    <Label htmlFor="roomType">
+                      {accommodationType === 'ROOM'
+                        ? 'Room Type*'
+                        : 'Dormitory*'}
                     </Label>
-                    <Select value={paymentMode} onValueChange={setPaymentMode}>
+                    <Select
+                      value={roomType}
+                      onValueChange={(value) => {
+                        setRoomType(value);
+                        setRoomNo('');
+                        setPricingData(null);
+                      }}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Choose Payment Mode" />
+                        <SelectValue
+                          placeholder={`Select ${accommodationType === 'ROOM' ? 'room type' : 'dormitory'}`}
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="card">Credit/Debit Card</SelectItem>
-                        <SelectItem value="bank">Bank Transfer</SelectItem>
-                        <SelectItem value="upi">Mobile Money</SelectItem>
-                        <SelectItem value="crypto">Crypto</SelectItem>
+                        {accommodationType === 'ROOM'
+                          ? roomTypes
+                              .filter(
+                                (rt) => rt.propertyId === selectedPropertyId,
+                              )
+                              .map((rt) => (
+                                <SelectItem key={rt.id} value={rt.id}>
+                                  {rt.name} - {formatCurrency(rt.basePrice)}
+                                </SelectItem>
+                              ))
+                          : dormitories
+                              .filter(
+                                (d) => d.propertyId === selectedPropertyId,
+                              )
+                              .map((d) => (
+                                <SelectItem key={d.id} value={d.id}>
+                                  {d.name} - {d.capacity} beds
+                                </SelectItem>
+                              ))}
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="totalAmount" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Total Amount
+                    <Label htmlFor="roomNo">
+                      {accommodationType === 'ROOM'
+                        ? 'Room Number*'
+                        : 'Bed Number*'}
                     </Label>
+                    <Select
+                      value={roomNo}
+                      onValueChange={setRoomNo}
+                      disabled={!roomType}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={`Select ${accommodationType === 'ROOM' ? 'room' : 'bed'}`}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {!roomType ? (
+                          <SelectItem value="no-type" disabled>
+                            Please select{' '}
+                            {accommodationType === 'ROOM'
+                              ? 'room type'
+                              : 'dormitory'}{' '}
+                            first
+                          </SelectItem>
+                        ) : accommodationType === 'ROOM' ? (
+                          rooms.filter(
+                            (r) =>
+                              r.roomTypeId === roomType &&
+                              r.status === 'AVAILABLE',
+                          ).length === 0 ? (
+                            <SelectItem value="empty" disabled>
+                              No available rooms
+                            </SelectItem>
+                          ) : (
+                            rooms
+                              .filter(
+                                (r) =>
+                                  r.roomTypeId === roomType &&
+                                  r.status === 'AVAILABLE',
+                              )
+                              .map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.number}
+                                </SelectItem>
+                              ))
+                          )
+                        ) : beds.filter(
+                            (b) =>
+                              b.dormitoryId === roomType &&
+                              b.status === 'AVAILABLE',
+                          ).length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No available beds
+                          </SelectItem>
+                        ) : (
+                          beds
+                            .filter(
+                              (b) =>
+                                b.dormitoryId === roomType &&
+                                b.status === 'AVAILABLE',
+                            )
+                            .map((bed) => (
+                              <SelectItem key={bed.id} value={bed.id}>
+                                {bed.number}
+                              </SelectItem>
+                            ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {/* Row 3: Adults and Children */}
+              {roomNo && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="adults">Adults*</Label>
                     <Input
-                      id="totalAmount"
+                      id="adults"
                       type="number"
-                      value={pricingData?.pricing?.finalPrice || 0}
-                      placeholder="Total amount"
-                      readOnly
-                      className="bg-gray-50"
+                      value={adults}
+                      onChange={(e) => setAdults(Number(e.target.value))}
+                      min={1}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="advanceRemarks" className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Advance Remarks
-                    </Label>
+                    <Label htmlFor="children">Children</Label>
                     <Input
-                      id="advanceRemarks"
-                      value={advanceRemarks}
-                      onChange={(e) => setAdvanceRemarks(e.target.value)}
-                      placeholder="Advance Remarks"
+                      id="children"
+                      type="number"
+                      value={children}
+                      onChange={(e) => setChildren(Number(e.target.value))}
+                      min={0}
                     />
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Guest Selection */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Guest Information
+                </CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" variant="outline" size="sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Guest
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={addOldGuest}
+                      className="cursor-pointer"
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      Select Existing Guest
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={addNewGuest}
+                      className="cursor-pointer"
+                    >
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Create New Guest
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {selectedGuests.length === 0 ? (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <User className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No guests selected
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Click &quot;Add Guest&quot; to select guests for this
+                    booking
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedGuests.map((guest) => (
+                    <div
+                      key={guest.id}
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">
+                            {guest.firstName} {guest.lastName}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {guest.email} {guest.phone && `• ${guest.phone}`}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeGuest(guest.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Pricing Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Pricing Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {pricingLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Calculating price...
+                  </p>
+                </div>
+              ) : pricingError ? (
+                <div className="text-center py-8 text-destructive">
+                  <p>{pricingError}</p>
+                </div>
+              ) : (
+                <PricingBreakdown
+                  pricingData={pricingData}
+                  currency={
+                    properties.find((p) => p.id === selectedPropertyId)
+                      ?.currency || 'ETB'
+                  }
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Advance Payment */}
+          {pricingData && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Advance Payment {mode === 'direct-checkin' && '*'}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {mode === 'direct-checkin'
+                    ? 'Full payment required for direct check-in'
+                    : 'Optional advance payment. Set amount to 0 to skip.'}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Row 1: Amount and Payment Method */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="advanceAmount" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      Advance Amount
+                    <Label htmlFor="advanceAmount">
+                      Payment Amount*
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (Max: {formatCurrency(pricingData.pricing.finalPrice)})
+                      </span>
                     </Label>
                     <Input
                       id="advanceAmount"
                       type="number"
                       value={advanceAmount}
                       onChange={(e) => setAdvanceAmount(Number(e.target.value))}
-                      placeholder="Advance Amount"
-                      min="0"
+                      min={0}
+                      max={pricingData.pricing.finalPrice}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentMethod">
+                      Payment Method{advanceAmount > 0 && '*'}
+                    </Label>
+                    <Select
+                      value={paymentMethod}
+                      onValueChange={setPaymentMethod}
+                      disabled={advanceAmount === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CASH">Cash</SelectItem>
+                        <SelectItem value="CARD">Card</SelectItem>
+                        <SelectItem value="MOBILE_MONEY">
+                          Mobile Money
+                        </SelectItem>
+                        <SelectItem value="CRYPTO">Crypto</SelectItem>
+                        <SelectItem value="BANK_TRANSFER">
+                          Bank Transfer
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Row 2: Currency (read-only) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Currency</Label>
+                    <Input
+                      value={
+                        properties.find((p) => p.id === selectedPropertyId)
+                          ?.currency || 'ETB'
+                      }
+                      readOnly
+                      className="bg-muted"
                     />
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                {/* Row 3: Optional fields (only show if amount > 0) */}
+                {advanceAmount > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="externalTransactionId">
+                        External Transaction ID (Optional)
+                      </Label>
+                      <Textarea
+                        id="externalTransactionId"
+                        value={externalTransactionId}
+                        onChange={(e) =>
+                          setExternalTransactionId(e.target.value)
+                        }
+                        placeholder="Reference from external payment system"
+                        rows={3}
+                        className="resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentNotes">
+                        Payment Notes (Optional)
+                      </Label>
+                      <Textarea
+                        id="paymentNotes"
+                        value={paymentNotes}
+                        onChange={(e) => setPaymentNotes(e.target.value)}
+                        placeholder="Additional notes about this payment"
+                        rows={3}
+                        className="resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4 items-center">
+          {pricingLoading && (
+            <p className="text-sm text-muted-foreground">
+              Please wait for pricing calculation to complete
+            </p>
+          )}
           <Button
             onClick={handleSave}
-            disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2"
+            disabled={isSaving || pricingLoading || !pricingData}
+            className="px-8 py-2"
             size="lg"
           >
-            {isSaving ? 'Saving...' : mode === 'direct-checkin' ? 'Check In & Pay' : 'Save'}
+            {isSaving
+              ? 'Saving...'
+              : mode === 'direct-checkin'
+                ? 'Check In & Pay'
+                : 'Save Reservation'}
           </Button>
         </div>
       </div>
@@ -1122,7 +1184,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
         loading={guestSearchLoading}
         onSearch={handleGuestSearch}
         onSelect={handleGuestSelect}
-        selectedGuestIds={selectedGuests.map(g => g.id)}
+        selectedGuestIds={selectedGuests.map((g) => g.id)}
       />
 
       {/* Create Guest Dialog */}

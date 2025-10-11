@@ -145,6 +145,18 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       href: '/dashboard/reservations/check-out',
       permission: 'reservation:checkout',
     },
+    {
+      label: 'Booking Types',
+      icon: FileText,
+      href: '/dashboard/reservations/booking-types',
+      permission: 'booking-type:read',
+    },
+    {
+      label: 'Booking Sources',
+      icon: Globe,
+      href: '/dashboard/reservations/booking-sources',
+      permission: 'booking-source:read',
+    },
   ];
 
   // Hotel Management section
