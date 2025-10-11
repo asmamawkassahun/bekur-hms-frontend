@@ -1,38 +1,68 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface BookingStatusChartProps {
-  data: Array<{ date: string; confirmed: number; pending: number; cancelled: number }>;
+  data: Array<{ status: string; count: number; fill: string }>;
 }
 
+const chartConfig = {
+  count: {
+    label: 'Bookings',
+    color: 'hsl(var(--chart-1))',
+  },
+};
+
 export function BookingStatusChart({ data }: BookingStatusChartProps) {
+  const totalBookings = data.reduce((sum, item) => sum + item.count, 0);
+
   return (
-    <Card className="bg-card border-0 shadow-sm">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>Booking Status Trend</CardTitle>
-        <CardDescription>Daily booking status distribution</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-foreground">Booking Status</CardTitle>
+            <CardDescription className="text-muted-foreground">Current status of all bookings</CardDescription>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-foreground">{totalBookings}</div>
+            <div className="text-xs text-muted-foreground">Total Bookings</div>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ChartContainer config={chartConfig} className="h-[340px]">
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="date" className="text-xs" />
-            <YAxis className="text-xs" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-              }}
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} vertical={false} />
+            <XAxis
+              dataKey="status"
+              className="stroke-muted-foreground"
+              style={{ fontSize: "12px" }}
             />
-            <Legend />
-            <Bar dataKey="confirmed" fill="hsl(var(--chart-1))" name="Confirmed" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="pending" fill="hsl(var(--chart-3))" name="Pending" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="cancelled" fill="hsl(var(--chart-5))" name="Cancelled" radius={[4, 4, 0, 0]} />
+            <YAxis className="stroke-muted-foreground" style={{ fontSize: "12px" }} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value: number) => [value, "Bookings"]}
+                />
+              }
+            />
+            <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+              <LabelList
+                dataKey="count"
+                position="top"
+                className="fill-foreground"
+                fontSize={12}
+                fontWeight="bold"
+              />
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Bar>
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
