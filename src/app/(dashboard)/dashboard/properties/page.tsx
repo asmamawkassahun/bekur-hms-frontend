@@ -6,6 +6,8 @@ import { AppDispatch, RootState } from '@/store';
 import {
   fetchProperties,
   createProperty,
+  updateProperty,
+  deleteProperty,
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/propertySlice';
@@ -56,6 +58,7 @@ export default function PropertiesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null,
@@ -153,11 +156,14 @@ export default function PropertiesPage() {
         timezone: formData.timezone,
         currency: formData.currency,
         taxRate: formData.taxRate || 0,
-        phone: formData.phone,
-        email: formData.email,
-        postalCode: formData.postalCode,
-        description: formData.description,
+        phone: formData.phone ?? undefined,
+        email: formData.email ?? undefined,
+        postalCode: formData.postalCode ?? undefined,
+        description: formData.description ?? undefined,
         isActive: formData.isActive !== undefined ? formData.isActive : true,
+        policies: formData.policies ?? undefined,
+        website: formData.website ?? undefined,
+        hotelCode: formData.hotelCode ?? undefined,
       };
       await dispatch(createProperty(data)).unwrap();
       success('Property created');
@@ -176,10 +182,19 @@ export default function PropertiesPage() {
     }
   };
 
-  const handleEditProperty = async (data: UpdatePropertyData) => {
+  const handleEditProperty = async (formData: UpdatePropertyData) => {
     if (!selectedProperty) return;
     try {
-      // await dispatch(updateProperty({ id: selectedProperty.id, data })).unwrap();
+      // Ensure all fields are properly sent to backend
+      const data: UpdatePropertyData = {
+        ...formData,
+        website: formData.website ?? undefined,
+        policies: formData.policies ?? undefined,
+        hotelCode: formData.hotelCode ?? undefined,
+        taxRate: typeof formData.taxRate === 'string' ? Number(formData.taxRate) : formData.taxRate,
+      };
+
+      await dispatch(updateProperty({ id: selectedProperty.id, data })).unwrap();
       success('Property updated');
       setOpenEdit(false);
       setSelectedProperty(null);
@@ -200,7 +215,7 @@ export default function PropertiesPage() {
   const handleDeleteProperty = async () => {
     if (!selectedProperty) return;
     try {
-      // await dispatch(deleteProperty(selectedProperty.id)).unwrap();
+      await dispatch(deleteProperty(selectedProperty.id)).unwrap();
       success('Property deleted');
       setOpenDelete(false);
       setSelectedProperty(null);
@@ -233,7 +248,7 @@ export default function PropertiesPage() {
       property={property}
       onView={(p) => {
         setSelectedProperty(p);
-        // setOpenView(true);
+        setOpenView(true);
       }}
       onEdit={(p) => {
         setSelectedProperty(p);
@@ -331,6 +346,98 @@ export default function PropertiesPage() {
         renderRow={renderPropertyRow}
       />
 
+      {/* View Property Dialog */}
+      <Dialog
+        open={openView}
+        onOpenChange={(open) => {
+          setOpenView(open);
+          if (!open) setSelectedProperty(null);
+        }}
+      >
+        <DialogContent className="!w-[90vw] !max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Property Details</DialogTitle>
+          </DialogHeader>
+          {selectedProperty && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-medium">{selectedProperty.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <p className="font-medium">{selectedProperty.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-medium">{selectedProperty.address}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">City</p>
+                  <p className="font-medium">{selectedProperty.city}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Country</p>
+                  <p className="font-medium">{selectedProperty.country}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{selectedProperty.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{selectedProperty.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Website</p>
+                  <p className="font-medium">{selectedProperty.website || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Timezone</p>
+                  <p className="font-medium">{selectedProperty.timezone}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Currency</p>
+                  <p className="font-medium">{selectedProperty.currency}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tax Rate</p>
+                  <p className="font-medium">{selectedProperty.taxRate}%</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Hotel Code</p>
+                  <p className="font-medium">{selectedProperty.hotelCode || 'N/A'}</p>
+                </div>
+              </div>
+              {selectedProperty.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Description</p>
+                  <p className="font-medium">{selectedProperty.description}</p>
+                </div>
+              )}
+              {selectedProperty.policies && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Policies</p>
+                  <p className="font-medium whitespace-pre-wrap">{selectedProperty.policies}</p>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setOpenView(false)}>
+                  Close
+                </Button>
+                <Button onClick={() => {
+                  setOpenView(false);
+                  setOpenEdit(true);
+                }}>
+                  Edit Property
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Property Dialog */}
       <Dialog
         open={openEdit}
@@ -362,9 +469,8 @@ export default function PropertiesPage() {
           if (!open) setSelectedProperty(null);
         }}
         title="Delete Property"
-        description={`Are you sure you want to delete ${
-          selectedProperty ? selectedProperty.name : 'this property'
-        }? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${selectedProperty ? selectedProperty.name : 'this property'
+          }? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
         onConfirm={handleDeleteProperty}

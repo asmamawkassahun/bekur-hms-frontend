@@ -168,7 +168,12 @@ const bookingTypeSlice = createSlice({
       .addCase(fetchBookingTypes.fulfilled, (state, action) => {
         state.loading = false;
         state.bookingTypes = action.payload.data || [];
-        state.pagination = action.payload.meta || initialState.pagination;
+        state.pagination = {
+          page: action.payload.meta?.page ?? 1,
+          limit: action.payload.meta?.limit ?? 10,
+          total: action.payload.meta?.total ?? 0,
+          totalPages: action.payload.meta?.totalPages ?? 0,
+        };
       })
       .addCase(fetchBookingTypes.rejected, (state, action) => {
         state.loading = false;
@@ -181,7 +186,7 @@ const bookingTypeSlice = createSlice({
       })
       .addCase(fetchBookingType.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentBookingType = action.payload.data;
+        state.currentBookingType = action.payload.data ?? null;
       })
       .addCase(fetchBookingType.rejected, (state, action) => {
         state.loading = false;
@@ -194,7 +199,9 @@ const bookingTypeSlice = createSlice({
       })
       .addCase(createBookingType.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookingTypes.unshift(action.payload.data);
+        if (action.payload.data) {
+          state.bookingTypes.unshift(action.payload.data);
+        }
       })
       .addCase(createBookingType.rejected, (state, action) => {
         state.loading = false;
@@ -207,11 +214,13 @@ const bookingTypeSlice = createSlice({
       })
       .addCase(updateBookingType.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.bookingTypes.findIndex(
-          (bt) => bt.id === action.payload.data.id,
-        );
-        if (index !== -1) {
-          state.bookingTypes[index] = action.payload.data;
+        if (action.payload.data) {
+          const index = state.bookingTypes.findIndex(
+            (bt) => bt.id === action.payload.data!.id,
+          );
+          if (index !== -1) {
+            state.bookingTypes[index] = action.payload.data;
+          }
         }
       })
       .addCase(updateBookingType.rejected, (state, action) => {
@@ -225,9 +234,11 @@ const bookingTypeSlice = createSlice({
       })
       .addCase(deleteBookingType.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookingTypes = state.bookingTypes.filter(
-          (bt) => bt.id !== action.payload.data.id,
-        );
+        if (action.payload.data) {
+          state.bookingTypes = state.bookingTypes.filter(
+            (bt) => bt.id !== action.payload.data!.id,
+          );
+        }
       })
       .addCase(deleteBookingType.rejected, (state, action) => {
         state.loading = false;
@@ -240,11 +251,13 @@ const bookingTypeSlice = createSlice({
       })
       .addCase(toggleBookingTypeStatus.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.bookingTypes.findIndex(
-          (bt) => bt.id === action.payload.data.id,
-        );
-        if (index !== -1) {
-          state.bookingTypes[index] = action.payload.data;
+        if (action.payload.data) {
+          const index = state.bookingTypes.findIndex(
+            (bt) => bt.id === action.payload.data!.id,
+          );
+          if (index !== -1) {
+            state.bookingTypes[index] = action.payload.data;
+          }
         }
       })
       .addCase(toggleBookingTypeStatus.rejected, (state, action) => {

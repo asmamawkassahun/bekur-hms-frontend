@@ -38,26 +38,49 @@ export default function NightAuditTopLevelPage() {
   const [propertyId, setPropertyId] = useState<string>('');
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [showSettingsForm, setShowSettingsForm] = useState(false);
 
+  const { settings } = useSelector((s: RootState) => s.nightAudit);
+
+  // Load properties once on mount
   useEffect(() => {
     if (!properties || properties.length === 0) {
       dispatch(fetchProperties({ page: 1, limit: 100 }));
-    } else if (!propertyId) {
+    }
+  }, [dispatch, properties]);
+
+  // Set initial propertyId when properties are loaded
+  useEffect(() => {
+    if (properties && properties.length > 0 && !propertyId) {
       setPropertyId(properties[0].id);
     }
-  }, [dispatch, properties, propertyId]);
+  }, [properties, propertyId]);
 
+  // Fetch night audits only when filters change
   useEffect(() => {
+    if (!propertyId) return; // Don't fetch without a property selected
+
     const q = {
-      ...filters,
-      propertyId: propertyId || undefined,
+      page: filters.page || 1,
+      limit: filters.limit || 10,
+      sortBy: filters.sortBy || 'businessDate',
+      sortOrder: filters.sortOrder || 'desc',
+      propertyId: propertyId,
       status: status === 'all' ? undefined : status,
       businessDateFrom: from || undefined,
       businessDateTo: to || undefined,
     };
+
+    // Only fetch if this is a new query or forced reload
+    if (hasLoaded && JSON.stringify(filters) === JSON.stringify(q)) {
+      return; // Skip if filters haven't actually changed
+    }
+
     dispatch(setFilters(q));
     dispatch(fetchNightAudits(q));
-  }, [dispatch, propertyId, status, from, to]);
+    setHasLoaded(true);
+  }, [propertyId, status, from, to]);
 
   const columns = useMemo(
     () => [
@@ -151,8 +174,55 @@ export default function NightAuditTopLevelPage() {
       />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Property Settings</h3>
-        <SettingsForm propertyId={propertyId || null} />
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Property Settings</h3>
+          {settings && settings.propertyId === propertyId && !showSettingsForm && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSettingsForm(true)}
+              className="cursor-pointer"
+            >
+              Edit Settings
+            </Button>
+          )}
+        </div>
+
+        {(!settings || settings.propertyId !== propertyId || showSettingsForm) && (
+          <SettingsForm
+            propertyId={propertyId || null}
+            onSaveSuccess={() => setShowSettingsForm(false)}
+          />
+        )}
+
+        {settings && settings.propertyId === propertyId && !showSettingsForm && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30">
+            <div>
+              <p className="text-sm text-muted-foreground">Day Open Time</p>
+              <p className="font-medium">{settings.dayOpenTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Day Close Time</p>
+              <p className="font-medium">{settings.dayCloseTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Night Audit Time</p>
+              <p className="font-medium">{settings.nightAuditTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Check-In Time</p>
+              <p className="font-medium">{settings.defaultCheckInTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Check-Out Time</p>
+              <p className="font-medium">{settings.defaultCheckOutTime}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Auto Run Audit</p>
+              <p className="font-medium">{settings.autoRunNightAudit ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <RunNightAuditDialog

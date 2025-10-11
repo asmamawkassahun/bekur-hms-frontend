@@ -24,10 +24,10 @@ import {
   Home,
   BedDouble,
   Building,
-  CreditCard,
-  UserCog,
+    UserCog,
   ChevronDown,
   Globe,
+  LucideBarChart3,
 } from 'lucide-react';
 
 interface SidebarContentProps {
@@ -84,12 +84,12 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       href: '/dashboard/guests',
       permission: 'guest:read',
     },
-    {
-      label: 'Beds',
-      icon: BedDouble,
-      href: '/dashboard/beds',
-      permission: 'bed:read',
-    },
+    // {
+    //   label: 'Beds',
+    //   icon: BedDouble,
+    //   href: '/dashboard/beds',
+    //   permission: 'bed:read',
+    // },
   ];
 
   // Rooms submenu items
@@ -184,23 +184,29 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
       href: '/dashboard/aiosell',
       permission: 'aiosell:view-logs',
     },
-    {
-      label: 'Payments',
-      icon: CreditCard,
-      href: '/dashboard/payments',
-      permission: 'payment:read',
-    },
-    {
-      label: 'Invoices',
-      icon: FileText,
-      href: '/dashboard/invoices',
-      permission: 'invoice:read',
-    },
+    // {
+    //   label: 'Payments',
+    //   icon: CreditCard,
+    //   href: '/dashboard/payments',
+    //   permission: 'payment:read',
+    // },
+    // {
+    //   label: 'Invoices',
+    //   icon: FileText,
+    //   href: '/dashboard/invoices',
+    //   permission: 'invoice:read',
+    // },
     {
       label: 'Reports',
       icon: BarChart3,
       href: '/dashboard/reports',
       permission: 'report:operational',
+    },
+    {
+      label: 'Night Audit',
+      icon: LucideBarChart3,
+      href: '/dashboard/night-audit',
+      permission: 'night-audit:read',
     },
     {
       label: 'Staff',
@@ -254,7 +260,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
             <div className="h-4 w-4 bg-sidebar-primary-foreground rounded-full"></div>
           </div>
           <div>
-            <h1 className="text-lg font-semibold">Bekur HMS</h1>
+            <h1 className="text-lg font-semibold">Automata HMS</h1>
           </div>
         </div>
       </div>
@@ -489,7 +495,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                     className={cn(
                       'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                       active &&
-                        'bg-sidebar-accent text-sidebar-accent-foreground',
+                      'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                     asChild
                   >
@@ -520,7 +526,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   className={cn(
                     'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                     active &&
-                      'bg-sidebar-accent text-sidebar-accent-foreground',
+                    'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   asChild
                 >

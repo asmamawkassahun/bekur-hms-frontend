@@ -58,5 +58,6 @@ export type AppDispatch = typeof store.dispatch;
 
 // Expose store globally for axios interceptor
 if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).__REDUX_STORE__ = store;
 }

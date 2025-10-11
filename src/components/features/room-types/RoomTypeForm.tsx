@@ -91,16 +91,16 @@ export function RoomTypeForm({
     defaultValues: {
       propertyId: roomType?.propertyId || '',
       name: roomType?.name || '',
-      description: roomType?.description || '',
-      roomSize: roomType?.roomSize || undefined,
+      description: roomType?.description ?? '',
+      roomSize: roomType?.roomSize ?? 0,
       sizeUnit: roomType?.sizeUnit || 'SQ_FT',
       adultCapacity: roomType?.adultCapacity || 1,
       childCapacity: roomType?.childCapacity || 0,
       basePrice: roomType?.basePrice || 0,
       amenities: roomType?.amenities || [],
       images: roomType?.images || [],
-      reserveCondition: roomType?.reserveCondition || '',
-      roomCode: roomType?.roomCode || '',
+      reserveCondition: roomType?.reserveCondition ?? '',
+      roomCode: roomType?.roomCode ?? '',
       ratePlanCodes: roomType?.ratePlanCodes || [],
       beds:
         roomType?.beds?.map((bed) => ({
@@ -183,8 +183,8 @@ export function RoomTypeForm({
                   <Input
                     type="number"
                     placeholder="Room size"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -313,7 +313,7 @@ export function RoomTypeForm({
               <FormControl>
                 <TagInput
                   placeholder="Add amenities..."
-                  value={field.value}
+                  value={field.value || []}
                   onChange={field.onChange}
                 />
               </FormControl>
@@ -330,9 +330,9 @@ export function RoomTypeForm({
               <FormLabel>Images</FormLabel>
               <FormControl>
                 <ImageUpload
-                  value={field.value}
+                  value={field.value || []}
                   onChange={field.onChange}
-                  maxFiles={5}
+                  maxImages={5}
                 />
               </FormControl>
               <FormMessage />

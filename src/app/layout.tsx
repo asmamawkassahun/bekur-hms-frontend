@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Bekur HMS - Hotel Management System',
+  title: 'Automata HMS - Hotel Management System',
   description: 'Professional hotel and hostel management system',
 };
 

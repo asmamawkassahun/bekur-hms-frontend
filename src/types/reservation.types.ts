@@ -1,7 +1,7 @@
 // Import types from their respective files
 import type { Guest } from './guest.types';
 import type { Property } from './property.types';
-import type { Room, RoomType } from './room.types';
+import type { Room } from './room.types';
 
 // Booking Guest
 export interface BookingGuest {

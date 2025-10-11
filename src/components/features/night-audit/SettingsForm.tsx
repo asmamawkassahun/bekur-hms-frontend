@@ -10,9 +10,10 @@ import { fetchSettings, updateSettings } from '@/store/slices/nightAuditSlice';
 
 interface SettingsFormProps {
   propertyId: string | null;
+  onSaveSuccess?: () => void;
 }
 
-export function SettingsForm({ propertyId }: SettingsFormProps) {
+export function SettingsForm({ propertyId, onSaveSuccess }: SettingsFormProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { success, error } = useNotification();
   const { settings, loading } = useSelector((s: RootState) => s.nightAudit);
@@ -29,14 +30,21 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
     autoCloseDay: false,
     requireApproval: true,
   });
+  const [loadedPropertyId, setLoadedPropertyId] = useState<string | null>(null);
 
+  // Fetch settings only once per property
   useEffect(() => {
     if (!propertyId) return;
-    dispatch(fetchSettings(propertyId));
-  }, [dispatch, propertyId]);
+    // Only fetch if we haven't loaded settings for this property yet
+    if (propertyId !== loadedPropertyId && !loading['settings']) {
+      dispatch(fetchSettings(propertyId));
+      setLoadedPropertyId(propertyId);
+    }
+  }, [dispatch, propertyId, loadedPropertyId, loading]);
 
+  // Update form when settings are loaded
   useEffect(() => {
-    if (settings) {
+    if (settings && settings.propertyId === propertyId) {
       setForm({
         dayOpenTime: settings.dayOpenTime,
         dayCloseTime: settings.dayCloseTime,
@@ -50,7 +58,7 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
         requireApproval: settings.requireApproval,
       });
     }
-  }, [settings]);
+  }, [settings, propertyId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -68,6 +76,10 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
     try {
       await dispatch(updateSettings({ propertyId, data: form })).unwrap();
       success('Settings updated');
+      // Call callback to hide form after successful save
+      if (onSaveSuccess) {
+        onSaveSuccess();
+      }
     } catch (e) {
       const apiErr = handleApiError(e as any);
       error(apiErr.message);
@@ -122,8 +134,20 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
         </label>
       </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={!propertyId || loading['updateSettings']} className="cursor-pointer">Save</Button>
+      <div className="flex justify-end gap-2">
+        {onSaveSuccess && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onSaveSuccess()}
+            className="cursor-pointer"
+          >
+            Cancel
+          </Button>
+        )}
+        <Button onClick={handleSubmit} disabled={!propertyId || loading['updateSettings']} className="cursor-pointer">
+          Save Settings
+        </Button>
       </div>
     </div>
   );

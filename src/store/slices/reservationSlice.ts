@@ -170,6 +170,7 @@ export const checkOutGuest = createAsyncThunk(
     try {
       const response = await reservationService.checkOut(data);
       return response.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       // Extract error message from API response
       let errorMessage = 'Failed to check out guest';
