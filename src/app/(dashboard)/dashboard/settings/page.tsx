@@ -95,16 +95,15 @@ export default function SettingsPage() {
 
   const onSave = async () => {
     try {
-      await dispatch(
-        updateSettings({
-          hotel,
-          preferences: prefs,
-          notifications: notif,
-          security: sec,
-          integrations: integr,
-        } as any),
-      ).unwrap();
-      success('Settings saved');
+      const data = {
+        hotel,
+        preferences: prefs,
+        notifications: notif,
+        security: sec,
+        integrations: integr,
+      };
+      await dispatch(updateSettings(data)).unwrap();
+      success('Settings saved successfully');
     } catch (e) {
       const apiErr = handleApiError(e as AxiosError);
       error(apiErr.message);
