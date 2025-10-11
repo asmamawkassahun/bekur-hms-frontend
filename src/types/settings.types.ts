@@ -43,6 +43,4 @@ export interface Settings {
   updatedAt?: string;
 }
 
-export interface UpdateSettingsData extends Partial<Settings> {}
-
-
+export type UpdateSettingsData = Partial<Settings>;

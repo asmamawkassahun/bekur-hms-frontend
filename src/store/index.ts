@@ -17,6 +17,8 @@ import bookingTypeReducer from './slices/bookingTypeSlice';
 import bookingSourceReducer from './slices/bookingSourceSlice';
 import uiReducer from './slices/uiSlice';
 import dashboardReducer from './slices/dashboardSlice';
+import nightAuditReducer from './slices/nightAuditSlice';
+import rateManagementReducer from './slices/rateManagementSlice';
 
 export const store = configureStore({
   reducer: {
@@ -38,6 +40,8 @@ export const store = configureStore({
     bookingSource: bookingSourceReducer,
     ui: uiReducer,
     dashboard: dashboardReducer,
+    nightAudit: nightAuditReducer,
+    rateManagement: rateManagementReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

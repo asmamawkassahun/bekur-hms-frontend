@@ -105,9 +105,13 @@ export default function BookingSourcesPage() {
   };
 
   // Handlers
-  const handleCreate = async (data: CreateBookingSourceData) => {
+  const handleCreate = async (
+    data: CreateBookingSourceData | UpdateBookingSourceData,
+  ) => {
     try {
-      await dispatch(createBookingSource(data)).unwrap();
+      await dispatch(
+        createBookingSource(data as CreateBookingSourceData),
+      ).unwrap();
       success('Booking source created successfully');
       setCreateOpen(false);
       dispatch(fetchBookingSources({ page: 1, limit: 100 }));
@@ -117,7 +121,9 @@ export default function BookingSourcesPage() {
     }
   };
 
-  const handleEdit = async (data: UpdateBookingSourceData) => {
+  const handleEdit = async (
+    data: CreateBookingSourceData | UpdateBookingSourceData,
+  ) => {
     if (!selectedBookingSource) return;
 
     try {

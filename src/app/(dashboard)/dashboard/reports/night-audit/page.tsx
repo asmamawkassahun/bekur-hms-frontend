@@ -6,7 +6,13 @@ import { RootState, AppDispatch } from '@/store';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { NightAuditTableRow } from '@/components/features/night-audit/NightAuditTableRow';
 import { NightAuditDetailDialog } from '@/components/features/night-audit/NightAuditDetailDialog';
@@ -20,7 +26,9 @@ import type { NightAudit, NightAuditStatus } from '@/types/night-audit.types';
 
 export default function NightAuditPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { items, loading, meta, filters } = useSelector((s: RootState) => s.nightAudit);
+  const { items, loading, meta, filters } = useSelector(
+    (s: RootState) => s.nightAudit,
+  );
   const { properties } = useSelector((s: RootState) => s.property);
 
   const [openRun, setOpenRun] = useState(false);
@@ -56,7 +64,11 @@ export default function NightAuditPage() {
       { key: 'businessDate', label: 'Business Date', sortable: true },
       { key: 'status', label: 'Status', sortable: true },
       { key: 'totalRevenue', label: 'Total Revenue', sortable: true },
-      { key: 'netAfterCommission', label: 'Net After Commission', sortable: true },
+      {
+        key: 'netAfterCommission',
+        label: 'Net After Commission',
+        sortable: true,
+      },
       { key: 'occupancy', label: 'Occupancy' },
       { key: 'actions', label: 'Actions' },
     ],
@@ -79,12 +91,13 @@ export default function NightAuditPage() {
       <PageHeader
         title="Night Audit"
         description="End-of-day financial and operational reporting"
-        actions={
-          <PermissionGuard permission="night-audit:run">
-            <Button onClick={() => setOpenRun(true)} className="cursor-pointer">Run Night Audit</Button>
-          </PermissionGuard>
-        }
-      />
+      >
+        <PermissionGuard permission="night-audit:run">
+          <Button onClick={() => setOpenRun(true)} className="cursor-pointer">
+            Run Night Audit
+          </Button>
+        </PermissionGuard>
+      </PageHeader>
 
       <NightAuditStatsCards />
 
@@ -96,15 +109,21 @@ export default function NightAuditPage() {
         filters={
           <div className="flex flex-wrap gap-2 w-full">
             <Select value={propertyId} onValueChange={setPropertyId}>
-              <SelectTrigger className="w-[220px]"><SelectValue placeholder="Property" /></SelectTrigger>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Property" />
+              </SelectTrigger>
               <SelectContent>
                 {(properties || []).map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={(v) => setStatus(v as any)}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
@@ -113,8 +132,16 @@ export default function NightAuditPage() {
                 <SelectItem value="REOPENED">Reopened</SelectItem>
               </SelectContent>
             </Select>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <Input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+            <Input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
           </div>
         }
         renderRow={renderRow}
@@ -125,10 +152,16 @@ export default function NightAuditPage() {
         <SettingsForm propertyId={propertyId || null} />
       </div>
 
-      <RunNightAuditDialog open={openRun} onOpenChange={setOpenRun} propertyId={propertyId || null} />
-      <NightAuditDetailDialog open={openDetail} onOpenChange={setOpenDetail} audit={selectedAudit} />
+      <RunNightAuditDialog
+        open={openRun}
+        onOpenChange={setOpenRun}
+        propertyId={propertyId || null}
+      />
+      <NightAuditDetailDialog
+        open={openDetail}
+        onOpenChange={setOpenDetail}
+        audit={selectedAudit}
+      />
     </div>
   );
 }
-
-

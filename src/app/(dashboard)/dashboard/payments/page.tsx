@@ -100,19 +100,17 @@ export default function PaymentsPage() {
         <div>
           <div className="font-medium">#{payment.id.slice(0, 8)}</div>
           <div className="text-sm text-muted-foreground">
-            {payment.transactionId}
+            {payment.reference || 'N/A'}
           </div>
         </div>
       </td>
       <td className="px-4 py-3">
         <div>
           <div className="font-medium">
-            {payment.reservation?.guest?.firstName}{' '}
-            {payment.reservation?.guest?.lastName}
+            Reservation #{payment.reservationId?.slice(0, 8) || 'N/A'}
           </div>
           <div className="text-sm text-muted-foreground">
-            {payment.reservation?.room?.number ||
-              payment.reservation?.bed?.number}
+            Guest: {payment.guestId?.slice(0, 8) || 'N/A'}
           </div>
         </div>
       </td>

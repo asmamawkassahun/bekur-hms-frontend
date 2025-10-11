@@ -56,7 +56,8 @@ export default function SearchPage() {
 
   const runSuggestions = useMemo(
     () =>
-      debounce(async (value: string) => {
+      debounce((...args: unknown[]) => {
+        const value = args[0] as string;
         if (!value.trim()) {
           setSuggestions({
             guests: [],
@@ -64,14 +65,14 @@ export default function SearchPage() {
             rooms: [],
             properties: [],
           });
-          return;
+          return undefined;
         }
-        try {
-          const data = await searchSuggestions(value);
-          setSuggestions(data as any);
-        } catch (_) {
-          /* ignore */
-        }
+        searchSuggestions(value)
+          .then((data) => setSuggestions(data))
+          .catch(() => {
+            /* ignore */
+          });
+        return undefined;
       }, 250),
     [],
   );
@@ -161,15 +162,15 @@ export default function SearchPage() {
                     ))}
                     {suggestions.rooms.slice(0, 3).map((r: Room) => (
                       <span key={r.id}>
-                        Room: {r.number} • {r.type}
+                        Room: {r.number} • {r.roomType?.name || 'N/A'}
                       </span>
                     ))}
                     {suggestions.reservations
                       .slice(0, 3)
                       .map((r: Reservation) => (
                         <span key={r.id}>
-                          Reservation: {formatDateTime(r.checkInDate)} →{' '}
-                          {formatDateTime(r.checkOutDate)}
+                          Reservation: {formatDateTime(r.checkIn)} →{' '}
+                          {formatDateTime(r.checkOut)}
                         </span>
                       ))}
                     {suggestions.properties.slice(0, 3).map((p: Property) => (
@@ -253,8 +254,8 @@ export default function SearchPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium">
-                    {formatDateTime(r.checkInDate)} →{' '}
-                    {formatDateTime(r.checkOutDate)}
+                    {formatDateTime(r.checkIn)} →{' '}
+                    {formatDateTime(r.checkOut)}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Status: {r.status}
@@ -272,10 +273,10 @@ export default function SearchPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium">
-                    {r.number} • {r.type}
+                    {r.number} • {r.roomType?.name || 'N/A'}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Property: {r.property?.name || r.propertyId}
+                    Property ID: {r.propertyId}
                   </div>
                 </div>
                 <Badge

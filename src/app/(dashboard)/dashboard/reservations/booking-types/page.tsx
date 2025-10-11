@@ -92,9 +92,11 @@ export default function BookingTypesPage() {
   };
 
   // Handlers
-  const handleCreate = async (data: CreateBookingTypeData) => {
+  const handleCreate = async (
+    data: CreateBookingTypeData | UpdateBookingTypeData,
+  ) => {
     try {
-      await dispatch(createBookingType(data)).unwrap();
+      await dispatch(createBookingType(data as CreateBookingTypeData)).unwrap();
       success('Booking type created successfully');
       setCreateOpen(false);
       dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
@@ -104,7 +106,9 @@ export default function BookingTypesPage() {
     }
   };
 
-  const handleEdit = async (data: UpdateBookingTypeData) => {
+  const handleEdit = async (
+    data: CreateBookingTypeData | UpdateBookingTypeData,
+  ) => {
     if (!selectedBookingType) return;
 
     try {

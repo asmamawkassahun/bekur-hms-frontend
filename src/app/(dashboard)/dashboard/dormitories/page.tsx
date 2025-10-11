@@ -29,7 +29,12 @@ import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
-import type { Dormitory } from '@/types';
+import type {
+  Dormitory,
+  CreateDormitoryData,
+  UpdateDormitoryData,
+  Bed,
+} from '@/types';
 
 // Import extracted components
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -56,7 +61,9 @@ export default function DormitoriesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   // Status is not part of Dormitory type; using active filter instead
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
   const [openView, setOpenView] = useState(false);
@@ -149,7 +156,7 @@ export default function DormitoriesPage() {
     lastSearchTerm,
   ]);
 
-  const handleCreateDormitory = async (data: any) => {
+  const handleCreateDormitory = async (data: CreateDormitoryData) => {
     try {
       await dispatch(createDormitory(data)).unwrap();
       success('Dormitory created');
@@ -169,7 +176,7 @@ export default function DormitoriesPage() {
     }
   };
 
-  const handleWizardSubmit = async (dormitory: Dormitory, beds: any[]) => {
+  const handleWizardSubmit = async (dormitory: Dormitory, beds: Bed[]) => {
     try {
       success(`Dormitory and ${beds.length} beds created successfully!`);
       setOpenCreate(false);
@@ -188,9 +195,23 @@ export default function DormitoriesPage() {
     }
   };
 
-  const handleEditDormitory = async (data: any) => {
+  const handleEditDormitory = async (formData: { name: string; propertyId: string; type: 'MIXED' | 'MALE' | 'FEMALE'; capacity: number; pricePerBed: number; amenities: string[]; isActive: boolean }) => {
     if (!selectedDormitory) return;
     try {
+      const typeMap: Record<string, "Men's" | "Women's" | "Mixed"> = {
+        'MALE': "Men's",
+        'FEMALE': "Women's",
+        'MIXED': "Mixed"
+      };
+      const data: UpdateDormitoryData = {
+        name: formData.name,
+        propertyId: formData.propertyId,
+        type: typeMap[formData.type],
+        capacity: formData.capacity,
+        basePrice: formData.pricePerBed,
+        amenities: formData.amenities,
+        isActive: formData.isActive,
+      };
       // await dispatch(updateDormitory({ id: selectedDormitory.id, data })).unwrap();
       success('Dormitory updated');
       setOpenEdit(false);
@@ -308,7 +329,12 @@ export default function DormitoriesPage() {
         }
         filters={
           <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as 'all' | 'active' | 'inactive')}>
+            <Select
+              value={activeFilter}
+              onValueChange={(v) =>
+                setActiveFilter(v as 'all' | 'active' | 'inactive')
+              }
+            >
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Active" />
               </SelectTrigger>
@@ -379,8 +405,9 @@ export default function DormitoriesPage() {
           if (!open) setSelectedDormitory(null);
         }}
         title="Delete Dormitory"
-        description={`Are you sure you want to delete ${selectedDormitory ? selectedDormitory.name : 'this dormitory'
-          }? This action cannot be undone.`}
+        description={`Are you sure you want to delete ${
+          selectedDormitory ? selectedDormitory.name : 'this dormitory'
+        }? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
         onConfirm={handleDeleteDormitory}

@@ -28,7 +28,7 @@ import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import { handleApiError } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
-import type { Property } from '@/types';
+import type { Property, CreatePropertyData, UpdatePropertyData } from '@/types';
 
 // Import extracted components
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -80,20 +80,15 @@ export default function PropertiesPage() {
             page: 1,
             limit: 1000, // Get all properties for stats calculation
             search: undefined,
-            type: undefined,
-            isActive: undefined,
           }),
         ).unwrap();
 
         const allProperties = response.data || [];
 
         setStatsData({
-          totalProperties: response.pagination?.total || 0,
+          totalProperties: response.meta?.total || 0,
           activeProperties: allProperties.filter((p) => p.isActive).length,
-          totalRooms: allProperties.reduce(
-            (sum, p) => sum + (p.rooms?.length || 0),
-            0,
-          ),
+          totalRooms: 0, // Rooms count would need a separate API call
           totalRevenue: 0, // This would need to be calculated from reservations
         });
       } catch (e) {
@@ -135,9 +130,6 @@ export default function PropertiesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     }
@@ -150,8 +142,23 @@ export default function PropertiesPage() {
     lastSearchTerm,
   ]);
 
-  const handleCreateProperty = async (data: any) => {
+  const handleCreateProperty = async (formData: Partial<CreatePropertyData> & Pick<CreatePropertyData, 'name' | 'type' | 'address' | 'city' | 'country' | 'timezone' | 'currency'>) => {
     try {
+      const data: CreatePropertyData = {
+        name: formData.name,
+        type: formData.type,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        timezone: formData.timezone,
+        currency: formData.currency,
+        taxRate: formData.taxRate || 0,
+        phone: formData.phone,
+        email: formData.email,
+        postalCode: formData.postalCode,
+        description: formData.description,
+        isActive: formData.isActive !== undefined ? formData.isActive : true,
+      };
       await dispatch(createProperty(data)).unwrap();
       success('Property created');
       setOpenCreate(false);
@@ -161,9 +168,6 @@ export default function PropertiesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     } catch (e) {
@@ -172,7 +176,7 @@ export default function PropertiesPage() {
     }
   };
 
-  const handleEditProperty = async (data: any) => {
+  const handleEditProperty = async (data: UpdatePropertyData) => {
     if (!selectedProperty) return;
     try {
       // await dispatch(updateProperty({ id: selectedProperty.id, data })).unwrap();
@@ -185,9 +189,6 @@ export default function PropertiesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     } catch (e) {
@@ -209,9 +210,6 @@ export default function PropertiesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
-          isActive:
-            statusFilter === 'all' ? undefined : statusFilter === 'active',
         }),
       );
     } catch (e) {

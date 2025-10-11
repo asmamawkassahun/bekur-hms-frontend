@@ -13,6 +13,12 @@ import {
 import { useNotification } from '@/hooks/useNotification';
 import type { AxiosError } from 'axios';
 import { handleApiError } from '@/lib/api/error-handler';
+import type {
+  Invoice,
+  CreateInvoiceData,
+  UpdateInvoiceData,
+  InvoiceItem,
+} from '@/types';
 
 import {
   Card,
@@ -77,8 +83,8 @@ export default function InvoicesPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
-  const [viewing, setViewing] = useState<any | null>(null);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [viewing, setViewing] = useState<Invoice | null>(null);
+  const [editing, setEditing] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (!properties || properties.length === 0) {
@@ -458,7 +464,7 @@ export default function InvoicesPage() {
             onSubmit={async (e) => {
               e.preventDefault();
               try {
-                const payload: any = {
+                const payload: CreateInvoiceData = {
                   propertyId: createForm.propertyId || undefined,
                   currency: createForm.currency,
                   issueDate: createForm.issueDate,
@@ -476,10 +482,8 @@ export default function InvoicesPage() {
                 setCreateOpen(false);
                 setCreateForm({
                   ...createForm,
-                  reference: '',
-                  description: '',
                   items: [{ description: '', quantity: '1', unitPrice: '0' }],
-                } as any);
+                });
                 setPage(1);
                 dispatch(fetchInvoices({ page: 1, limit }));
               } catch (e) {
@@ -691,7 +695,7 @@ export default function InvoicesPage() {
                 <p className="text-sm text-muted-foreground mb-1">Items</p>
                 {viewing.items?.length ? (
                   <div className="space-y-1">
-                    {viewing.items.map((it: any, idx: number) => (
+                    {viewing.items.map((it: InvoiceItem, idx: number) => (
                       <div key={idx} className="text-sm flex justify-between">
                         <span>
                           {it.description} x {it.quantity}

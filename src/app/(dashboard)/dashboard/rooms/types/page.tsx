@@ -90,17 +90,17 @@ const createRoomTypeSchema = z.object({
   adultCapacity: z.number().min(1, 'Adult capacity is required'),
   childCapacity: z.number().min(0, 'Child capacity must be 0 or greater'),
   basePrice: z.number().min(0, 'Base price must be 0 or greater'),
-  amenities: z.array(z.string()).default([]),
-  images: z.array(z.string()).default([]),
+  amenities: z.array(z.string()),
+  images: z.array(z.string()).optional(),
   reserveCondition: z.string().optional(),
-  beds: z
-    .array(
-      z.object({
-        bedTypeId: z.string().min(1, 'Bed type is required'),
-        quantity: z.number().min(1, 'Quantity must be at least 1'),
-      }),
-    )
-    .default([]),
+  roomCode: z.string().optional(),
+  ratePlanCodes: z.array(z.string()).optional(),
+  beds: z.array(
+    z.object({
+      bedTypeId: z.string().min(1, 'Bed type is required'),
+      quantity: z.number().min(1, 'Quantity must be at least 1'),
+    }),
+  ),
 });
 
 const editRoomTypeSchema = createRoomTypeSchema.partial();
@@ -199,7 +199,7 @@ export default function RoomTypesPage() {
         search: undefined,
         propertyId: undefined,
       });
-      console.log("roomTypesResponse: ", roomTypesResponse);
+      console.log('roomTypesResponse: ', roomTypesResponse);
       setRoomTypes(roomTypesResponse.data.data || []);
 
       // Load bed types
@@ -252,9 +252,9 @@ export default function RoomTypesPage() {
   });
 
   // Room Type CRUD
-  const onCreateSubmit = async (data: CreateRoomTypeData) => {
+  const onCreateSubmit = async (data: CreateRoomTypeData | UpdateRoomTypeData) => {
     try {
-      await roomTypeService.create(data);
+      await roomTypeService.create(data as CreateRoomTypeData);
       success('Room type created successfully');
       setCreateOpen(false);
       createForm.reset();
@@ -265,7 +265,7 @@ export default function RoomTypesPage() {
     }
   };
 
-  const onEditSubmit = async (data: UpdateRoomTypeData) => {
+  const onEditSubmit = async (data: CreateRoomTypeData | UpdateRoomTypeData) => {
     if (!selectedRoomType) return;
 
     try {
@@ -360,11 +360,6 @@ export default function RoomTypesPage() {
       amenities: roomType.amenities,
       images: roomType.images,
       reserveCondition: roomType.reserveCondition,
-      beds:
-        roomType.beds?.map((bed) => ({
-          bedTypeId: bed.bedTypeId,
-          quantity: bed.quantity,
-        })) || [],
     });
     setEditOpen(true);
   };

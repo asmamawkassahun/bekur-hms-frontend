@@ -60,6 +60,7 @@ const singleRoomSchema = z.object({
     'MAINTENANCE',
     'OUT_OF_ORDER',
   ]),
+  isActive: z.boolean(),
 });
 
 const bulkRoomSchema = z.object({

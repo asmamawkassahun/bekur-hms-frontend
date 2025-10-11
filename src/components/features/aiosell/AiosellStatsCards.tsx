@@ -22,7 +22,6 @@ export function AiosellStatsCards({
         value="Active"
         icon={RefreshCw}
         description="Real-time inventory sync enabled"
-        valueClassName="text-green-600"
       />
       <StatsCard
         title="Connected OTAs"

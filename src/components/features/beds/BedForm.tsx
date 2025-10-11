@@ -50,7 +50,16 @@ type BedFormData = z.infer<typeof bedSchema>;
 
 interface BedFormProps {
   bed?: Bed;
-  onSubmit: (data: BedFormData) => void;
+  onSubmit: (data: {
+    number: string;
+    dormitoryId: string;
+    bedTypeId: string;
+    basePrice: number;
+    status: string;
+    isActive: boolean;
+    description?: string;
+    amenities?: string;
+  }) => void;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -109,7 +118,7 @@ export function BedForm({
       description: values.description,
       amenities: values.amenities?.join(', '),
     };
-    onSubmit(payload as unknown as BedFormData);
+    onSubmit(payload);
   };
 
   return (

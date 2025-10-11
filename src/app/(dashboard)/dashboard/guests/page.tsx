@@ -33,7 +33,7 @@ import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
 import type { AxiosError } from 'axios';
 import { handleApiError } from '@/lib/api/error-handler';
-import type { Guest } from '@/types';
+import type { Guest, CreateGuestData, UpdateGuestData } from '@/types';
 import { FileType } from '@/types';
 
 // Import extracted components
@@ -89,21 +89,27 @@ export default function GuestsPage() {
           }),
         ).unwrap();
 
-        const allGuests = Array.isArray((response as any)?.data?.guests) ? (response as any).data.guests : [];
+        const responseData = response as unknown as {
+          data?: { guests?: Guest[] };
+        };
+        const allGuests = Array.isArray(responseData?.data?.guests)
+          ? responseData.data.guests
+          : [];
         const now = new Date();
 
         setStatsData({
           totalGuests: allGuests.length,
-          vipGuests: allGuests.filter((g: any) => g.loyaltyTier === 'PLATINUM')
-            .length,
-          newThisMonth: allGuests.filter((g: any) => {
+          vipGuests: allGuests.filter(
+            (g: Guest) => g.loyaltyTier === 'PLATINUM',
+          ).length,
+          newThisMonth: allGuests.filter((g: Guest) => {
             const created = new Date(g.createdAt);
             return (
               created.getMonth() === now.getMonth() &&
               created.getFullYear() === now.getFullYear()
             );
           }).length,
-          activeGuests: allGuests.filter((g: any) => g.isActive).length,
+          activeGuests: allGuests.filter((g: Guest) => g.isActive).length,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
@@ -150,54 +156,62 @@ export default function GuestsPage() {
     }
   }, [dispatch, debouncedSearch, loyaltyFilter, searchCache, lastSearchTerm]);
 
-  const handleCreateGuest = async (data: any) => {
+  const handleCreateGuest = async (
+    data: CreateGuestData & { documents?: { front?: File; back?: File } },
+  ) => {
     try {
       // Extract documents from form data
       const { documents, ...guestData } = data;
-      
+
       // Create guest first
       const createResult = await dispatch(createGuest(guestData)).unwrap();
       const guestId = createResult.data?.id;
-      
+
       if (!guestId) {
         throw new Error('Failed to create guest');
       }
-      
+
       // Upload documents if provided
       if (documents && documents.front && documents.back) {
         try {
           // Upload front ID card
-          await dispatch(uploadDocument({
-            id: guestId,
-            data: {
-              file: documents.front,
-              fileType: FileType.ID_CARD,
-              description: 'ID Card Front',
-            },
-          })).unwrap();
-          
+          await dispatch(
+            uploadDocument({
+              id: guestId,
+              data: {
+                file: documents.front,
+                fileType: FileType.ID_CARD,
+                description: 'ID Card Front',
+              },
+            }),
+          ).unwrap();
+
           // Upload back ID card
-          await dispatch(uploadDocument({
-            id: guestId,
-            data: {
-              file: documents.back,
-              fileType: FileType.ID_CARD,
-              description: 'ID Card Back',
-            },
-          })).unwrap();
-          
+          await dispatch(
+            uploadDocument({
+              id: guestId,
+              data: {
+                file: documents.back,
+                fileType: FileType.ID_CARD,
+                description: 'ID Card Back',
+              },
+            }),
+          ).unwrap();
+
           success('Guest created with documents uploaded successfully');
         } catch (uploadError) {
           // If document upload fails, show error but guest was created
           const uploadApiErr = handleApiError(uploadError as AxiosError);
-          error(`Guest created but document upload failed: ${uploadApiErr.message}`);
+          error(
+            `Guest created but document upload failed: ${uploadApiErr.message}`,
+          );
         }
       } else {
-      success('Guest created');
+        success('Guest created');
       }
-      
+
       setOpenCreate(false);
-      
+
       // refetch with current search term
       dispatch(
         fetchGuests({
@@ -213,7 +227,7 @@ export default function GuestsPage() {
     }
   };
 
-  const handleEditGuest = async (data: any) => {
+  const handleEditGuest = async (data: UpdateGuestData) => {
     if (!selectedGuest) return;
     try {
       await dispatch(updateGuest({ id: selectedGuest.id, data })).unwrap();
@@ -240,7 +254,9 @@ export default function GuestsPage() {
     try {
       // First, get guest documents to delete them
       try {
-        const documentsResponse = await dispatch(fetchGuestDocuments(selectedGuest.id)).unwrap();
+        const documentsResponse = await dispatch(
+          fetchGuestDocuments(selectedGuest.id),
+        ).unwrap();
         // Delete all documents
         if (Array.isArray(documentsResponse)) {
           for (const doc of documentsResponse) {

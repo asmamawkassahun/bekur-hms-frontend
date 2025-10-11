@@ -98,7 +98,7 @@ export default function DashboardPage() {
   const handlePeriodChange = (period: string) => {
     dispatch(
       setSelectedPeriod(
-        period as 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR',
+        period as 'today' | 'week' | 'month' | 'quarter' | 'year',
       ),
     );
   };
@@ -126,7 +126,7 @@ export default function DashboardPage() {
       rooms: { occupied: 0, available: 0, total: 0, rate: 0 },
       beds: { occupied: 0, available: 0, total: 0, rate: 0 },
     },
-    revenue: { today: 0, thisWeek: 0, thisMonth: 0, currency: 'USD' },
+    revenue: { today: 0, currency: 'ETB' },
     operations: { pendingCheckIns: 0, pendingCheckOuts: 0, pendingPayments: 0 },
     availability: { availableRooms: 0, availableBeds: 0 },
   };
@@ -136,6 +136,13 @@ export default function DashboardPage() {
     revenue: [],
     bookings: [],
   };
+
+  // Calculate total revenue from trends for the selected period
+  const totalRevenue =
+    trends?.revenue?.reduce(
+      (sum: number, item: any) => sum + (Number(item.amount) || 0),
+      0,
+    ) || 0;
 
   const recentActivities = overview?.recentActivities || [];
   const alerts = overview?.alerts || [];
@@ -180,11 +187,11 @@ export default function DashboardPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="TODAY">Today</SelectItem>
-              <SelectItem value="WEEK">This Week</SelectItem>
-              <SelectItem value="MONTH">This Month</SelectItem>
-              <SelectItem value="QUARTER">This Quarter</SelectItem>
-              <SelectItem value="YEAR">This Year</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="quarter">This Quarter</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
             </SelectContent>
           </Select>
 
@@ -236,20 +243,20 @@ export default function DashboardPage() {
       {/* Secondary KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="This Week Revenue"
-          value={formatCurrency(kpis.revenue.thisWeek, kpis.revenue.currency)}
-          description="Weekly performance"
+          title="Total Revenue"
+          value={formatCurrency(totalRevenue, kpis.revenue.currency)}
+          description={`${selectedPeriod === 'today' ? 'Today' : selectedPeriod === 'week' ? 'This week' : selectedPeriod === 'month' ? 'This month' : selectedPeriod === 'quarter' ? 'This quarter' : 'This year'}`}
           icon={TrendingUp}
         />
         <StatsCard
-          title="This Month Revenue"
-          value={formatCurrency(kpis.revenue.thisMonth, kpis.revenue.currency)}
-          description="Monthly performance"
+          title="Total Bookings"
+          value={trends?.revenue?.length || 0}
+          description={`${selectedPeriod === 'today' ? 'Today' : selectedPeriod === 'week' ? 'This week' : selectedPeriod === 'month' ? 'This month' : selectedPeriod === 'quarter' ? 'This quarter' : 'This year'}`}
           icon={Calendar}
         />
         <StatsCard
           title="Available Rooms"
-          value={kpis.availability.availableRooms}
+          value={kpis.occupancy.rooms.available}
           description="Ready for booking"
           icon={Bed}
         />

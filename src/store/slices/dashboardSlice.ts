@@ -1,11 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { dashboardService, DashboardOverview } from '@/services/dashboard.service';
+import {
+  dashboardService,
+  DashboardOverview,
+} from '@/services/dashboard.service';
 
 interface DashboardState {
   overview: DashboardOverview | null;
   loading: boolean;
   error: string | null;
-  selectedPeriod: 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR';
+  selectedPeriod: 'today' | 'week' | 'month' | 'quarter' | 'year';
   selectedPropertyId: string | null;
 }
 
@@ -13,7 +16,7 @@ const initialState: DashboardState = {
   overview: null,
   loading: false,
   error: null,
-  selectedPeriod: 'MONTH',
+  selectedPeriod: 'month',
   selectedPropertyId: null,
 };
 
@@ -53,6 +56,6 @@ const dashboardSlice = createSlice({
   },
 });
 
-export const { setSelectedPeriod, setSelectedProperty } = dashboardSlice.actions;
+export const { setSelectedPeriod, setSelectedProperty } =
+  dashboardSlice.actions;
 export default dashboardSlice.reducer;
-

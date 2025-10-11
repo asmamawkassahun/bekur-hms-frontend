@@ -14,20 +14,18 @@ interface AiosellTableRowProps {
 }
 
 export function AiosellTableRow({ property }: AiosellTableRowProps) {
-  const { showSuccess, showError } = useNotification();
+  const { success, error } = useNotification();
   const [syncing, setSyncing] = useState(false);
 
   const handleFullSync = async () => {
     setSyncing(true);
     try {
       await aiosellService.triggerFullSync(property.id);
-      showSuccess(
-        'Full sync initiated successfully. This may take a few moments.',
-      );
-    } catch (error) {
+      success('Full sync initiated successfully. This may take a few moments.');
+    } catch (err) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to trigger sync';
-      showError(errorMessage);
+        err instanceof Error ? err.message : 'Failed to trigger sync';
+      error(errorMessage);
     } finally {
       setSyncing(false);
     }

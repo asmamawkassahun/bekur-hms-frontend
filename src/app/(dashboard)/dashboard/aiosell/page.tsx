@@ -23,9 +23,8 @@ export default function AiosellOverviewPage() {
     try {
       const response = await propertyService.getAll();
       // Filter only properties with hotelCode
-      const aiosellProperties = response.data.data.filter(
-        (p: Property) => p.hotelCode,
-      );
+      const aiosellProperties =
+        response.data.data?.filter((p: Property) => p.hotelCode) || [];
       setProperties(aiosellProperties);
     } catch (error) {
       console.error('Failed to load properties', error);

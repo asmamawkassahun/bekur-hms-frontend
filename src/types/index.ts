@@ -7,6 +7,7 @@ export * from './dormitory.types';
 export * from './guest.types';
 export * from './reservation.types';
 export * from './payment.types';
+export * from './invoice.types';
 export * from './aiosell.types';
 export * from './rate-management.types';
 

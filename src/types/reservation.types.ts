@@ -1,74 +1,7 @@
-// Guest Type
-export interface Guest {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  dateOfBirth?: string;
-  nationality?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  postalCode?: string;
-  loyaltyTier?: string;
-  preferences?: string[];
-  specialRequests?: string[];
-  notes?: string;
-  tags?: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Room Type
-export interface RoomType {
-  id: string;
-  propertyId: string;
-  name: string;
-  description?: string;
-  roomSize?: string;
-  sizeUnit?: string;
-  adultCapacity: number;
-  childCapacity: number;
-  basePrice: string;
-  amenities?: string[];
-  images?: string[];
-  reserveCondition?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Room
-export interface Room {
-  id: string;
-  propertyId: string;
-  roomTypeId: string;
-  number: string;
-  floor: number;
-  status: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  roomType?: RoomType;
-  type?: string; // For backward compatibility
-}
-
-// Property
-export interface Property {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  country: string;
-  timezone: string;
-  currency: string;
-  taxRate: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Import types from their respective files
+import type { Guest } from './guest.types';
+import type { Property } from './property.types';
+import type { Room, RoomType } from './room.types';
 
 // Booking Guest
 export interface BookingGuest {
@@ -92,8 +25,8 @@ export interface PaymentSummary {
   updatedAt: string;
 }
 
-// Payment Status Interface
-export interface PaymentStatus {
+// Payment Status Data Interface (for payment summary data, not the status enum)
+export interface PaymentStatusData {
   totalAmount: number;
   paidAmount: number;
   unpaidAmount: number;
@@ -126,12 +59,12 @@ export interface Reservation {
   commissionAmount: string;
   netRevenue: string;
   status:
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'CHECKED_IN'
-  | 'CHECKED_OUT'
-  | 'CANCELLED'
-  | 'NO_SHOW';
+    | 'PENDING'
+    | 'CONFIRMED'
+    | 'CHECKED_IN'
+    | 'CHECKED_OUT'
+    | 'CANCELLED'
+    | 'NO_SHOW';
   confirmedAt?: string;
   checkedInAt?: string;
   checkedOutAt?: string;
@@ -161,7 +94,7 @@ export interface Reservation {
 
   // Payment Information
   paymentSummary?: PaymentSummary;
-  paymentStatus?: PaymentStatus;
+  paymentStatus?: PaymentStatusData;
 
   // Backward compatibility
   guestId?: string;
@@ -189,12 +122,12 @@ export interface UpdateReservationData {
   checkIn?: string;
   checkOut?: string;
   status?:
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'CHECKED_IN'
-  | 'CHECKED_OUT'
-  | 'CANCELLED'
-  | 'NO_SHOW';
+    | 'PENDING'
+    | 'CONFIRMED'
+    | 'CHECKED_IN'
+    | 'CHECKED_OUT'
+    | 'CANCELLED'
+    | 'NO_SHOW';
   adults?: number;
   children?: number;
   specialRequests?: string[];
@@ -203,12 +136,12 @@ export interface UpdateReservationData {
 
 export interface ReservationFilters {
   status?:
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'CHECKED_IN'
-  | 'CHECKED_OUT'
-  | 'CANCELLED'
-  | 'NO_SHOW';
+    | 'PENDING'
+    | 'CONFIRMED'
+    | 'CHECKED_IN'
+    | 'CHECKED_OUT'
+    | 'CANCELLED'
+    | 'NO_SHOW';
   checkInFrom?: string;
   checkInTo?: string;
   guestName?: string;
