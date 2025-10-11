@@ -10,14 +10,17 @@ interface NightAuditTableRowProps {
 }
 
 export function NightAuditTableRow({ item, onView }: NightAuditTableRowProps) {
+  const formatCurrency = (value: string | number) => Number(value).toLocaleString();
+  const formatPercent = (value: string | number) => Number(value).toFixed(1);
+
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell>{new Date(item.businessDate).toLocaleDateString()}</TableCell>
       <TableCell>{item.status}</TableCell>
-      <TableCell>{item.totalRevenue.toLocaleString()}</TableCell>
-      <TableCell>{item.netAfterCommission.toLocaleString()}</TableCell>
+      <TableCell>{formatCurrency(item.totalRevenue)}</TableCell>
+      <TableCell>{formatCurrency(item.netAfterCommission)}</TableCell>
       <TableCell>
-        {item.roomOccupancyRate.toFixed(1)}% / {item.bedOccupancyRate.toFixed(1)}%
+        {formatPercent(item.roomOccupancyRate)}% / {formatPercent(item.bedOccupancyRate)}%
       </TableCell>
       <TableCell className="text-right">
         <Button variant="outline" size="sm" onClick={() => onView(item)} className="cursor-pointer">

@@ -29,14 +29,21 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
     autoCloseDay: false,
     requireApproval: true,
   });
+  const [loadedPropertyId, setLoadedPropertyId] = useState<string | null>(null);
 
+  // Fetch settings only once per property
   useEffect(() => {
     if (!propertyId) return;
-    dispatch(fetchSettings(propertyId));
-  }, [dispatch, propertyId]);
+    // Only fetch if we haven't loaded settings for this property yet
+    if (propertyId !== loadedPropertyId && !loading['settings']) {
+      dispatch(fetchSettings(propertyId));
+      setLoadedPropertyId(propertyId);
+    }
+  }, [dispatch, propertyId, loadedPropertyId, loading]);
 
+  // Update form when settings are loaded
   useEffect(() => {
-    if (settings) {
+    if (settings && settings.propertyId === propertyId) {
       setForm({
         dayOpenTime: settings.dayOpenTime,
         dayCloseTime: settings.dayCloseTime,
@@ -50,7 +57,7 @@ export function SettingsForm({ propertyId }: SettingsFormProps) {
         requireApproval: settings.requireApproval,
       });
     }
-  }, [settings]);
+  }, [settings, propertyId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,

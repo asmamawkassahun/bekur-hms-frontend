@@ -36,20 +36,20 @@ export function NightAuditDetailDialog({ open, onOpenChange, audit }: NightAudit
           </TabsList>
           <TabsContent value="financial">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>Total Revenue: {audit.totalRevenue.toLocaleString()}</div>
-              <div>Total Payments: {audit.totalPayments.toLocaleString()}</div>
-              <div>Refunds: {audit.totalRefunds.toLocaleString()}</div>
-              <div>Commission: {audit.totalCommission.toLocaleString()}</div>
-              <div>Net: {audit.netRevenue.toLocaleString()}</div>
-              <div>Net After Commission: {audit.netAfterCommission.toLocaleString()}</div>
+              <div>Total Revenue: {Number(audit.totalRevenue).toLocaleString()}</div>
+              <div>Total Payments: {Number(audit.totalPayments).toLocaleString()}</div>
+              <div>Refunds: {Number(audit.totalRefunds).toLocaleString()}</div>
+              <div>Commission: {Number(audit.totalCommission).toLocaleString()}</div>
+              <div>Net: {Number(audit.netRevenue).toLocaleString()}</div>
+              <div>Net After Commission: {Number(audit.netAfterCommission).toLocaleString()}</div>
             </div>
           </TabsContent>
           <TabsContent value="occupancy">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>Rooms: {audit.occupiedRooms}/{audit.totalRooms}</div>
               <div>Beds: {audit.occupiedBeds}/{audit.totalBeds}</div>
-              <div>Room Occ: {audit.roomOccupancyRate.toFixed(1)}%</div>
-              <div>Bed Occ: {audit.bedOccupancyRate.toFixed(1)}%</div>
+              <div>Room Occ: {Number(audit.roomOccupancyRate).toFixed(1)}%</div>
+              <div>Bed Occ: {Number(audit.bedOccupancyRate).toFixed(1)}%</div>
             </div>
           </TabsContent>
           <TabsContent value="bookings">
@@ -75,7 +75,7 @@ export function NightAuditDetailDialog({ open, onOpenChange, audit }: NightAudit
                   <div className="font-medium">{entry.primaryGuest.name}</div>
                   <div className="text-sm text-muted-foreground">{entry.accommodation}</div>
                   <div className="text-sm">
-                    Charges: {entry.charges.totalAmount.toLocaleString()} — Balance: {entry.balance.toLocaleString()}
+                    Charges: {Number(entry.charges.totalAmount).toLocaleString()} — Balance: {Number(entry.balance).toLocaleString()}
                   </div>
                 </div>
               ))}

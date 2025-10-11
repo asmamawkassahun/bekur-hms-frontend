@@ -38,26 +38,46 @@ export default function NightAuditTopLevelPage() {
   const [propertyId, setPropertyId] = useState<string>('');
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
+  const [hasLoaded, setHasLoaded] = useState(false);
 
+  // Load properties once on mount
   useEffect(() => {
     if (!properties || properties.length === 0) {
       dispatch(fetchProperties({ page: 1, limit: 100 }));
-    } else if (!propertyId) {
+    }
+  }, [dispatch, properties]);
+
+  // Set initial propertyId when properties are loaded
+  useEffect(() => {
+    if (properties && properties.length > 0 && !propertyId) {
       setPropertyId(properties[0].id);
     }
-  }, [dispatch, properties, propertyId]);
+  }, [properties, propertyId]);
 
+  // Fetch night audits only when filters change
   useEffect(() => {
+    if (!propertyId) return; // Don't fetch without a property selected
+
     const q = {
-      ...filters,
-      propertyId: propertyId || undefined,
+      page: filters.page || 1,
+      limit: filters.limit || 10,
+      sortBy: filters.sortBy || 'businessDate',
+      sortOrder: filters.sortOrder || 'desc',
+      propertyId: propertyId,
       status: status === 'all' ? undefined : status,
       businessDateFrom: from || undefined,
       businessDateTo: to || undefined,
     };
+
+    // Only fetch if this is a new query or forced reload
+    if (hasLoaded && JSON.stringify(filters) === JSON.stringify(q)) {
+      return; // Skip if filters haven't actually changed
+    }
+
     dispatch(setFilters(q));
     dispatch(fetchNightAudits(q));
-  }, [dispatch, propertyId, status, from, to]);
+    setHasLoaded(true);
+  }, [propertyId, status, from, to]);
 
   const columns = useMemo(
     () => [

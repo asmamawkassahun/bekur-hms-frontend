@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { StatsCard } from '@/components/shared/StatsCard';
+import { DollarSign, CreditCard, Home, Bed } from 'lucide-react';
 
 interface NightAuditStatsCardsProps {
   auditId?: string;
@@ -16,30 +17,34 @@ export function NightAuditStatsCards({ auditId }: NightAuditStatsCardsProps) {
   const stats = [
     {
       title: 'Net Revenue',
-      value: audit.netRevenue,
-      helper: `After commission: ${audit.netAfterCommission.toLocaleString()}`,
+      value: Number(audit.netRevenue).toLocaleString(),
+      description: `After commission: ${Number(audit.netAfterCommission).toLocaleString()}`,
+      icon: DollarSign,
     },
     {
       title: 'Total Payments',
-      value: audit.totalPayments,
-      helper: `Refunds: ${audit.totalRefunds.toLocaleString()}`,
+      value: Number(audit.totalPayments).toLocaleString(),
+      description: `Refunds: ${Number(audit.totalRefunds).toLocaleString()}`,
+      icon: CreditCard,
     },
     {
       title: 'Room Occupancy',
-      value: `${audit.roomOccupancyRate.toFixed(1)}%`,
-      helper: `${audit.occupiedRooms}/${audit.totalRooms} occupied`,
+      value: `${Number(audit.roomOccupancyRate).toFixed(1)}%`,
+      description: `${audit.occupiedRooms}/${audit.totalRooms} occupied`,
+      icon: Home,
     },
     {
       title: 'Bed Occupancy',
-      value: `${audit.bedOccupancyRate.toFixed(1)}%`,
-      helper: `${audit.occupiedBeds}/${audit.totalBeds} occupied`,
+      value: `${Number(audit.bedOccupancyRate).toFixed(1)}%`,
+      description: `${audit.occupiedBeds}/${audit.totalBeds} occupied`,
+      icon: Bed,
     },
   ];
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((s) => (
-        <StatsCard key={s.title} title={s.title} value={s.value} helper={s.helper} />
+        <StatsCard key={s.title} title={s.title} value={s.value} description={s.description} icon={s.icon} />
       ))}
     </div>
   );
