@@ -19,27 +19,28 @@ export function DormitoryStatsCards({ stats }: DormitoryStatsCardsProps) {
         value={stats.totalDormitories}
         description="All dormitories in property"
         icon={Home}
+        gradient="blue"
       />
       <StatsCard
         title="Available"
         value={stats.availableDormitories}
         description="Ready for booking"
         icon={CheckCircle}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
       <StatsCard
         title="Occupied"
         value={stats.occupiedDormitories}
         description="Currently occupied"
         icon={Clock}
-        className="[&>div>div>svg]:text-blue-600"
+        gradient="violet"
       />
       <StatsCard
         title="Maintenance"
         value={stats.maintenanceDormitories}
         description="Under maintenance"
         icon={XCircle}
-        className="[&>div>div>svg]:text-red-600"
+        gradient="rose"
       />
     </div>
   );

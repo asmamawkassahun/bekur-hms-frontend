@@ -16,18 +16,21 @@ export function AiosellStatsCards({
         value={connectedProperties}
         icon={Globe}
         description="Properties syncing with Aiosell"
+        gradient="blue"
       />
       <StatsCard
         title="Auto Sync"
         value="Active"
         icon={RefreshCw}
         description="Real-time inventory sync enabled"
+        gradient="green"
       />
       <StatsCard
         title="Connected OTAs"
         value="6+"
         icon={CheckCircle}
         description="Booking.com, Expedia, Agoda, etc."
+        gradient="violet"
       />
     </div>
   );

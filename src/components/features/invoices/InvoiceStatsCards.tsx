@@ -26,24 +26,28 @@ export function InvoiceStatsCards({ stats }: InvoiceStatsCardsProps) {
         value={stats.totalInvoices}
         description="All invoices"
         icon={FileText}
+        gradient="blue"
       />
       <StatsCard
         title="Total Billed"
         value={formatCurrency(stats.totalBilled)}
         description="Sum of filtered"
         icon={DollarSign}
+        gradient="green"
       />
       <StatsCard
         title="Paid"
         value={stats.paidCount}
         description="Fully/Partially paid"
         icon={CheckCircle}
+        gradient="green"
       />
       <StatsCard
         title="Overdue"
         value={stats.overdueCount}
         description="Past due date"
         icon={AlertTriangle}
+        gradient="rose"
       />
     </div>
   );

@@ -210,24 +210,28 @@ export default function CheckOutPage() {
           value={checkOutStats.checkedIn}
           description="Currently checked in"
           icon={Clock}
+          gradient="yellow"
         />
         <StatsCard
           title="Checked Out Today"
           value={checkOutStats.checkedOutToday}
           description="Departures today"
           icon={CheckCircle}
+          gradient="green"
         />
         <StatsCard
           title="Total Checked Out"
           value={checkOutStats.totalCheckedOut}
           description="All time checkouts"
           icon={LogOut}
+          gradient="blue"
         />
         <StatsCard
           title="Unpaid Checkouts"
           value={checkOutStats.unpaidCheckouts}
           description="Payment pending"
           icon={AlertCircle}
+          gradient="rose"
         />
       </div>
 

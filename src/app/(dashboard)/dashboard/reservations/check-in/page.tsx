@@ -279,24 +279,28 @@ export default function CheckInPage() {
           value={checkedInStats.totalCheckedIn}
           description="Currently in hotel"
           icon={CheckCircle}
+          gradient="green"
         />
         <StatsCard
           title="Confirmed & Waiting"
           value={checkedInStats.confirmedWaiting}
           description="Ready to check in"
           icon={Clock}
+          gradient="yellow"
         />
         <StatsCard
           title="Checked In Today"
           value={checkedInStats.checkedInToday}
           description="Arrivals today"
           icon={Calendar}
+          gradient="blue"
         />
         <StatsCard
           title="Unpaid Guests"
           value={checkedInStats.unpaidGuests}
           description="Payment pending"
           icon={AlertCircle}
+          gradient="rose"
         />
       </div>
 

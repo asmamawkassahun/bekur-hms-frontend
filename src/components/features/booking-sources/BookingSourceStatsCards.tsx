@@ -21,24 +21,28 @@ export function BookingSourceStatsCards({
         value={stats.total}
         description="All booking sources"
         icon={Globe}
+        gradient="blue"
       />
       <StatsCard
         title="Active"
         value={stats.active}
         description="Currently active"
         icon={CheckCircle}
+        gradient="green"
       />
       <StatsCard
         title="Inactive"
         value={stats.inactive}
         description="Deactivated"
         icon={XCircle}
+        gradient="rose"
       />
       <StatsCard
         title="Avg Commission"
         value={`${stats.averageCommission.toFixed(2)}%`}
         description="Average rate"
         icon={TrendingUp}
+        gradient="yellow"
       />
     </div>
   );

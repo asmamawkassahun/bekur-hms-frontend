@@ -41,10 +41,19 @@ export function NightAuditStatsCards({ auditId }: NightAuditStatsCardsProps) {
     },
   ];
 
+  const gradients = ['green', 'blue', 'violet', 'yellow'] as const;
+
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map((s) => (
-        <StatsCard key={s.title} title={s.title} value={s.value} description={s.description} icon={s.icon} />
+      {stats.map((s, index) => (
+        <StatsCard
+          key={s.title}
+          title={s.title}
+          value={s.value}
+          description={s.description}
+          icon={s.icon}
+          gradient={gradients[index % gradients.length]}
+        />
       ))}
     </div>
   );

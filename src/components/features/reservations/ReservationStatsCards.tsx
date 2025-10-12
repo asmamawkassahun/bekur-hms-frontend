@@ -38,41 +38,42 @@ export function ReservationStatsCards({ stats }: ReservationStatsCardsProps) {
         value={stats.totalReservations}
         description="All time reservations"
         icon={Calendar}
+        gradient="blue"
       />
       <StatsCard
         title="Checked In"
         value={stats.checkedInReservations}
         description="Currently in hotel"
         icon={CheckCircle}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
       <StatsCard
         title="Pending"
         value={stats.pendingReservations}
         description="Awaiting confirmation"
         icon={Clock}
-        className="[&>div>div>svg]:text-yellow-600"
+        gradient="yellow"
       />
       <StatsCard
         title="Total Revenue"
         value={formatCurrency(stats.totalRevenue, stats.currency)}
         description="Total booking value"
         icon={DollarSign}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
       <StatsCard
         title="Paid Amount"
         value={formatCurrency(stats.totalPaidAmount, stats.currency)}
         description={`${stats.paidReservations} reservations paid`}
         icon={CreditCard}
-        className="[&>div>div>svg]:text-blue-600"
+        gradient="blue"
       />
       <StatsCard
         title="Unpaid Amount"
         value={formatCurrency(stats.totalUnpaidAmount, stats.currency)}
         description="Outstanding payments"
         icon={AlertCircle}
-        className="[&>div>div>svg]:text-red-600"
+        gradient="rose"
       />
     </div>
   );

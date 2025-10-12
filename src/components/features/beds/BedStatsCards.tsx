@@ -19,27 +19,28 @@ export function BedStatsCards({ stats }: BedStatsCardsProps) {
         value={stats.totalBeds}
         description="All beds in dormitories"
         icon={BedDouble}
+        gradient="blue"
       />
       <StatsCard
         title="Available"
         value={stats.availableBeds}
         description="Ready for booking"
         icon={CheckCircle}
-        className="[&>div>div>svg]:text-green-600"
+        gradient="green"
       />
       <StatsCard
         title="Occupied"
         value={stats.occupiedBeds}
         description="Currently occupied"
         icon={Clock}
-        className="[&>div>div>svg]:text-blue-600"
+        gradient="violet"
       />
       <StatsCard
         title="Maintenance"
         value={stats.maintenanceBeds}
         description="Under maintenance"
         icon={XCircle}
-        className="[&>div>div>svg]:text-red-600"
+        gradient="rose"
       />
     </div>
   );

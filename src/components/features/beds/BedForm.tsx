@@ -27,20 +27,12 @@ import { fetchDormitories } from '@/store/slices/dormitorySlice';
 import { fetchBedTypes } from '@/store/slices/bedTypeSlice';
 import type { Bed, Dormitory, BedType } from '@/types';
 
-const BED_STATUSES = [
-  'AVAILABLE',
-  'OCCUPIED',
-  'MAINTENANCE',
-  'OUT_OF_ORDER',
-] as const;
-
 const bedSchema = z.object({
   number: z.string().min(1, 'Bed number is required'),
   dormitoryId: z.string().uuid({ message: 'Dormitory is required' }),
   typeId: z.string().uuid({ message: 'Bed type is required' }),
   price: z.coerce.number().min(0, 'Price must be positive'),
   currency: z.string().min(1, 'Currency is required'),
-  status: z.enum(['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'OUT_OF_ORDER']),
   amenities: z.array(z.string()).optional(),
   description: z.string().optional(),
   isActive: z.boolean().default(true),
@@ -55,7 +47,6 @@ interface BedFormProps {
     dormitoryId: string;
     bedTypeId: string;
     basePrice: number;
-    status: string;
     isActive: boolean;
     description?: string;
     amenities?: string;
@@ -83,7 +74,6 @@ export function BedForm({
           typeId: (bed as any).bedTypeId || (bed as any).typeId || '',
           price: (bed as any).basePrice ?? (bed as any).price ?? 0,
           currency: (bed as any).currency || 'USD',
-          status: bed.status,
           amenities: bed.amenities || [],
           description: bed.description,
           isActive: bed.isActive,
@@ -94,7 +84,6 @@ export function BedForm({
           typeId: '',
           price: 0,
           currency: 'USD',
-          status: 'AVAILABLE',
           amenities: [],
           description: '',
           isActive: true,
@@ -113,7 +102,6 @@ export function BedForm({
       dormitoryId: values.dormitoryId,
       bedTypeId: values.typeId,
       basePrice: values.price,
-      status: values.status,
       isActive: values.isActive,
       description: values.description,
       amenities: values.amenities?.join(', '),
@@ -179,30 +167,6 @@ export function BedForm({
                     {(bedTypes || []).map((bt: BedType) => (
                       <SelectItem key={bt.id} value={bt.id}>
                         {bt.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {BED_STATUSES.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status?.replace('_', ' ') || 'Unknown'}
                       </SelectItem>
                     ))}
                   </SelectContent>
