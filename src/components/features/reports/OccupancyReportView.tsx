@@ -1,7 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatsCard } from '@/components/shared/StatsCard';
 import { OccupancyTrendChart } from './OccupancyTrendChart';
+import { Bed, Users, TrendingUp, Calendar } from 'lucide-react';
 import type { OccupancyReportData } from '@/types/report.types';
 
 interface OccupancyReportViewProps {
@@ -13,9 +15,6 @@ export function OccupancyReportView({ data }: OccupancyReportViewProps) {
   if (!data) {
     return <div>No data available</div>;
   }
-
-  // Debug: Log the actual data structure
-  console.log('OccupancyReportView received data:', data);
 
   // Handle different possible data structures
   const summary = data.summary || data;
@@ -31,53 +30,37 @@ export function OccupancyReportView({ data }: OccupancyReportViewProps) {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Rooms</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalRooms || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.totalRoomNights || 0} room nights
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total Rooms"
+          value={summary.totalRooms || 0}
+          description={`${summary.totalRoomNights || 0} room nights`}
+          icon={Bed}
+          gradient="violet"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Beds</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalBeds || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.totalBedNights || 0} bed nights
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total Beds"
+          value={summary.totalBeds || 0}
+          description={`${summary.totalBedNights || 0} bed nights`}
+          icon={Users}
+          gradient="blue"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Room Occupancy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(summary.roomOccupancyRate || 0).toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Avg: {(summary.averageRoomOccupancy || 0).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Room Occupancy"
+          value={`${(summary.roomOccupancyRate || 0).toFixed(1)}%`}
+          description={`Avg: ${(summary.averageRoomOccupancy || 0).toFixed(1)}%`}
+          icon={TrendingUp}
+          gradient="green"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Bed Occupancy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(summary.bedOccupancyRate || 0).toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Avg: {(summary.averageBedOccupancy || 0).toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Bed Occupancy"
+          value={`${(summary.bedOccupancyRate || 0).toFixed(1)}%`}
+          description={`Avg: ${(summary.averageBedOccupancy || 0).toFixed(1)}%`}
+          icon={Calendar}
+          gradient="yellow"
+        />
       </div>
 
       {/* Chart */}

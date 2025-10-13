@@ -16,29 +16,13 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Label,
+  Tooltip,
+  Legend,
 } from 'recharts';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from '@/components/ui/chart';
 
 interface OccupancyTrendChartProps {
   data: Array<{ date: string; rooms: number; beds: number }>;
 }
-
-const chartConfig = {
-  rooms: {
-    label: 'Room Occupancy',
-    color: 'hsl(var(--chart-1))',
-  },
-  beds: {
-    label: 'Bed Occupancy',
-    color: 'hsl(var(--chart-2))',
-  },
-};
 
 export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
   const avgOccupancy = Math.round(
@@ -63,75 +47,90 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px]">
-          <LineChart data={data}>
+      <CardContent className="overflow-hidden">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid
               strokeDasharray="3 3"
-              className="stroke-border"
+              stroke="#e5e7eb"
               opacity={0.5}
               vertical={false}
             />
             <XAxis
               dataKey="date"
-              className="stroke-muted-foreground"
+              stroke="#6b7280"
               style={{ fontSize: '12px' }}
             />
             <YAxis
-              className="stroke-muted-foreground"
+              stroke="#6b7280"
               style={{ fontSize: '12px' }}
               tickFormatter={(value) => `${value}%`}
               domain={[60, 100]}
             />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent formatter={(value) => [`${value}%`, '']} />
-              }
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                color: '#374151',
+              }}
+              formatter={(value, name) => [`${value}%`, name]}
+              labelFormatter={(value) => value}
             />
-            {/* <ChartLegend content={<ChartLegendContent payload={undefined} /> as any} /> */}
+            <Legend />
             <ReferenceLine
               y={avgOccupancy}
-              className="stroke-muted-foreground"
+              stroke="#6b7280"
               strokeDasharray="3 3"
               strokeWidth={1}
             >
               <Label
                 value={`Avg: ${avgOccupancy}%`}
                 position="insideTopRight"
-                className="fill-muted-foreground"
+                fill="#6b7280"
                 fontSize={11}
               />
             </ReferenceLine>
             <Line
               type="monotone"
               dataKey="rooms"
-              stroke="hsl(var(--chart-1))"
+              stroke="#8b5cf6"
               strokeWidth={3}
               name="Room Occupancy"
               dot={{
-                fill: 'hsl(var(--chart-1))',
-                r: 5,
+                fill: '#8b5cf6',
+                r: 4,
                 strokeWidth: 2,
-                stroke: 'hsl(var(--card))',
+                stroke: '#ffffff',
               }}
-              activeDot={{ r: 7 }}
+              activeDot={{
+                r: 6,
+                stroke: '#8b5cf6',
+                strokeWidth: 2,
+                fill: '#ffffff'
+              }}
             />
             <Line
               type="monotone"
               dataKey="beds"
-              stroke="hsl(var(--chart-2))"
+              stroke="#3b82f6"
               strokeWidth={3}
               name="Bed Occupancy"
               dot={{
-                fill: 'hsl(var(--chart-2))',
-                r: 5,
+                fill: '#3b82f6',
+                r: 4,
                 strokeWidth: 2,
-                stroke: 'hsl(var(--card))',
+                stroke: '#ffffff',
               }}
-              activeDot={{ r: 7 }}
+              activeDot={{
+                r: 6,
+                stroke: '#3b82f6',
+                strokeWidth: 2,
+                fill: '#ffffff'
+              }}
             />
           </LineChart>
-        </ChartContainer>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

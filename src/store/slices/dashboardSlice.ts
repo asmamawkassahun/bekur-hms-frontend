@@ -50,7 +50,13 @@ const dashboardSlice = createSlice({
       })
       .addCase(fetchDashboardOverview.fulfilled, (state, action) => {
         state.loading = false;
-        state.overview = action.payload ?? null;
+        // Only update if data actually changed (prevent unnecessary re-renders)
+        const newData = action.payload ?? null;
+        const hasChanged = JSON.stringify(state.overview) !== JSON.stringify(newData);
+
+        if (hasChanged) {
+          state.overview = newData;
+        }
       })
       .addCase(fetchDashboardOverview.rejected, (state, action) => {
         state.loading = false;

@@ -1,7 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatsCard } from '@/components/shared/StatsCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { DollarSign, TrendingUp, CreditCard, Receipt } from 'lucide-react';
 import type { FinancialReportData } from '@/types/report.types';
 
 interface FinancialReportViewProps {
@@ -34,112 +36,48 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.totalRevenue || 0)}
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total Revenue"
+          value={new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'ETB'
+          }).format(summary.totalRevenue || 0)}
+          icon={DollarSign}
+          gradient="green"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Refunds</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.totalRefunds || 0)}
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total Refunds"
+          value={new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'ETB'
+          }).format(summary.totalRefunds || 0)}
+          icon={TrendingUp}
+          gradient="rose"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Net Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.netRevenue || 0)}
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Net Revenue"
+          value={new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'ETB'
+          }).format(summary.netRevenue || 0)}
+          icon={CreditCard}
+          gradient="blue"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Outstanding Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.outstandingAmount || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {summary.outstandingInvoices || 0} invoices
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Outstanding Invoices"
+          value={summary.outstandingInvoices || 0}
+          icon={Receipt}
+          gradient="yellow"
+        />
       </div>
 
-      {/* Invoice Status Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalInvoices || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.totalInvoiceAmount || 0)} total
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Paid Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.paidInvoices || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.paidInvoiceAmount || 0)} paid
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{summary.overdueInvoices || 0}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Chart */}
+      {/* Financial Trend Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Net Revenue Trend</CardTitle>
+          <CardTitle>Financial Trend</CardTitle>
         </CardHeader>
         <CardContent>
           {charts?.netRevenue ? (
@@ -200,7 +138,7 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
         </CardContent>
       </Card>
 
-      {/* Revenue by Method */}
+      {/* Revenue by Payment Method */}
       <Card>
         <CardHeader>
           <CardTitle>Revenue by Payment Method</CardTitle>
@@ -212,9 +150,9 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
                 <span className="font-medium">{method.method}</span>
                 <div className="text-right">
                   <div className="font-bold">
-                    {new Intl.NumberFormat('en-US', { 
-                      style: 'currency', 
-                      currency: 'ETB' 
+                    {new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'ETB'
                     }).format(method.amount)}
                   </div>
                   <div className="text-sm text-muted-foreground">
@@ -229,4 +167,3 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
     </div>
   );
 }
-

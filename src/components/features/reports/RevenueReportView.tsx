@@ -1,9 +1,11 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatsCard } from '@/components/shared/StatsCard';
 import { RevenueTrendChart } from './RevenueTrendChart';
 import { RevenueByMethodChart } from './RevenueByMethodChart';
 import { RevenueByRoomTypeChart } from './RevenueByRoomTypeChart';
+import { DollarSign, TrendingUp, Calendar, Users } from 'lucide-react';
 import type { RevenueReportData } from '@/types/report.types';
 
 interface RevenueReportViewProps {
@@ -15,9 +17,6 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
   if (!data) {
     return <div>No data available</div>;
   }
-
-  // Debug: Log the actual data structure
-  console.log('RevenueReportView received data:', data);
 
   // Handle different possible data structures
   const summary = data.summary || data;
@@ -35,59 +34,43 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.totalRevenue || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {summary.totalReservations || 0} reservations
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total Revenue"
+          value={new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'ETB'
+          }).format(summary.totalRevenue || 0)}
+          description={`${summary.totalReservations || 0} reservations`}
+          icon={DollarSign}
+          gradient="green"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Avg per Reservation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.averageRevenuePerReservation || 0)}
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Avg per Reservation"
+          value={new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'ETB'
+          }).format(summary.averageRevenuePerReservation || 0)}
+          icon={TrendingUp}
+          gradient="blue"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('en-US', { 
-                style: 'currency', 
-                currency: 'ETB' 
-              }).format(summary.averageDailyRevenue || 0)}
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Daily Average"
+          value={new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'ETB'
+          }).format(summary.averageDailyRevenue || 0)}
+          icon={Calendar}
+          gradient="violet"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Reservations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.totalReservations || 0}</div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Total Reservations"
+          value={summary.totalReservations || 0}
+          icon={Users}
+          gradient="rose"
+        />
       </div>
 
       {/* Charts */}

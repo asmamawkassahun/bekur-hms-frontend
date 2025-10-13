@@ -6,8 +6,8 @@ import { AppDispatch, RootState } from '@/store';
 import { fetchProperties } from '@/store/slices/propertySlice';
 import { fetchRoomTypes } from '@/store/slices/roomTypeSlice';
 import { fetchDormitories } from '@/store/slices/dormitorySlice';
-import { 
-  setActiveTab, 
+import {
+  setActiveTab,
   generateOccupancyReport,
   generateRevenueReport,
   generateOperationalReport,
@@ -36,12 +36,12 @@ export default function ReportsPage() {
   const { properties } = useSelector((s: RootState) => s.property);
   const { roomTypes } = useSelector((s: RootState) => s.roomType);
   const { dormitories } = useSelector((s: RootState) => s.dormitory);
-  const { 
-    generatedReports, 
-    activeTab, 
-    filters, 
-    loading, 
-    error 
+  const {
+    generatedReports,
+    activeTab,
+    filters,
+    loading,
+    error
   } = useSelector((s: RootState) => s.reports);
   const { error: showError, success } = useNotification();
 
@@ -102,8 +102,6 @@ export default function ReportsPage() {
         reportData.guestId = filters.guestId;
       }
 
-      console.log('Generating report with data:', reportData);
-
       switch (activeTab) {
         case ReportType.OCCUPANCY:
           await dispatch(generateOccupancyReport(reportData)).unwrap();
@@ -144,7 +142,7 @@ export default function ReportsPage() {
       />
 
       {/* Filters */}
-      <ReportFilters 
+      <ReportFilters
         onGenerate={handleGenerateReport}
         loading={isGenerating}
       />

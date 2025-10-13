@@ -54,7 +54,7 @@ export function RevenueTrendChart({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-hidden">
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data}>
             <defs>
@@ -75,9 +75,20 @@ export function RevenueTrendChart({
               stroke="#6b7280"
               style={{ fontSize: '12px' }}
               tickFormatter={(value) => {
-                // Format date to show only month and day
-                const date = new Date(value);
-                return `${date.getMonth() + 1}/${date.getDate()}`;
+                // Handle both month names and date strings
+                if (typeof value === 'string') {
+                  // If it's already a month name like 'Jan', 'Feb', return as is
+                  if (value.length <= 3) {
+                    return value;
+                  }
+                  // If it's a date string, try to parse it
+                  const date = new Date(value);
+                  if (!isNaN(date.getTime())) {
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                  }
+                }
+                // Fallback: return the value as string
+                return String(value);
               }}
             />
             <YAxis
@@ -97,8 +108,20 @@ export function RevenueTrendChart({
                 name === 'amount' ? 'Revenue' : 'Bookings',
               ]}
               labelFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString();
+                // Handle both month names and date strings
+                if (typeof value === 'string') {
+                  // If it's already a month name like 'Jan', 'Feb', return as is
+                  if (value.length <= 3) {
+                    return value;
+                  }
+                  // If it's a date string, try to parse it
+                  const date = new Date(value);
+                  if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString();
+                  }
+                }
+                // Fallback: return the value as string
+                return String(value);
               }}
             />
             <Area

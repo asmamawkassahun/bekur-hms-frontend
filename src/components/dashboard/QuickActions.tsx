@@ -25,12 +25,12 @@ export function QuickActions() {
       icon: Calendar,
       color: 'bg-purple-500 hover:bg-purple-600',
     },
-    {
-      label: 'Record Payment',
-      href: '/dashboard/payments',
-      icon: DollarSign,
-      color: 'bg-orange-500 hover:bg-orange-600',
-    },
+    // {
+    //   label: 'Record Payment',
+    //   href: '/dashboard/payments',
+    //   icon: DollarSign,
+    //   color: 'bg-orange-500 hover:bg-orange-600',
+    // },
   ];
 
   return (

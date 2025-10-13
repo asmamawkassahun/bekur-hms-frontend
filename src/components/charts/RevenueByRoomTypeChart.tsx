@@ -59,7 +59,7 @@ export function RevenueByRoomTypeChart({
           Distribution of revenue across room categories
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-hidden">
         <div className="space-y-3">
           {data.map((item, index) => (
             <div key={item.name} className="flex items-center justify-between">
@@ -83,7 +83,7 @@ export function RevenueByRoomTypeChart({
             </div>
           ))}
         </div>
-        <ChartContainer config={chartConfig} className="h-[280px] mt-4">
+        <ChartContainer config={chartConfig} className="h-[280px] w-full mt-4">
           <RadialBarChart
             cx="50%"
             cy="50%"
