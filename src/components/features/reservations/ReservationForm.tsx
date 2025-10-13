@@ -553,7 +553,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
             | 'CRYPTO', // Already using backend enum values (CASH, CARD, etc.)
           currency: selectedPropertyCurrency,
           status: mode === 'direct-checkin' ? 'COMPLETED' : 'PENDING',
-          externalTransactionId: externalTransactionId || undefined,
+          transactionId: externalTransactionId || undefined,
           notes: paymentNotes || undefined,
         };
 
