@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
@@ -200,39 +200,68 @@ export default function DashboardPage() {
   const { properties } = useSelector((state: RootState) => state.property);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastFetchParams, setLastFetchParams] = useState<string>('');
 
-  // Fetch properties on mount
+  // Use refs to store current values for auto-refresh without causing re-renders
+  const selectedPropertyIdRef = useRef(selectedPropertyId);
+  const selectedPeriodRef = useRef(selectedPeriod);
+
+  // Update refs when values change
+  useEffect(() => {
+    selectedPropertyIdRef.current = selectedPropertyId;
+  }, [selectedPropertyId]);
+
+  useEffect(() => {
+    selectedPeriodRef.current = selectedPeriod;
+  }, [selectedPeriod]);
+
+  // Fetch properties on mount only
   useEffect(() => {
     dispatch(fetchProperties({ page: 1, limit: 100 }));
   }, [dispatch]);
 
-  // Fetch dashboard data
-  const loadDashboardData = useCallback(() => {
+  // Fetch dashboard data when period or property changes
+  useEffect(() => {
+    const params = JSON.stringify({ selectedPropertyId, selectedPeriod });
+
+    // Prevent duplicate fetches with same parameters
+    if (params !== lastFetchParams) {
+      dispatch(
+        fetchDashboardOverview({
+          propertyId: selectedPropertyId || undefined,
+          period: selectedPeriod,
+        }),
+      );
+      setLastFetchParams(params);
+    }
+  }, [dispatch, selectedPropertyId, selectedPeriod, lastFetchParams]);
+
+  // Auto-refresh every 60 seconds - set up ONCE and use refs to get current values
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Use ref values to avoid recreating interval on every render
+      // Set silent flag to prevent loading state changes during background refresh
+      dispatch(
+        fetchDashboardOverview({
+          propertyId: selectedPropertyIdRef.current || undefined,
+          period: selectedPeriodRef.current,
+          silent: true, // Background refresh - don't show loading states
+        }),
+      );
+    }, 60000);
+
+    return () => clearInterval(interval);
+    // Only depend on dispatch - interval runs independently
+  }, [dispatch]);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
     dispatch(
       fetchDashboardOverview({
         propertyId: selectedPropertyId || undefined,
         period: selectedPeriod,
       }),
     );
-  }, [dispatch, selectedPropertyId, selectedPeriod]);
-
-  // Initial load
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
-
-  // Auto-refresh every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadDashboardData();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [loadDashboardData]);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    loadDashboardData();
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
@@ -256,7 +285,7 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
-  // Helper function to check if data is empty
+  // Helper function to check if data is empty - memoized to prevent recalculation
   const isDataEmpty = useCallback((data: any) => {
     if (!data) return true;
     if (Array.isArray(data)) return data.length === 0;
@@ -274,8 +303,10 @@ export default function DashboardPage() {
     return false;
   }, []);
 
-  // Use real API data now that backend is set up
-  const useStaticData = useMemo(() => !overview || isDataEmpty(overview), [overview, isDataEmpty]);
+  // Use real API data now that backend is set up - only recalculate when overview reference changes
+  const useStaticData = useMemo(() => {
+    return !overview || isDataEmpty(overview);
+  }, [overview, isDataEmpty]);
 
   // Safe data extraction with static data fallback
   const kpis = useMemo(() => {
