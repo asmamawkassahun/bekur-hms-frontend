@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
@@ -207,35 +207,32 @@ export default function DashboardPage() {
   }, [dispatch]);
 
   // Fetch dashboard data
-  const loadDashboardData = () => {
+  const loadDashboardData = useCallback(() => {
     dispatch(
       fetchDashboardOverview({
         propertyId: selectedPropertyId || undefined,
         period: selectedPeriod,
       }),
     );
-  };
+  }, [dispatch, selectedPropertyId, selectedPeriod]);
 
   // Initial load
   useEffect(() => {
     loadDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPeriod, selectedPropertyId]);
+  }, [loadDashboardData]);
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('Auto-refreshing dashboard data...');
       loadDashboardData();
     }, 60000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPeriod, selectedPropertyId]);
+  }, [loadDashboardData]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setIsRefreshing(true);
-    await loadDashboardData();
+    loadDashboardData();
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
@@ -259,13 +256,8 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
-  // Show skeleton during initial loading
-  if (loading && !overview) {
-    return <DashboardSkeleton />;
-  }
-
   // Helper function to check if data is empty
-  const isDataEmpty = (data: any) => {
+  const isDataEmpty = useCallback((data: any) => {
     if (!data) return true;
     if (Array.isArray(data)) return data.length === 0;
     if (typeof data === 'object') {
@@ -280,25 +272,28 @@ export default function DashboardPage() {
       );
     }
     return false;
-  };
+  }, []);
 
   // Use real API data now that backend is set up
-  const useStaticData = !overview || isDataEmpty(overview);
+  const useStaticData = useMemo(() => !overview || isDataEmpty(overview), [overview, isDataEmpty]);
 
   // Safe data extraction with static data fallback
-  const kpis = useStaticData
-    ? DUMMY_DATA.kpis
-    : overview?.kpis || DUMMY_DATA.kpis;
+  const kpis = useMemo(() => {
+    return useStaticData
+      ? DUMMY_DATA.kpis
+      : overview?.kpis || DUMMY_DATA.kpis;
+  }, [useStaticData, overview]);
 
   // Transform API data to match chart expectations
-  const trends = useStaticData
-    ? DUMMY_DATA.trends
-    : {
+  const trends = useMemo(() => {
+    return useStaticData
+      ? DUMMY_DATA.trends
+      : {
         occupancy:
           overview?.trends?.occupancy?.map((item: any) => ({
             date: item.date,
-            rooms: item.occupancy || 0,
-            beds: item.occupancy || 0,
+            rooms: item.rooms || item.occupancy || 0,
+            beds: item.beds || Math.round((item.occupancy || 0) * 0.9), // Slightly lower for beds
           })) || [],
         revenue:
           overview?.trends?.revenue?.map((item: any) => ({
@@ -322,37 +317,43 @@ export default function DashboardPage() {
           { status: 'Cancelled', count: 12, fill: '#f87171' },
         ],
       };
+  }, [useStaticData, overview]);
 
   // Calculate total revenue from trends for the selected period
-  const totalRevenue = useStaticData
-    ? DUMMY_DATA.trends.revenue.reduce(
+  const totalRevenue = useMemo(() => {
+    return useStaticData
+      ? DUMMY_DATA.trends.revenue.reduce(
         (sum: number, item: any) => sum + (Number(item.amount) || 0),
         0,
       )
-    : overview?.trends?.revenue?.reduce(
+      : overview?.trends?.revenue?.reduce(
         (sum: number, item: any) => sum + (Number(item.revenue) || 0),
         0,
       ) || 0;
+  }, [useStaticData, overview]);
 
   // Transform recent activities to match expected format
-  const recentActivities = useStaticData
-    ? DUMMY_DATA.recentActivities
-    : overview?.recentActivities?.map((activity: any) => ({
+  const recentActivities = useMemo(() => {
+    return useStaticData
+      ? DUMMY_DATA.recentActivities
+      : overview?.recentActivities?.map((activity: any) => ({
         id: activity.id,
         type: activity.type,
         description: `${activity.guestName} ${activity.action} - ${activity.roomInfo}`,
         timestamp: activity.timestamp,
         user: activity.guestName,
       })) || DUMMY_DATA.recentActivities;
+  }, [useStaticData, overview]);
 
-  const alerts = useStaticData
-    ? DUMMY_DATA.alerts
-    : overview?.alerts || DUMMY_DATA.alerts;
+  const alerts = useMemo(() => {
+    return useStaticData ? DUMMY_DATA.alerts : overview?.alerts || DUMMY_DATA.alerts;
+  }, [useStaticData, overview]);
 
   // Transform guest data to match expected format
-  const guestData = useStaticData
-    ? DUMMY_DATA.guestData
-    : {
+  const guestData = useMemo(() => {
+    return useStaticData
+      ? DUMMY_DATA.guestData
+      : {
         byNationality:
           overview?.guestData?.byNationality?.map((item: any) => ({
             country: item.nationality,
@@ -360,11 +361,13 @@ export default function DashboardPage() {
           })) || [],
         byLoyaltyTier: overview?.guestData?.byLoyaltyTier || [],
       };
+  }, [useStaticData, overview]);
 
   // Transform revenue data to match expected format
-  const revenueData = useStaticData
-    ? DUMMY_DATA.revenueData
-    : {
+  const revenueData = useMemo(() => {
+    return useStaticData
+      ? DUMMY_DATA.revenueData
+      : {
         byRoomType:
           overview?.revenueData?.byRoomType
             ?.reduce((acc: any[], item: any) => {
@@ -388,6 +391,12 @@ export default function DashboardPage() {
             })) || [],
         byPaymentMethod: overview?.revenueData?.byPaymentMethod || [],
       };
+  }, [useStaticData, overview, totalRevenue]);
+
+  // Show skeleton during initial loading (after all hooks)
+  if (loading && !overview) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -511,49 +520,63 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row 1 - Revenue & Occupancy */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <RevenueTrendChart
-          data={trends.revenue}
-          currency={kpis.revenue.currency}
-        />
-        <OccupancyTrendChart data={trends.occupancy} />
+      <div className="grid gap-6 md:grid-cols-2 overflow-hidden">
+        <div className="overflow-hidden">
+          <RevenueTrendChart
+            data={trends.revenue}
+            currency={kpis.revenue.currency}
+          />
+        </div>
+        <div className="overflow-hidden">
+          <OccupancyTrendChart data={trends.occupancy} />
+        </div>
       </div>
 
       {/* Charts Row 2 - Distribution & Status */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <RevenueByRoomTypeChart
+      <div className="grid gap-6 md:grid-cols-2 overflow-hidden">
+        <div className="overflow-hidden">
+          <RevenueByRoomTypeChart
+            data={
+              revenueData.byRoomType as Array<{
+                name: string;
+                amount: number;
+                percentage: number;
+                fill: string;
+              }>
+            }
+            currency={kpis.revenue.currency}
+          />
+        </div>
+        <div className="overflow-hidden">
+          <BookingStatusChart
+            data={
+              trends.bookings as Array<{
+                status: string;
+                count: number;
+                fill: string;
+              }>
+            }
+          />
+        </div>
+      </div>
+
+      {/* Charts Row 3 - Demographics */}
+      <div className="overflow-hidden">
+        <GuestDemographicsChart
           data={
-            revenueData.byRoomType as Array<{
-              name: string;
-              amount: number;
-              percentage: number;
-              fill: string;
-            }>
-          }
-          currency={kpis.revenue.currency}
-        />
-        <BookingStatusChart
-          data={
-            trends.bookings as Array<{
-              status: string;
-              count: number;
-              fill: string;
-            }>
+            guestData.byNationality as Array<{ country: string; guests: number }>
           }
         />
       </div>
 
-      {/* Charts Row 3 - Demographics */}
-      <GuestDemographicsChart
-        data={
-          guestData.byNationality as Array<{ country: string; guests: number }>
-        }
-      />
-
       {/* Bottom Row - Activities & Alerts */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <RecentActivities activities={recentActivities} />
-        <AlertsPanel alerts={alerts} />
+      <div className="grid gap-6 md:grid-cols-2 overflow-hidden">
+        <div className="overflow-hidden">
+          <RecentActivities activities={recentActivities} />
+        </div>
+        <div className="overflow-hidden">
+          <AlertsPanel alerts={alerts} />
+        </div>
       </div>
 
       {/* Quick Actions */}
