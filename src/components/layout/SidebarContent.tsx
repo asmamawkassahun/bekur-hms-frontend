@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { openModal } from '@/store/slices/uiSlice';
+import { Logo } from '@/components/ui/logo';
 import {
   LayoutDashboard,
   BarChart3,
@@ -24,7 +25,7 @@ import {
   Home,
   BedDouble,
   Building,
-    UserCog,
+  UserCog,
   ChevronDown,
   Globe,
   LucideBarChart3,
@@ -262,14 +263,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground overflow-y-auto">
       {/* Logo/Brand */}
       <div className="flex h-16 items-center px-4">
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-sidebar-primary rounded-full flex items-center justify-center">
-            <div className="h-4 w-4 bg-sidebar-primary-foreground rounded-full"></div>
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold">Automata HMS</h1>
-          </div>
-        </div>
+        <Logo size="md" showText={true} />
       </div>
 
       {/* Main Navigation */}
@@ -502,7 +496,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                     className={cn(
                       'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                       active &&
-                      'bg-sidebar-accent text-sidebar-accent-foreground',
+                        'bg-sidebar-accent text-sidebar-accent-foreground',
                     )}
                     asChild
                   >
@@ -533,7 +527,7 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
                   className={cn(
                     'w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer',
                     active &&
-                    'bg-sidebar-accent text-sidebar-accent-foreground',
+                      'bg-sidebar-accent text-sidebar-accent-foreground',
                   )}
                   asChild
                 >
