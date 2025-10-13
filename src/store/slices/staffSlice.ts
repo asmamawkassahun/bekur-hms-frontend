@@ -63,6 +63,14 @@ export const removeStaffRole = createAsyncThunk(
   },
 );
 
+export const deleteStaff = createAsyncThunk(
+  'staff/deleteStaff',
+  async (id: string, { rejectWithValue }) => {
+    try { const res = await staffService.delete(id); return { id, message: res.data.message }; }
+    catch (e: unknown) { return rejectWithValue(e instanceof Error ? e.message : 'Failed to delete staff'); }
+  },
+);
+
 const staffSlice = createSlice({
   name: 'staff', initialState, reducers: {},
   extraReducers: (builder) => {
@@ -79,7 +87,8 @@ const staffSlice = createSlice({
       .addCase(createStaff.fulfilled, (state, action) => { if (action.payload.data) state.staff.unshift(action.payload.data); })
       .addCase(updateStaff.fulfilled, (state, action) => { if (action.payload.data) { const idx = state.staff.findIndex((s) => s.id === action.payload.data?.id); if (idx !== -1) state.staff[idx] = action.payload.data!; } })
       .addCase(assignStaffRole.fulfilled, (state, action) => { if (action.payload.data) { const idx = state.staff.findIndex((s) => s.id === action.payload.data?.id); if (idx !== -1) state.staff[idx] = action.payload.data!; } })
-      .addCase(removeStaffRole.fulfilled, (state, action) => { if (action.payload.data) { const idx = state.staff.findIndex((s) => s.id === action.payload.data?.id); if (idx !== -1) state.staff[idx] = action.payload.data!; } });
+      .addCase(removeStaffRole.fulfilled, (state, action) => { if (action.payload.data) { const idx = state.staff.findIndex((s) => s.id === action.payload.data?.id); if (idx !== -1) state.staff[idx] = action.payload.data!; } })
+      .addCase(deleteStaff.fulfilled, (state, action) => { state.staff = state.staff.filter((s) => s.id !== action.payload.id); });
   },
 });
 
