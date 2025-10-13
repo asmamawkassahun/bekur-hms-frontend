@@ -1,7 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatsCard } from '@/components/shared/StatsCard';
 import { Badge } from '@/components/ui/badge';
+import { ArrowUpCircle, ArrowDownCircle, Users, XCircle, CheckCircle } from 'lucide-react';
 import type { OperationalReportData } from '@/types/report.types';
 
 interface OperationalReportViewProps {
@@ -13,9 +15,6 @@ export function OperationalReportView({ data }: OperationalReportViewProps) {
   if (!data) {
     return <div>No data available</div>;
   }
-
-  // Debug: Log the actual data structure
-  console.log('OperationalReportView received data:', data);
 
   // Handle different possible data structures
   const summary = data.summary || data;
@@ -33,54 +32,42 @@ export function OperationalReportView({ data }: OperationalReportViewProps) {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Arrivals</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.totalArrivals || 0}</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <StatsCard
+          title="Arrivals"
+          value={summary.totalArrivals || 0}
+          icon={ArrowUpCircle}
+          gradient="green"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Departures</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{summary.totalDepartures || 0}</div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Departures"
+          value={summary.totalDepartures || 0}
+          icon={ArrowDownCircle}
+          gradient="blue"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Current Guests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{summary.currentGuests || 0}</div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Current Guests"
+          value={summary.currentGuests || 0}
+          icon={Users}
+          gradient="violet"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">No Shows</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{summary.noShows || 0}</div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="No Shows"
+          value={summary.noShows || 0}
+          icon={XCircle}
+          gradient="rose"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Housekeeping Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.housekeepingTasksCompleted || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.housekeepingTasksPending || 0} pending
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Housekeeping Completed"
+          value={summary.housekeepingTasksCompleted || 0}
+          description={`${summary.housekeepingTasksPending || 0} pending`}
+          icon={CheckCircle}
+          gradient="yellow"
+        />
       </div>
 
       {/* Housekeeping Status */}

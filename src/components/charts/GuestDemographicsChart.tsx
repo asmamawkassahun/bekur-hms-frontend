@@ -47,8 +47,8 @@ export function GuestDemographicsChart({ data }: GuestDemographicsChartProps) {
           Guest distribution by country
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px]">
+      <CardContent className="overflow-hidden">
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <BarChart data={topCountries} layout="vertical">
             <CartesianGrid
               strokeDasharray="3 3"

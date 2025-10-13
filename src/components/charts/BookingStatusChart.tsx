@@ -55,8 +55,8 @@ export function BookingStatusChart({ data }: BookingStatusChartProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[340px]">
+      <CardContent className="overflow-hidden">
+        <ChartContainer config={chartConfig} className="h-[340px] w-full">
           <BarChart data={data}>
             <CartesianGrid
               strokeDasharray="3 3"
