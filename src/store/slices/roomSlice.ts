@@ -68,8 +68,15 @@ export const fetchRooms = createAsyncThunk(
       console.log('response from fetching rooms: ', response);
       return response.data;
     } catch (error: unknown) {
+      const axiosErr = error as any;
+      const responseData = axiosErr?.response?.data as any;
+      const extractedMessage =
+        responseData?.error?.message ||
+        responseData?.message ||
+        (Array.isArray(responseData?.errors) && responseData.errors[0]?.message);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch rooms';
+        extractedMessage ||
+        (error instanceof Error ? error.message : 'Failed to fetch rooms');
       return rejectWithValue(errorMessage);
     }
   },
@@ -82,8 +89,15 @@ export const createRoom = createAsyncThunk(
       const response = await roomService.create(data);
       return response.data;
     } catch (error: unknown) {
+      const axiosErr = error as any;
+      const responseData = axiosErr?.response?.data as any;
+      const extractedMessage =
+        responseData?.error?.message ||
+        responseData?.message ||
+        (Array.isArray(responseData?.errors) && responseData.errors[0]?.message);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create room';
+        extractedMessage ||
+        (error instanceof Error ? error.message : 'Failed to create room');
       return rejectWithValue(errorMessage);
     }
   },
@@ -99,8 +113,15 @@ export const updateRoom = createAsyncThunk(
       const response = await roomService.update(id, data);
       return response.data;
     } catch (error: unknown) {
+      const axiosErr = error as any;
+      const responseData = axiosErr?.response?.data as any;
+      const extractedMessage =
+        responseData?.error?.message ||
+        responseData?.message ||
+        (Array.isArray(responseData?.errors) && responseData.errors[0]?.message);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update room';
+        extractedMessage ||
+        (error instanceof Error ? error.message : 'Failed to update room');
       return rejectWithValue(errorMessage);
     }
   },
@@ -116,8 +137,15 @@ export const updateRoomStatus = createAsyncThunk(
       const response = await roomService.updateStatus(id, data);
       return response.data;
     } catch (error: unknown) {
+      const axiosErr = error as any;
+      const responseData = axiosErr?.response?.data as any;
+      const extractedMessage =
+        responseData?.error?.message ||
+        responseData?.message ||
+        (Array.isArray(responseData?.errors) && responseData.errors[0]?.message);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update room status';
+        extractedMessage ||
+        (error instanceof Error ? error.message : 'Failed to update room status');
       return rejectWithValue(errorMessage);
     }
   },
@@ -130,8 +158,15 @@ export const deleteRoom = createAsyncThunk(
       await roomService.delete(id);
       return id;
     } catch (error: unknown) {
+      const axiosErr = error as any;
+      const responseData = axiosErr?.response?.data as any;
+      const extractedMessage =
+        responseData?.error?.message ||
+        responseData?.message ||
+        (Array.isArray(responseData?.errors) && responseData.errors[0]?.message);
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to delete room';
+        extractedMessage ||
+        (error instanceof Error ? error.message : 'Failed to delete room');
       return rejectWithValue(errorMessage);
     }
   },

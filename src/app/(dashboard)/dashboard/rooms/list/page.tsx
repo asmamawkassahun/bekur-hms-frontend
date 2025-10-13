@@ -6,6 +6,8 @@ import { AppDispatch, RootState } from '@/store';
 import {
   fetchRooms,
   createRoom,
+  updateRoom,
+  deleteRoom,
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/roomSlice';
@@ -33,6 +35,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { RoomStatsCards } from '@/components/features/rooms/RoomStatsCards';
 import { RoomTableRow } from '@/components/features/rooms/RoomTableRow';
 import { RoomForm } from '@/components/features/rooms/RoomForm';
+import RoomViewDialog from '../../../../../components/features/rooms/RoomViewDialog';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +61,7 @@ export default function RoomsPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openView, setOpenView] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   // Separate state for stats that don't change during search
@@ -69,6 +73,13 @@ export default function RoomsPage() {
   });
 
   const { success, error } = useNotification();
+
+  // Normalize error messages whether coming from unwrap(rejectWithValue) or Axios
+  const getErrorMessage = (err: unknown) => {
+    if (typeof err === 'string') return err;
+    const apiErr = handleApiError(err as AxiosError);
+    return apiErr.message || 'An unexpected error occurred';
+  };
 
   // Fetch overall stats data (not affected by search)
   useEffect(() => {
@@ -163,15 +174,26 @@ export default function RoomsPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
   const handleEditRoom = async (data: any) => {
     if (!selectedRoom) return;
     try {
-      // await dispatch(updateRoom({ id: selectedRoom.id, data })).unwrap();
+      // Map form fields to API payload
+      const updatePayload = {
+        number: data.number,
+        floor: data.floor,
+        status: data.status,
+        isActive: data.isActive,
+        propertyId: data.propertyId,
+        roomTypeId: data.typeId,
+      };
+
+      await dispatch(
+        updateRoom({ id: selectedRoom.id, data: updatePayload }),
+      ).unwrap();
       success('Room updated');
       setOpenEdit(false);
       setSelectedRoom(null);
@@ -186,15 +208,14 @@ export default function RoomsPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
   const handleDeleteRoom = async () => {
     if (!selectedRoom) return;
     try {
-      // await dispatch(deleteRoom(selectedRoom.id)).unwrap();
+      await dispatch(deleteRoom(selectedRoom.id)).unwrap();
       success('Room deleted');
       setOpenDelete(false);
       setSelectedRoom(null);
@@ -209,8 +230,7 @@ export default function RoomsPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -229,7 +249,7 @@ export default function RoomsPage() {
       room={room}
       onView={(r) => {
         setSelectedRoom(r);
-        // setOpenView(true);
+        setOpenView(true);
       }}
       onEdit={(r) => {
         setSelectedRoom(r);
@@ -309,6 +329,16 @@ export default function RoomsPage() {
         renderRow={renderRoomRow}
       />
 
+      {/* View Room Dialog */}
+      <RoomViewDialog
+        open={openView}
+        room={selectedRoom}
+        onOpenChange={(open: boolean) => {
+          setOpenView(open);
+          if (!open) setSelectedRoom(null);
+        }}
+      />
+
       {/* Edit Room Dialog */}
       <Dialog
         open={openEdit}
@@ -323,6 +353,7 @@ export default function RoomsPage() {
           </DialogHeader>
           {selectedRoom && (
             <RoomForm
+              key={selectedRoom.id}
               room={selectedRoom}
               onSubmit={handleEditRoom}
               onCancel={() => setOpenEdit(false)}

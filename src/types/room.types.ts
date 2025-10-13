@@ -110,6 +110,9 @@ export interface UpdateRoomData {
   floor?: number;
   status?: RoomStatus;
   isActive?: boolean;
+  // Allow changing associations during edit
+  propertyId?: string;
+  roomTypeId?: string;
 }
 
 export interface UpdateRoomStatusData {
