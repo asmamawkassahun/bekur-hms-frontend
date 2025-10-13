@@ -10,10 +10,26 @@ interface RevenueByMethodChartProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export function RevenueByMethodChart({ data }: RevenueByMethodChartProps) {
-  if (!data || !Array.isArray(data.data)) {
+  if (!data || !Array.isArray(data.data) || data.data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
         No data available for chart
+      </div>
+    );
+  }
+
+  // Filter out invalid data points and ensure values are numbers
+  const validData = data.data
+    .map(item => ({
+      ...item,
+      value: typeof item.value === 'number' ? item.value : (Number(item.value) || 0)
+    }))
+    .filter(item => item.value > 0);
+
+  if (validData.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        No valid data available for chart
       </div>
     );
   }
@@ -22,7 +38,7 @@ export function RevenueByMethodChart({ data }: RevenueByMethodChartProps) {
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie
-          data={data.data}
+          data={validData}
           cx="50%"
           cy="50%"
           labelLine={false}
@@ -31,7 +47,7 @@ export function RevenueByMethodChart({ data }: RevenueByMethodChartProps) {
           fill="#8884d8"
           dataKey="value"
         >
-          {data.data.map((entry, index) => (
+          {validData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>

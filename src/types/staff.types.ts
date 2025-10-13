@@ -4,36 +4,54 @@ export type StaffRole = 'SUPER_ADMIN' | 'PROPERTY_MANAGER' | 'FRONT_DESK' | 'HOU
 
 export interface Staff {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  roles: StaffRole[];
+  userId: string;
+  position: string;
   isActive: boolean;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+  roles: Array<{
+    role: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+  }>;
+  properties: Array<{
+    property: {
+      id: string;
+      name: string;
+    };
+  }>;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateStaffData {
+  userId: string;
+  position: string;
+  isActive?: boolean;
+}
+
+export interface CreateUserData {
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
-  roles: StaffRole[];
-  temporaryPassword?: string;
-  isActive?: boolean;
+  password: string;
 }
 
 export interface UpdateStaffData {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  roles?: StaffRole[];
+  position?: string;
   isActive?: boolean;
 }
 
 export interface AssignRolesData {
-  roles: StaffRole[];
+  roleId: string;
 }
 
 
