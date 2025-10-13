@@ -24,6 +24,12 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
   const bookingPatterns = data.bookingPatterns || { advanceBooking: {}, dayOfWeek: {}, lengthOfStay: {} };
   const loyaltyAnalysis = data.loyaltyAnalysis || [];
   const repeatGuests = data.repeatGuests || [];
+  const charts = data.charts || {};
+
+  // Debug: Log the actual data structure
+  console.log('GuestAnalyticsReportView received data:', data);
+  console.log('Demographics data:', demographics);
+  console.log('Charts data:', charts);
 
   // Handle case where summary might be undefined or empty
   if (!summary || (typeof summary === 'object' && Object.keys(summary).length === 0)) {
@@ -36,30 +42,32 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Guests"
-          value={summary.totalGuests || 0}
-          description={`${(summary.averageStaysPerGuest || 0).toFixed(1)} avg stays`}
+          value={summary?.totalGuests || 0}
+          description={`${(summary?.averageStaysPerGuest || 0).toFixed(1)} avg stays`}
           icon={Users}
           gradient="violet"
         />
 
         <StatsCard
           title="Repeat Guests"
-          value={summary.repeatGuests || 0}
-          description={`${(summary.repeatGuestPercentage || 0).toFixed(1)}% of total`}
+          value={summary?.repeatGuests || 0}
+          description={`${summary?.totalGuests ? ((summary.repeatGuests / summary.totalGuests) * 100).toFixed(1) : '0.0'}% of total`}
           icon={UserCheck}
           gradient="green"
         />
 
         <StatsCard
-          title="Avg Length of Stay"
-          value={`${(summary.averageLengthOfStay || 0).toFixed(1)} days`}
+          title="New Guests"
+          value={summary?.newGuests || 0}
+          description={`${summary?.totalGuests ? ((summary.newGuests / summary.totalGuests) * 100).toFixed(1) : '0.0'}% of total`}
           icon={Calendar}
           gradient="blue"
         />
 
         <StatsCard
-          title="Advance Booking"
-          value={`${(summary.averageAdvanceBooking || 0).toFixed(1)} days`}
+          title="Avg Stays per Guest"
+          value={`${(summary?.averageStaysPerGuest || 0).toFixed(1)} stays`}
+          description="Average number of stays per guest"
           icon={TrendingUp}
           gradient="yellow"
         />
@@ -72,25 +80,32 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <CardTitle>Guest Demographics by Age</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={demographics.ageGroups}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {demographics.ageGroups.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {charts?.ageDistribution ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={charts.ageDistribution.data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(props: any) => `${props.name} ${(props.percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {(charts.ageDistribution.data || []).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                No data available for chart
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -99,47 +114,100 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <CardTitle>Guest Demographics by Gender</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={demographics.genders}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {demographics.genders.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {demographics.genders && demographics.genders.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={demographics.genders.map((item: any) => ({
+                      name: item.gender,
+                      value: item.count
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(props: any) => `${props.name} ${(props.percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {(demographics.genders || []).map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      value, 
+                      name
+                    ]}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                No data available for chart
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Top Countries */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Countries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {demographics.countries && demographics.countries.length > 0 ? (
+                demographics.countries.slice(0, 10).map((country: any, index: number) => {
+                  const totalGuests = summary?.totalGuests || 1;
+                  const percentage = (country.count / totalGuests) * 100;
+                  return (
+                    <div key={index} className="flex justify-between items-center p-2 border rounded">
+                      <span className="font-medium">{country.country || 'Unknown'}</span>
+                      <div className="text-right">
+                        <div className="font-bold">{country.count || 0}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {percentage.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  No country data available
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+      {/* Loyalty Analysis */}
       <Card>
         <CardHeader>
-          <CardTitle>Top Countries</CardTitle>
+          <CardTitle>Loyalty Tier Distribution</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {demographics.countries.slice(0, 10).map((country, index) => (
-              <div key={index} className="flex justify-between items-center p-2 border rounded">
-                <span className="font-medium">{country.name}</span>
-                <div className="text-right">
-                  <div className="font-bold">{country.value}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {country.percentage.toFixed(1)}%
+            {loyaltyAnalysis && loyaltyAnalysis.length > 0 ? (
+              loyaltyAnalysis.map((tier: any, index: number) => (
+                <div key={index} className="flex justify-between items-center p-2 border rounded">
+                  <span className="font-medium">{tier.tier}</span>
+                  <div className="text-right">
+                    <div className="font-bold">{tier.count}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {tier.percentage.toFixed(1)}%
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No loyalty data available
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -151,18 +219,27 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {repeatGuests.slice(0, 10).map((guest) => (
-              <div key={guest.id} className="flex justify-between items-center p-2 border rounded">
-                <div>
-                  <div className="font-medium">{guest.guestName}</div>
-                  <div className="text-sm text-muted-foreground">{guest.email}</div>
+            {repeatGuests && repeatGuests.length > 0 ? (
+              repeatGuests.slice(0, 10).map((guest: any) => (
+                <div key={guest.id || Math.random()} className="flex justify-between items-center p-2 border rounded">
+                  <div>
+                    <div className="font-medium">{guest.name || 'Unknown Guest'}</div>
+                    <div className="text-sm text-muted-foreground">{guest.email || 'No email'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold">{guest.totalStays || 0}</div>
+                    <div className="text-sm text-muted-foreground">stays</div>
+                    <div className="text-xs text-muted-foreground">
+                      ${guest.totalSpent || 0} spent
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold">{guest.totalStays}</div>
-                  <div className="text-sm text-muted-foreground">stays</div>
-                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No repeat guest data available
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

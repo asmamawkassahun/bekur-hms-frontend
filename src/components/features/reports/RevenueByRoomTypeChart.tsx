@@ -8,7 +8,7 @@ interface RevenueByRoomTypeChartProps {
 }
 
 export function RevenueByRoomTypeChart({ data }: RevenueByRoomTypeChartProps) {
-  if (!data || !Array.isArray(data.data)) {
+  if (!data || !Array.isArray(data.data) || data.data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
         No data available for chart
@@ -16,9 +16,25 @@ export function RevenueByRoomTypeChart({ data }: RevenueByRoomTypeChartProps) {
     );
   }
 
+  // Filter out invalid data points and ensure values are numbers
+  const validData = data.data
+    .map(item => ({
+      ...item,
+      value: typeof item.value === 'number' ? item.value : (Number(item.value) || 0)
+    }))
+    .filter(item => item.value > 0);
+
+  if (validData.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        No valid data available for chart
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data.data}>
+      <BarChart data={validData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
         <YAxis />

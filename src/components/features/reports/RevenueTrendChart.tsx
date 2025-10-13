@@ -8,7 +8,7 @@ interface RevenueTrendChartProps {
 }
 
 export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
-  if (!data || !Array.isArray(data.data)) {
+  if (!data || !Array.isArray(data.data) || data.data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
         No data available for chart
@@ -16,9 +16,22 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
     );
   }
 
+  // Filter out invalid data points
+  const validData = data.data.filter(item => 
+    typeof item.y === 'number' && !isNaN(item.y) && item.y >= 0
+  );
+
+  if (validData.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        No valid data available for chart
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data.data}>
+      <LineChart data={validData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="x" />
         <YAxis />

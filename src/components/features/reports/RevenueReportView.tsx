@@ -80,7 +80,13 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
             <CardTitle>Revenue Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <RevenueTrendChart data={charts.revenueTrend} />
+            {charts?.revenueTrend ? (
+              <RevenueTrendChart data={charts.revenueTrend} />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                No data available for chart
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -89,7 +95,13 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
             <CardTitle>Revenue by Payment Method</CardTitle>
           </CardHeader>
           <CardContent>
-            <RevenueByMethodChart data={charts.revenueByMethod} />
+            {charts?.revenueByMethod ? (
+              <RevenueByMethodChart data={charts.revenueByMethod} />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                No data available for chart
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -99,7 +111,13 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
           <CardTitle>Revenue by Room Type</CardTitle>
         </CardHeader>
         <CardContent>
-          <RevenueByRoomTypeChart data={charts.revenueByRoomType} />
+          {charts?.revenueByRoomType ? (
+            <RevenueByRoomTypeChart data={charts.revenueByRoomType} />
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              No data available for chart
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -111,22 +129,27 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {revenueByMethod.map((method, index) => (
-                <div key={index} className="flex justify-between items-center p-2 border rounded">
-                  <span className="font-medium">{method.method}</span>
-                  <div className="text-right">
-                    <div className="font-bold">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'ETB'
-                      }).format(method.amount)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {method.percentage.toFixed(1)}%
+              {revenueByMethod.map((method, index) => {
+                const amount = typeof method.amount === 'number' ? method.amount : (Number(method.amount) || 0);
+                const percentage = typeof method.percentage === 'number' ? method.percentage : (Number(method.percentage) || 0);
+                
+                return (
+                  <div key={index} className="flex justify-between items-center p-2 border rounded">
+                    <span className="font-medium">{method.method}</span>
+                    <div className="text-right">
+                      <div className="font-bold">
+                        {new Intl.NumberFormat('en-US', { 
+                          style: 'currency', 
+                          currency: 'ETB' 
+                        }).format(amount)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {percentage.toFixed(1)}%
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -137,22 +160,27 @@ export function RevenueReportView({ data }: RevenueReportViewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {revenueByRoomType.map((type, index) => (
-                <div key={index} className="flex justify-between items-center p-2 border rounded">
-                  <span className="font-medium">{type.type}</span>
-                  <div className="text-right">
-                    <div className="font-bold">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'ETB'
-                      }).format(type.amount)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {type.percentage.toFixed(1)}%
+              {revenueByRoomType.map((type, index) => {
+                const amount = typeof type.amount === 'number' ? type.amount : (Number(type.amount) || 0);
+                const percentage = typeof type.percentage === 'number' ? type.percentage : (Number(type.percentage) || 0);
+                
+                return (
+                  <div key={index} className="flex justify-between items-center p-2 border rounded">
+                    <span className="font-medium">{type.type}</span>
+                    <div className="text-right">
+                      <div className="font-bold">
+                        {new Intl.NumberFormat('en-US', { 
+                          style: 'currency', 
+                          currency: 'ETB' 
+                        }).format(amount)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {percentage.toFixed(1)}%
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

@@ -128,8 +128,8 @@ export default function ReportsPage() {
 
   const getCurrentReport = () => {
     const report = generatedReports[activeTab];
-    // The backend returns the full report object, but we need the data field
-    return report;
+    // The backend returns the full report object, and the data is in the data field
+    return report?.data || null;
   };
 
   const isGenerating = loading.generating[activeTab];

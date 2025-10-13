@@ -305,7 +305,7 @@ export default function DashboardPage() {
       </PageHeader>
 
       {/* Primary KPIs */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-4">
         <StatsCard
           title="Room Occupancy"
           value={`${kpis.occupancy.rooms.rate.toFixed(1)}%`}
@@ -339,7 +339,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4  lg:grid-cols-4">
         <StatsCard
           title="Total Revenue"
           value={formatCurrency(totalRevenue, kpis.revenue.currency)}
@@ -439,7 +439,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <QuickActions />
+      {/* <QuickActions /> */}
     </div>
   );
 }
