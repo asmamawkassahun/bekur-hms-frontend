@@ -260,9 +260,10 @@ export default function PropertiesPage() {
   const columns = [
     { key: 'property', label: 'Property', width: 'w-[200px]' },
     { key: 'location', label: 'Location', width: 'w-[200px]' },
-    { key: 'contact', label: 'Contact', width: 'w-[180px]' },
-    { key: 'isActive', label: 'Status', width: 'w-[100px]' },
-    { key: 'createdAt', label: 'Created', width: 'w-[120px]' },
+    { key: 'contact', label: 'Contact', width: 'w-[200px]' },
+    { key: 'website', label: 'Website', width: 'w-[200px]' },
+    { key: 'isActive', label: 'Status', width: 'w-[200px]' },
+    { key: 'createdAt', label: 'Created', width: 'w-[200px]' },
     { key: 'actions', label: 'Actions', width: 'w-[120px]', sortable: false },
   ];
 

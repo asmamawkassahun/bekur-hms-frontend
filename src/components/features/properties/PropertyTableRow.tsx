@@ -77,11 +77,13 @@ export function PropertyTableRow({
         </div>
       </TableCell>
       <TableCell>
-        {property.hotelCode ? (
+        {property.website ? (
           <div className="flex items-center gap-1.5">
             <Globe className="h-3.5 w-3.5 text-green-600" />
             <Badge variant="outline" className="font-mono text-xs">
-              {property.hotelCode}
+              {
+                <a href={property.website} target="_blank" rel="noopener noreferrer">{property.website}</a>
+              }
             </Badge>
           </div>
         ) : (
