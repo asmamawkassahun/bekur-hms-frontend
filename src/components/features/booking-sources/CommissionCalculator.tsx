@@ -54,7 +54,7 @@ export function CommissionCalculator({
           commissionRate: bookingSource.commissionRate,
         }),
       ).unwrap();
-      setResult(response.data);
+      setResult(response.data || null);
     } catch (err) {
       error('Failed to calculate commission');
       console.error(err);

@@ -16,7 +16,7 @@ export function PropertySyncStatus({ propertyId }: PropertySyncStatusProps) {
   const loadStatus = async () => {
     try {
       const response = await aiosellService.getSyncStatus(propertyId);
-      setStatus(response.data.data);
+      setStatus(response.data.data ?? null);
     } catch (error) {
       console.error('Failed to load sync status', error);
       setStatus(null);

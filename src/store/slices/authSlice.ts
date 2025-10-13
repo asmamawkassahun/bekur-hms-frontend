@@ -126,7 +126,6 @@ export const verifyOTP = createAsyncThunk(
       // Store tokens securely
       TokenManager.setTokens(accessToken, refreshToken);
 
-
       return { accessToken, refreshToken, user };
     } catch (error: unknown) {
       const errorMessage =
@@ -205,8 +204,7 @@ export const refreshTokens = createAsyncThunk(
         throw new Error('Invalid refresh token response');
       }
 
-      const { accessToken, refreshToken: newRefreshToken } =
-        response.data.data;
+      const { accessToken, refreshToken: newRefreshToken } = response.data.data;
 
       // Update stored tokens
       TokenManager.setTokens(accessToken, newRefreshToken);
@@ -238,7 +236,8 @@ export const getProfile = createAsyncThunk(
       const isAuthError = status === 401 || status === 403;
 
       return rejectWithValue({
-        message: error instanceof Error ? error.message : 'Failed to get profile',
+        message:
+          error instanceof Error ? error.message : 'Failed to get profile',
         status,
         isAuthError,
         code: axiosError?.code, // ECONNABORTED for timeout, ERR_NETWORK for network errors
@@ -254,7 +253,6 @@ export const logout = createAsyncThunk('auth/logout', async () => {
     // Continue with logout even if API call fails
     console.error('Logout API call failed:', error);
   } finally {
-
     // Always clear local tokens
     TokenManager.clearTokens();
   }
@@ -306,10 +304,8 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
 
-
       // Clear tokens from storage
       TokenManager.clearTokens();
-
     },
   },
   extraReducers: (builder) => {
@@ -424,7 +420,8 @@ const authSlice = createSlice({
         // Keep user logged in for network/timeout errors
         if (errorPayload?.isAuthError) {
           console.error('🔐 Authentication error - logging out');
-          state.error = errorPayload.message || 'Session expired. Please login again.';
+          state.error =
+            errorPayload.message || 'Session expired. Please login again.';
           state.isAuthenticated = false;
           state.user = null;
           state.accessToken = null;
@@ -434,7 +431,10 @@ const authSlice = createSlice({
           TokenManager.clearTokens();
         } else {
           // For network/timeout errors, just set error message but keep user logged in
-          console.warn('⚠️  Network/timeout error fetching profile:', errorPayload);
+          console.warn(
+            '⚠️  Network/timeout error fetching profile:',
+            errorPayload,
+          );
           state.error = null; // Don't set error to avoid logout trigger in layout
           // User stays authenticated, can retry later
         }
@@ -504,15 +504,18 @@ export const initializeAuth = createAsyncThunk(
 
         // Only clear tokens and logout for actual authentication errors
         if (isAuthError) {
-          console.error('🔐 Authentication error during initialization - clearing tokens');
+          console.error(
+            '🔐 Authentication error during initialization - clearing tokens',
+          );
           TokenManager.clearTokens();
           dispatch(setError('Session expired. Please login again.'));
           return null;
         } else {
           // For network/timeout errors, keep tokens and let user stay logged in
-          console.warn('⚠️  Network/timeout error during initialization - keeping user logged in');
-          // Still set user if we have tokens, they can try loading profile again later
-          dispatch(setUser(null)); // Clear user but keep tokens
+          console.warn(
+            '⚠️  Network/timeout error during initialization - keeping user logged in',
+          );
+          // Keep tokens but don't set user - they can try loading profile again later
           return { accessToken, refreshToken, user: null };
         }
       }

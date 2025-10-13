@@ -30,6 +30,7 @@ import type { Room, Property, RoomType } from '@/types';
 const ROOM_STATUSES = [
   'AVAILABLE',
   'OCCUPIED',
+  'CLEANING',
   'MAINTENANCE',
   'OUT_OF_ORDER',
 ] as const;
@@ -38,14 +39,20 @@ const roomSchema = z.object({
   number: z.string().min(1, 'Room number is required'),
   propertyId: z.string().uuid({ message: 'Property is required' }),
   typeId: z.string().uuid({ message: 'Room type is required' }),
-  floor: z.coerce.number().int().min(0).optional(),
-  capacity: z.coerce.number().int().min(1, 'Capacity must be at least 1'),
-  basePrice: z.coerce.number().min(0, 'Price must be positive'),
+  floor: z.number().int().min(0).optional(),
+  capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+  basePrice: z.number().min(0, 'Price must be positive'),
   currency: z.string().min(1, 'Currency is required'),
-  status: z.enum(['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'OUT_OF_ORDER']),
+  status: z.enum([
+    'AVAILABLE',
+    'OCCUPIED',
+    'CLEANING',
+    'MAINTENANCE',
+    'OUT_OF_ORDER',
+  ]),
   amenities: z.array(z.string()).optional(),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type RoomFormData = z.infer<typeof roomSchema>;
@@ -73,14 +80,14 @@ export function RoomForm({
       ? {
           number: room.number,
           propertyId: room.propertyId,
-          typeId: room.typeId,
+          typeId: room.roomTypeId,
           floor: room.floor,
-          capacity: room.capacity,
+          capacity: room.roomType?.adultCapacity || 2,
           basePrice: room.basePrice,
-          currency: room.currency,
+          currency: 'USD',
           status: room.status,
-          amenities: room.amenities || [],
-          description: room.description,
+          amenities: [],
+          description: '',
           isActive: room.isActive,
         }
       : {

@@ -23,8 +23,10 @@ import type {
 const bookingTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
+
+type BookingTypeFormData = z.infer<typeof bookingTypeSchema>;
 
 interface BookingTypeFormProps {
   mode: 'create' | 'edit';
@@ -41,7 +43,7 @@ export function BookingTypeForm({
   onCancel,
   loading = false,
 }: BookingTypeFormProps) {
-  const form = useForm<CreateBookingTypeData | UpdateBookingTypeData>({
+  const form = useForm<BookingTypeFormData>({
     resolver: zodResolver(bookingTypeSchema),
     defaultValues: {
       name: bookingType?.name || '',
@@ -51,9 +53,7 @@ export function BookingTypeForm({
     },
   });
 
-  const handleSubmit = (
-    data: CreateBookingTypeData | UpdateBookingTypeData,
-  ) => {
+  const handleSubmit = (data: BookingTypeFormData) => {
     onSubmit(data);
   };
 

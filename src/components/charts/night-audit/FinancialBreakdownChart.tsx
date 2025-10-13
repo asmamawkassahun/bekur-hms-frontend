@@ -93,7 +93,7 @@ export function FinancialBreakdownChart({
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value) => formatCurrency(Number(value))}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',

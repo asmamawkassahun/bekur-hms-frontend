@@ -221,8 +221,10 @@ export function ComparisonSection({
                           <p className="text-xl font-bold">
                             {metric.isCurrency
                               ? formatCurrency(metric.current)
-                              : metric.current.toFixed(metric.suffix ? 1 : 0)}
-                            {metric.suffix || ''}
+                              : metric.current.toFixed(
+                                  'suffix' in metric && metric.suffix ? 1 : 0,
+                                )}
+                            {'suffix' in metric ? metric.suffix || '' : ''}
                           </p>
                         </div>
                         <div>
@@ -232,8 +234,10 @@ export function ComparisonSection({
                           <p className="text-lg font-medium text-muted-foreground">
                             {metric.isCurrency
                               ? formatCurrency(metric.previous)
-                              : metric.previous.toFixed(metric.suffix ? 1 : 0)}
-                            {metric.suffix || ''}
+                              : metric.previous.toFixed(
+                                  'suffix' in metric && metric.suffix ? 1 : 0,
+                                )}
+                            {'suffix' in metric ? metric.suffix || '' : ''}
                           </p>
                         </div>
                       </div>

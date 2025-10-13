@@ -1,8 +1,26 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  LabelList,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 interface GuestDemographicsChartProps {
   data: Array<{ country: string; guests: number }>;
@@ -25,29 +43,34 @@ export function GuestDemographicsChart({ data }: GuestDemographicsChartProps) {
     <Card className="bg-card border-border">
       <CardHeader>
         <CardTitle className="text-foreground">Guest Demographics</CardTitle>
-        <CardDescription className="text-muted-foreground">Guest distribution by country</CardDescription>
+        <CardDescription className="text-muted-foreground">
+          Guest distribution by country
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px]">
           <BarChart data={topCountries} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} horizontal={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              className="stroke-border"
+              opacity={0.5}
+              horizontal={false}
+            />
             <XAxis
               type="number"
               className="stroke-muted-foreground"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
             />
             <YAxis
               dataKey="country"
               type="category"
               className="stroke-muted-foreground"
               width={80}
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
             />
             <ChartTooltip
               content={
-                <ChartTooltipContent
-                  formatter={(value: number) => [value, "Guests"]}
-                />
+                <ChartTooltipContent formatter={(value) => [value, 'Guests']} />
               }
             />
             <Bar dataKey="guests" fill="#60a5fa" radius={[0, 8, 8, 0]}>
@@ -65,4 +88,3 @@ export function GuestDemographicsChart({ data }: GuestDemographicsChartProps) {
     </Card>
   );
 }
-

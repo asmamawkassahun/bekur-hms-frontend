@@ -7,15 +7,20 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
+import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import {
-  RadialBarChart,
-  RadialBar,
-  ResponsiveContainer,
-} from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 interface RevenueByRoomTypeChartProps {
-  data: Array<{ name: string; amount: number; percentage: number; fill: string }>;
+  data: Array<{
+    name: string;
+    amount: number;
+    percentage: number;
+    fill: string;
+  }>;
   currency?: string;
 }
 
@@ -59,12 +64,21 @@ export function RevenueByRoomTypeChart({
           {data.map((item, index) => (
             <div key={item.name} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                <span className="text-sm font-medium text-foreground">{item.name}</span>
+                <div
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: item.fill }}
+                />
+                <span className="text-sm font-medium text-foreground">
+                  {item.name}
+                </span>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold text-foreground">{formatCurrency(item.amount)}</div>
-                <div className="text-xs text-muted-foreground">{item.percentage}%</div>
+                <div className="text-sm font-bold text-foreground">
+                  {formatCurrency(item.amount)}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {item.percentage}%
+                </div>
               </div>
             </div>
           ))}
@@ -81,18 +95,21 @@ export function RevenueByRoomTypeChart({
             endAngle={-270}
           >
             <RadialBar
-              minAngle={15}
-              background={{ fill: "hsl(var(--muted))" }}
-              clockWise
+              background={{ fill: 'hsl(var(--muted))' }}
               dataKey="percentage"
               cornerRadius={10}
-              label={{ position: "insideStart", fill: "#fff", fontSize: 14, fontWeight: "bold" }}
+              label={{
+                position: 'insideStart',
+                fill: '#fff',
+                fontSize: 14,
+                fontWeight: 'bold',
+              }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number, name: string, props: any) => [
-                    `${formatCurrency(props.payload.value)} (${value}%)`,
+                  formatter={(value, name, props) => [
+                    `${formatCurrency(Number(props.payload.value))} (${value}%)`,
                     props.payload.name,
                   ]}
                 />

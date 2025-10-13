@@ -101,9 +101,11 @@ export function PaymentMethodsChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) =>
-                `${name}: ${(percent * 100).toFixed(0)}%`
-              }
+              label={({ name, percent }) => {
+                const safePercent =
+                  typeof percent === 'number' && !isNaN(percent) ? percent : 0;
+                return `${name}: ${(safePercent * 100).toFixed(0)}%`;
+              }}
               outerRadius={100}
               innerRadius={50}
               fill="#8884d8"
@@ -114,7 +116,7 @@ export function PaymentMethodsChart({
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => formatCurrency(value)}
+              formatter={(value) => formatCurrency(Number(value))}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',

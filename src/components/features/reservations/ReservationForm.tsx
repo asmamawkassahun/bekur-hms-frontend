@@ -366,7 +366,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
           if (response.data) {
             setPricingData(response.data);
             // Set advance amount to final price by default
-            setAdvanceAmount(response.data.pricing?.finalPrice || 0);
+            setAdvanceAmount((response.data as any)?.pricing?.finalPrice || 0);
           }
           setPricingLoading(false);
         })
@@ -545,7 +545,12 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
           bookingId: bookingId,
           guestId: selectedGuests[0].id,
           amount: advanceAmount,
-          method: paymentMethod, // Already using backend enum values (CASH, CARD, etc.)
+          method: paymentMethod as
+            | 'CASH'
+            | 'CARD'
+            | 'BANK_TRANSFER'
+            | 'MOBILE_MONEY'
+            | 'CRYPTO', // Already using backend enum values (CASH, CARD, etc.)
           currency: selectedPropertyCurrency,
           status: mode === 'direct-checkin' ? 'COMPLETED' : 'PENDING',
           transactionId: externalTransactionId || undefined,

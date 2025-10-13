@@ -37,8 +37,10 @@ const bookingSourceSchema = z.object({
     .number()
     .min(0, 'Commission rate must be at least 0')
     .max(100, 'Commission rate cannot exceed 100'),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
+
+type BookingSourceFormData = z.infer<typeof bookingSourceSchema>;
 
 interface BookingSourceFormProps {
   mode: 'create' | 'edit';
@@ -63,7 +65,7 @@ export function BookingSourceForm({
     dispatch(fetchBookingTypes({ page: 1, limit: 100, isActive: true }));
   }, [dispatch]);
 
-  const form = useForm<CreateBookingSourceData | UpdateBookingSourceData>({
+  const form = useForm<BookingSourceFormData>({
     resolver: zodResolver(bookingSourceSchema),
     defaultValues: {
       name: bookingSource?.name || '',
@@ -74,9 +76,7 @@ export function BookingSourceForm({
     },
   });
 
-  const handleSubmit = (
-    data: CreateBookingSourceData | UpdateBookingSourceData,
-  ) => {
+  const handleSubmit = (data: BookingSourceFormData) => {
     onSubmit(data);
   };
 

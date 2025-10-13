@@ -1,8 +1,29 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, Label } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  ReferenceLine,
+  Label,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
 
 interface OccupancyTrendChartProps {
   data: Array<{ date: string; rooms: number; beds: number }>;
@@ -30,10 +51,14 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-foreground">Occupancy Trend</CardTitle>
-            <CardDescription className="text-muted-foreground">Room and bed occupancy rates over time</CardDescription>
+            <CardDescription className="text-muted-foreground">
+              Room and bed occupancy rates over time
+            </CardDescription>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-foreground">{avgOccupancy}%</div>
+            <div className="text-2xl font-bold text-foreground">
+              {avgOccupancy}%
+            </div>
             <div className="text-xs text-muted-foreground">Avg Occupancy</div>
           </div>
         </div>
@@ -41,26 +66,29 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px]">
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} vertical={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              className="stroke-border"
+              opacity={0.5}
+              vertical={false}
+            />
             <XAxis
               dataKey="date"
               className="stroke-muted-foreground"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
             />
             <YAxis
               className="stroke-muted-foreground"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
               tickFormatter={(value) => `${value}%`}
               domain={[60, 100]}
             />
             <ChartTooltip
               content={
-                <ChartTooltipContent
-                  formatter={(value: number) => [`${value}%`, '']}
-                />
+                <ChartTooltipContent formatter={(value) => [`${value}%`, '']} />
               }
             />
-            <ChartLegend content={<ChartLegendContent />} />
+            {/* <ChartLegend content={<ChartLegendContent payload={undefined} /> as any} /> */}
             <ReferenceLine
               y={avgOccupancy}
               className="stroke-muted-foreground"
@@ -80,7 +108,12 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
               stroke="hsl(var(--chart-1))"
               strokeWidth={3}
               name="Room Occupancy"
-              dot={{ fill: "hsl(var(--chart-1))", r: 5, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+              dot={{
+                fill: 'hsl(var(--chart-1))',
+                r: 5,
+                strokeWidth: 2,
+                stroke: 'hsl(var(--card))',
+              }}
               activeDot={{ r: 7 }}
             />
             <Line
@@ -89,7 +122,12 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
               stroke="hsl(var(--chart-2))"
               strokeWidth={3}
               name="Bed Occupancy"
-              dot={{ fill: "hsl(var(--chart-2))", r: 5, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+              dot={{
+                fill: 'hsl(var(--chart-2))',
+                r: 5,
+                strokeWidth: 2,
+                stroke: 'hsl(var(--card))',
+              }}
               activeDot={{ r: 7 }}
             />
           </LineChart>
@@ -98,4 +136,3 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
     </Card>
   );
 }
-

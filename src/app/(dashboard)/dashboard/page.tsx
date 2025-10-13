@@ -55,7 +55,11 @@ const DUMMY_DATA = {
       beds: { occupied: 142, available: 38, total: 180, rate: 78.9 },
     },
     revenue: { today: 45680, currency: 'ETB' },
-    operations: { pendingCheckIns: 12, pendingCheckOuts: 8, pendingPayments: 5 },
+    operations: {
+      pendingCheckIns: 12,
+      pendingCheckOuts: 8,
+      pendingPayments: 5,
+    },
     availability: { availableRooms: 15, availableBeds: 38 },
   },
   trends: {
@@ -98,8 +102,18 @@ const DUMMY_DATA = {
   revenueData: {
     byRoomType: [
       { name: 'Deluxe Suite', amount: 485000, percentage: 35, fill: '#a78bfa' },
-      { name: 'Standard Room', amount: 415000, percentage: 30, fill: '#60a5fa' },
-      { name: 'Executive Suite', amount: 345000, percentage: 25, fill: '#fbbf24' },
+      {
+        name: 'Standard Room',
+        amount: 415000,
+        percentage: 30,
+        fill: '#60a5fa',
+      },
+      {
+        name: 'Executive Suite',
+        amount: 345000,
+        percentage: 25,
+        fill: '#fbbf24',
+      },
       { name: 'Family Room', amount: 138000, percentage: 10, fill: '#f472b6' },
     ],
     byPaymentMethod: [],
@@ -116,16 +130,64 @@ const DUMMY_DATA = {
     byLoyaltyTier: [],
   },
   recentActivities: [
-    { id: '1', type: 'check-in', description: 'John Smith checked in to Room 305', timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(), user: 'John Smith' },
-    { id: '2', type: 'booking', description: 'Sarah Johnson made a booking for Room 412', timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(), user: 'Sarah Johnson' },
-    { id: '3', type: 'check-out', description: 'Michael Brown checked out from Room 208', timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(), user: 'Michael Brown' },
-    { id: '4', type: 'payment', description: 'Payment of ETB 1,250 received from Emma Wilson', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), user: 'Emma Wilson' },
-    { id: '5', type: 'booking', description: 'David Lee made a booking for Room 501', timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), user: 'David Lee' },
+    {
+      id: '1',
+      type: 'check-in',
+      description: 'John Smith checked in to Room 305',
+      timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+      user: 'John Smith',
+    },
+    {
+      id: '2',
+      type: 'booking',
+      description: 'Sarah Johnson made a booking for Room 412',
+      timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      user: 'Sarah Johnson',
+    },
+    {
+      id: '3',
+      type: 'check-out',
+      description: 'Michael Brown checked out from Room 208',
+      timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      user: 'Michael Brown',
+    },
+    {
+      id: '4',
+      type: 'payment',
+      description: 'Payment of ETB 1,250 received from Emma Wilson',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      user: 'Emma Wilson',
+    },
+    {
+      id: '5',
+      type: 'booking',
+      description: 'David Lee made a booking for Room 501',
+      timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+      user: 'David Lee',
+    },
   ],
   alerts: [
-    { id: '1', type: 'warning', message: 'Low inventory for Deluxe Suites', severity: 'medium' as const, timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-    { id: '2', type: 'info', message: 'New booking received for Room 305', severity: 'low' as const, timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
-    { id: '3', type: 'success', message: 'Payment completed for Booking #1234', severity: 'low' as const, timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString() },
+    {
+      id: '1',
+      type: 'warning',
+      message: 'Low inventory for Deluxe Suites',
+      severity: 'medium' as const,
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '2',
+      type: 'info',
+      message: 'New booking received for Room 305',
+      severity: 'low' as const,
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '3',
+      type: 'success',
+      message: 'Payment completed for Booking #1234',
+      severity: 'low' as const,
+      timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    },
   ],
 };
 
@@ -207,10 +269,15 @@ export default function DashboardPage() {
     if (!data) return true;
     if (Array.isArray(data)) return data.length === 0;
     if (typeof data === 'object') {
-      return Object.keys(data).length === 0 ||
-        (data.occupancy && Object.values(data.occupancy).every((v: any) =>
-          Array.isArray(v) ? v.length === 0 : v === 0 || v === null || v === undefined
-        ));
+      return (
+        Object.keys(data).length === 0 ||
+        (data.occupancy &&
+          Object.values(data.occupancy).every((v: any) =>
+            Array.isArray(v)
+              ? v.length === 0
+              : v === 0 || v === null || v === undefined,
+          ))
+      );
     }
     return false;
   };
@@ -219,78 +286,108 @@ export default function DashboardPage() {
   const useStaticData = !overview || isDataEmpty(overview);
 
   // Safe data extraction with static data fallback
-  const kpis = useStaticData ? DUMMY_DATA.kpis : (overview?.kpis || DUMMY_DATA.kpis);
+  const kpis = useStaticData
+    ? DUMMY_DATA.kpis
+    : overview?.kpis || DUMMY_DATA.kpis;
 
   // Transform API data to match chart expectations
-  const trends = useStaticData ? DUMMY_DATA.trends : {
-    occupancy: overview?.trends?.occupancy?.map((item: any) => ({
-      date: item.date,
-      rooms: item.occupancy || 0,
-      beds: item.occupancy || 0
-    })) || [],
-    revenue: overview?.trends?.revenue?.map((item: any) => ({
-      date: item.date,
-      amount: Number(item.revenue) || 0,
-      bookings: 0
-    })) || [],
-    bookings: [
-      { status: 'Confirmed', count: 145, fill: '#34d399' },
-      { status: 'Pending', count: 32, fill: '#fbbf24' },
-      { status: 'Checked In', count: overview?.kpis?.occupancy?.rooms?.occupied || 0, fill: '#60a5fa' },
-      { status: 'Checked Out', count: overview?.kpis?.operations?.pendingCheckOuts || 0, fill: '#a78bfa' },
-      { status: 'Cancelled', count: 12, fill: '#f87171' },
-    ]
-  };
+  const trends = useStaticData
+    ? DUMMY_DATA.trends
+    : {
+        occupancy:
+          overview?.trends?.occupancy?.map((item: any) => ({
+            date: item.date,
+            rooms: item.occupancy || 0,
+            beds: item.occupancy || 0,
+          })) || [],
+        revenue:
+          overview?.trends?.revenue?.map((item: any) => ({
+            date: item.date,
+            amount: Number(item.revenue) || 0,
+            bookings: 0,
+          })) || [],
+        bookings: [
+          { status: 'Confirmed', count: 145, fill: '#34d399' },
+          { status: 'Pending', count: 32, fill: '#fbbf24' },
+          {
+            status: 'Checked In',
+            count: overview?.kpis?.occupancy?.rooms?.occupied || 0,
+            fill: '#60a5fa',
+          },
+          {
+            status: 'Checked Out',
+            count: overview?.kpis?.operations?.pendingCheckOuts || 0,
+            fill: '#a78bfa',
+          },
+          { status: 'Cancelled', count: 12, fill: '#f87171' },
+        ],
+      };
 
   // Calculate total revenue from trends for the selected period
-  const totalRevenue = useStaticData ?
-    DUMMY_DATA.trends.revenue.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0) :
-    overview?.trends?.revenue?.reduce((sum: number, item: any) => sum + (Number(item.revenue) || 0), 0) || 0;
+  const totalRevenue = useStaticData
+    ? DUMMY_DATA.trends.revenue.reduce(
+        (sum: number, item: any) => sum + (Number(item.amount) || 0),
+        0,
+      )
+    : overview?.trends?.revenue?.reduce(
+        (sum: number, item: any) => sum + (Number(item.revenue) || 0),
+        0,
+      ) || 0;
 
   // Transform recent activities to match expected format
-  const recentActivities = useStaticData ? DUMMY_DATA.recentActivities :
-    overview?.recentActivities?.map((activity: any) => ({
-      id: activity.id,
-      type: activity.type,
-      description: `${activity.guestName} ${activity.action} - ${activity.roomInfo}`,
-      timestamp: activity.timestamp,
-      user: activity.guestName
-    })) || DUMMY_DATA.recentActivities;
+  const recentActivities = useStaticData
+    ? DUMMY_DATA.recentActivities
+    : overview?.recentActivities?.map((activity: any) => ({
+        id: activity.id,
+        type: activity.type,
+        description: `${activity.guestName} ${activity.action} - ${activity.roomInfo}`,
+        timestamp: activity.timestamp,
+        user: activity.guestName,
+      })) || DUMMY_DATA.recentActivities;
 
-  const alerts = useStaticData ? DUMMY_DATA.alerts : (overview?.alerts || DUMMY_DATA.alerts);
+  const alerts = useStaticData
+    ? DUMMY_DATA.alerts
+    : overview?.alerts || DUMMY_DATA.alerts;
 
   // Transform guest data to match expected format
-  const guestData = useStaticData ? DUMMY_DATA.guestData : {
-    byNationality: overview?.guestData?.byNationality?.map((item: any) => ({
-      country: item.nationality,
-      guests: item.count
-    })) || [],
-    byLoyaltyTier: overview?.guestData?.byLoyaltyTier || []
-  };
+  const guestData = useStaticData
+    ? DUMMY_DATA.guestData
+    : {
+        byNationality:
+          overview?.guestData?.byNationality?.map((item: any) => ({
+            country: item.nationality,
+            guests: item.count,
+          })) || [],
+        byLoyaltyTier: overview?.guestData?.byLoyaltyTier || [],
+      };
 
   // Transform revenue data to match expected format
-  const revenueData = useStaticData ? DUMMY_DATA.revenueData : {
-    byRoomType: overview?.revenueData?.byRoomType?.reduce((acc: any[], item: any) => {
-      const existing = acc.find(r => r.name === item.type);
-      if (existing) {
-        existing.amount += Number(item.amount);
-      } else {
-        acc.push({
-          name: item.type,
-          amount: Number(item.amount),
-          percentage: 0, // Will be calculated
-          fill: '#a78bfa' // Default color
-        });
-      }
-      return acc;
-    }, []).map((item: any, index: number) => ({
-      ...item,
-      percentage: Math.round((item.amount / totalRevenue) * 100),
-      fill: ['#a78bfa', '#60a5fa', '#fbbf24', '#f472b6'][index % 4]
-    })) || [],
-    byPaymentMethod: overview?.revenueData?.byPaymentMethod || []
-  };
-
+  const revenueData = useStaticData
+    ? DUMMY_DATA.revenueData
+    : {
+        byRoomType:
+          overview?.revenueData?.byRoomType
+            ?.reduce((acc: any[], item: any) => {
+              const existing = acc.find((r) => r.name === item.type);
+              if (existing) {
+                existing.amount += Number(item.amount);
+              } else {
+                acc.push({
+                  name: item.type,
+                  amount: Number(item.amount),
+                  percentage: 0, // Will be calculated
+                  fill: '#a78bfa', // Default color
+                });
+              }
+              return acc;
+            }, [])
+            .map((item: any, index: number) => ({
+              ...item,
+              percentage: Math.round((item.amount / totalRevenue) * 100),
+              fill: ['#a78bfa', '#60a5fa', '#fbbf24', '#f472b6'][index % 4],
+            })) || [],
+        byPaymentMethod: overview?.revenueData?.byPaymentMethod || [],
+      };
 
   return (
     <div className="p-6 space-y-6">
@@ -324,11 +421,11 @@ export default function DashboardPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="TODAY">Today</SelectItem>
+              <SelectItem value="WEEK">This Week</SelectItem>
+              <SelectItem value="MONTH">This Month</SelectItem>
+              <SelectItem value="QUARTER">This Quarter</SelectItem>
+              <SelectItem value="YEAR">This Year</SelectItem>
             </SelectContent>
           </Select>
 
@@ -386,14 +483,14 @@ export default function DashboardPage() {
         <StatsCard
           title="Total Revenue"
           value={formatCurrency(totalRevenue, kpis.revenue.currency)}
-          description={`${selectedPeriod === 'today' ? 'Today' : selectedPeriod === 'week' ? 'This week' : selectedPeriod === 'month' ? 'This month' : selectedPeriod === 'quarter' ? 'This quarter' : 'This year'}`}
+          description={`${selectedPeriod === 'TODAY' ? 'Today' : selectedPeriod === 'WEEK' ? 'This week' : selectedPeriod === 'MONTH' ? 'This month' : selectedPeriod === 'QUARTER' ? 'This quarter' : 'This year'}`}
           icon={TrendingUp}
           gradient="rose"
         />
         <StatsCard
           title="Total Bookings"
           value={trends?.revenue?.length || 0}
-          description={`${selectedPeriod === 'today' ? 'Today' : selectedPeriod === 'week' ? 'This week' : selectedPeriod === 'month' ? 'This month' : selectedPeriod === 'quarter' ? 'This quarter' : 'This year'}`}
+          description={`${selectedPeriod === 'TODAY' ? 'Today' : selectedPeriod === 'WEEK' ? 'This week' : selectedPeriod === 'MONTH' ? 'This month' : selectedPeriod === 'QUARTER' ? 'This quarter' : 'This year'}`}
           icon={Calendar}
           gradient="green"
         />
@@ -425,14 +522,33 @@ export default function DashboardPage() {
       {/* Charts Row 2 - Distribution & Status */}
       <div className="grid gap-6 md:grid-cols-2">
         <RevenueByRoomTypeChart
-          data={revenueData.byRoomType as Array<{ name: string; amount: number; percentage: number; fill: string }>}
+          data={
+            revenueData.byRoomType as Array<{
+              name: string;
+              amount: number;
+              percentage: number;
+              fill: string;
+            }>
+          }
           currency={kpis.revenue.currency}
         />
-        <BookingStatusChart data={trends.bookings as Array<{ status: string; count: number; fill: string }>} />
+        <BookingStatusChart
+          data={
+            trends.bookings as Array<{
+              status: string;
+              count: number;
+              fill: string;
+            }>
+          }
+        />
       </div>
 
       {/* Charts Row 3 - Demographics */}
-      <GuestDemographicsChart data={guestData.byNationality as Array<{ country: string; guests: number }>} />
+      <GuestDemographicsChart
+        data={
+          guestData.byNationality as Array<{ country: string; guests: number }>
+        }
+      />
 
       {/* Bottom Row - Activities & Alerts */}
       <div className="grid gap-6 md:grid-cols-2">
