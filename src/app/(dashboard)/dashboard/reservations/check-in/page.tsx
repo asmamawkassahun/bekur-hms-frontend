@@ -118,6 +118,7 @@ export default function CheckInPage() {
         }),
       );
 
+
       dispatch(
         fetchReservations({
           page: 1,
@@ -174,6 +175,48 @@ export default function CheckInPage() {
 
   // Handle checkout
   const handleCheckOut = async (reservation: any) => {
+    // First check payment status before attempting checkout
+    const paymentStatus = getPaymentStatus(reservation.id);
+    
+    console.log('Payment status check:', {
+      reservationId: reservation.id,
+      paymentStatus: paymentStatus.status,
+      paid: paymentStatus.paid,
+      total: paymentStatus.total
+    });
+
+    // If payment is not completed, show payment dialog first
+    if (paymentStatus.status !== 'COMPLETED') {
+      console.log('💳 Payment required - Opening payment dialog:', {
+        paymentStatus: paymentStatus.status,
+        reservation: reservation.id,
+        guest: `${reservation.primaryGuest?.firstName} ${reservation.primaryGuest?.lastName}`,
+      });
+
+      // Get unpaid amount from reservation's payment summary or payment status
+      const reservationData = reservation as any;
+      const unpaidAmount = reservationData?.paymentSummary?.unpaidAmount || 
+                          reservationData?.paymentStatus?.unpaidAmount || 
+                          (Number(reservationData?.finalPrice || reservationData?.totalPrice || 0) - paymentStatus.paid);
+
+      console.log('Unpaid amount calculation:', {
+        paymentSummaryUnpaid: reservationData?.paymentSummary?.unpaidAmount,
+        paymentStatusUnpaid: reservationData?.paymentStatus?.unpaidAmount,
+        finalPrice: reservationData?.finalPrice,
+        totalPrice: reservationData?.totalPrice,
+        paidAmount: paymentStatus.paid,
+        calculatedUnpaid: unpaidAmount
+      });
+
+      setUnpaidAmount(Number(unpaidAmount));
+      setSelectedReservationForPayment(reservation);
+      setShowPaymentDialog(true);
+
+      showError('Payment required before checkout');
+      return;
+    }
+
+    // If payment is completed, proceed with checkout
     try {
       const checkOutData = {
         reservationId: reservation.id,
@@ -197,47 +240,70 @@ export default function CheckInPage() {
         }
       });
     } catch (err: any) {
-      // When using .unwrap(), the error is the value from rejectWithValue (a string in our case)
       const errorMessage =
         typeof err === 'string'
           ? err
           : err?.message || 'Failed to check out guest';
 
       console.error('Check-out Error:', errorMessage);
-
-      // Check if error is due to unpaid balance
-      if (
-        errorMessage &&
-        (errorMessage.includes('unpaid balance') ||
-          errorMessage.includes('Remaining amount'))
-      ) {
-        // Extract unpaid amount from error message
-        const amountMatch = errorMessage.match(/Remaining amount: ([\d.]+)/);
-        const remainingAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
-
-        console.log('💳 Payment required - Opening payment dialog:', {
-          remainingAmount,
-          reservation: reservation.id,
-          guest: `${reservation.primaryGuest?.firstName} ${reservation.primaryGuest?.lastName}`,
-        });
-
-        // Show payment dialog
-        setUnpaidAmount(remainingAmount);
-        setSelectedReservationForPayment(reservation);
-        setShowPaymentDialog(true);
-
-        showError('Payment required before checkout');
-      } else {
-        showError(errorMessage);
-      }
+      showError(errorMessage);
     }
   };
 
   // Handle payment success and retry checkout
-  const handlePaymentSuccess = () => {
-    // After payment, try checkout again
-    if (selectedReservationForPayment) {
-      handleCheckOut(selectedReservationForPayment);
+  const handlePaymentSuccess = async () => {
+    if (!selectedReservationForPayment) return;
+
+    try {
+      // Store reservation before closing dialog
+      const reservation = selectedReservationForPayment;
+
+      // Close the payment dialog first
+      setShowPaymentDialog(false);
+
+      // Refresh payments to get updated status
+      await dispatch(fetchPayments({ page: 1, limit: 1000 }));
+
+      // Now attempt checkout with the stored reservation
+      const checkOutData = {
+        reservationId: reservation.id,
+        actualCheckOut: new Date().toISOString(),
+        notes: 'Checked out via dashboard',
+      };
+
+
+      await dispatch(checkOutGuest(checkOutData)).unwrap();
+      success('Guest checked out successfully!');
+
+      // Refresh the checked-in reservations list
+      dispatch(
+        fetchReservations({
+          page: 1,
+          limit: 100,
+          filters: { status: 'CHECKED_IN' },
+        }),
+      ).then((result: any) => {
+        if (result.payload?.data) {
+          setCheckedInReservations(result.payload.data);
+        }
+      });
+
+      // Clear the selected reservation state
+      setSelectedReservationForPayment(null);
+      setUnpaidAmount(0);
+    } catch (err: any) {
+      const errorMessage =
+        typeof err === 'string'
+          ? err
+          : err?.message || 'Failed to check out guest after payment';
+
+      console.error('Check-out Error after payment:', errorMessage);
+      showError(errorMessage);
+
+      // Reset payment dialog state
+      setShowPaymentDialog(false);
+      setSelectedReservationForPayment(null);
+      setUnpaidAmount(0);
     }
   };
 
@@ -303,6 +369,7 @@ export default function CheckInPage() {
           gradient="rose"
         />
       </div>
+
 
       {/* Check-In List */}
       <DataTable

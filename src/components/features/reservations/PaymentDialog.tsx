@@ -76,6 +76,7 @@ export function PaymentDialog({
                 method: methodMap[paymentMode] as any,
                 currency: reservation.property?.currency || 'ETB',
                 notes: remarks || 'Payment for checkout',
+                status: 'COMPLETED',
             };
 
             await dispatch(createPayment(paymentData)).unwrap();
