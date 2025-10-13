@@ -11,6 +11,7 @@ export const staffService = {
   getAll: (params?: QueryParams) => apiClient.get<ApiResponse<Staff[]>>('/staff', { params }),
   getById: (id: string) => apiClient.get<ApiResponse<Staff>>(`/staff/${id}`),
   update: (id: string, data: UpdateStaffData) => apiClient.patch<ApiResponse<Staff>>(`/staff/${id}`, data),
+  delete: (id: string) => apiClient.delete<ApiResponse<{ message: string }>>(`/staff/${id}`),
   
   // Role management
   assignRole: (id: string, data: AssignRolesData) => apiClient.post<ApiResponse<Staff>>(`/staff/${id}/roles`, data),

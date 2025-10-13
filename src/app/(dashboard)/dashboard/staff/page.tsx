@@ -10,6 +10,7 @@ import {
   updateStaff,
   assignStaffRole,
   removeStaffRole,
+  deleteStaff,
 } from '@/store/slices/staffSlice';
 import { useNotification } from '@/hooks/useNotification';
 import type { AxiosError } from 'axios';
@@ -50,7 +51,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, UserCog, Search, Eye, Edit, MoreHorizontal } from 'lucide-react';
+import { Plus, UserCog, Search, Eye, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
 
 export default function StaffPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -72,8 +73,10 @@ export default function StaffPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [viewing, setViewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState<any | null>(null);
 
   // Fetch roles
   useEffect(() => {
@@ -131,6 +134,20 @@ export default function StaffPage() {
     isActive: true,
   });
   const [rolesForm, setRolesForm] = useState<string[]>([]);
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    try {
+      await dispatch(deleteStaff(deleting.id)).unwrap();
+      success('Staff deleted successfully');
+      setDeleteOpen(false);
+      setDeleting(null);
+      dispatch(fetchStaff({ page, limit }));
+    } catch (e) {
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -316,6 +333,18 @@ export default function StaffPage() {
                             }}
                           >
                             <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="cursor-pointer text-destructive hover:text-destructive/90 min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px]"
+                            onClick={() => {
+                              setDeleting(s);
+                              setDeleteOpen(true);
+                            }}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -764,6 +793,42 @@ export default function StaffPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Staff Member</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete{' '}
+              <span className="font-medium">
+                {deleting?.user.firstName} {deleting?.user.lastName}
+              </span>
+              ? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              className="cursor-pointer"
+              onClick={() => setDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
