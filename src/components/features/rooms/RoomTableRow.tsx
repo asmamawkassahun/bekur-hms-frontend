@@ -18,7 +18,7 @@ export function RoomTableRow({
   onEdit,
   onDelete,
 }: RoomTableRowProps) {
-  console.log("room: ", room);
+  console.log('room: ', room);
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       AVAILABLE: { color: 'bg-green-100 text-green-800', icon: Bed },
@@ -66,15 +66,18 @@ export function RoomTableRow({
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-3 w-3 text-muted-foreground" />
-            <span>{room.roomType?.adultCapacity + room.roomType?.childCapacity} guests</span>
+            <span>
+              {(room.roomType?.adultCapacity || 0) +
+                (room.roomType?.childCapacity || 0)}{' '}
+              guests
+            </span>
           </div>
-          
         </div>
       </TableCell>
       <TableCell>
         <div className="space-y-1">
           <div className="font-medium">
-            {formatCurrency(room.roomType?.basePrice, room.roomType?.currency)}
+            {formatCurrency(room.roomType?.basePrice || 0, 'ETB')}
           </div>
           <div className="text-sm text-muted-foreground">per night</div>
         </div>

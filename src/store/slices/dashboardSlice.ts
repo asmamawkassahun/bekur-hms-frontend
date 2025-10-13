@@ -8,7 +8,7 @@ interface DashboardState {
   overview: DashboardOverview | null;
   loading: boolean;
   error: string | null;
-  selectedPeriod: 'today' | 'week' | 'month' | 'quarter' | 'year';
+  selectedPeriod: 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR';
   selectedPropertyId: string | null;
 }
 
@@ -16,13 +16,16 @@ const initialState: DashboardState = {
   overview: null,
   loading: false,
   error: null,
-  selectedPeriod: 'month',
+  selectedPeriod: 'MONTH',
   selectedPropertyId: null,
 };
 
 export const fetchDashboardOverview = createAsyncThunk(
   'dashboard/fetchOverview',
-  async (params: { propertyId?: string; period?: 'today' | 'week' | 'month' | 'quarter' | 'year' }) => {
+  async (params: {
+    propertyId?: string;
+    period?: 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR';
+  }) => {
     const response = await dashboardService.getOverview(params);
     return response.data.data;
   },

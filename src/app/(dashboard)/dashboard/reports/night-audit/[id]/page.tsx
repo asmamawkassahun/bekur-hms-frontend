@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/store';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,7 +46,7 @@ export default function NightAuditDetailReportPage() {
         setLoading(true);
         setError(null);
         const response = await nightAuditService.getOne(auditId);
-        setAudit(response.data);
+        setAudit(response.data.data || null);
       } catch (err: any) {
         setError(err.message || 'Failed to load night audit report');
       } finally {
@@ -104,7 +102,7 @@ export default function NightAuditDetailReportPage() {
     );
   }
 
-  const currency = audit.property?.currency || 'ETB';
+  const currency = 'ETB'; // TODO: Fetch property details to get actual currency
 
   return (
     <div className="p-6 space-y-6">
@@ -184,8 +182,7 @@ export default function NightAuditDetailReportPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Performed By</p>
                 <p className="font-semibold">
-                  {audit.performedByStaff?.user?.firstName || 'System'}{' '}
-                  {audit.performedByStaff?.user?.lastName || ''}
+                  {audit.performedBy ? 'Staff Member' : 'System'}
                 </p>
               </div>
             </div>

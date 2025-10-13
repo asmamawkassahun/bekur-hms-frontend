@@ -2,7 +2,16 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Eye, Edit, Trash2, CheckCircle, Clock, XCircle, LogIn, Check } from 'lucide-react';
+import {
+  Eye,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Clock,
+  XCircle,
+  LogIn,
+  Check,
+} from 'lucide-react';
 import type { Reservation } from '@/types';
 
 interface ReservationTableRowProps {
@@ -87,7 +96,7 @@ export function ReservationTableRow({
             {reservation.room?.number || reservation.bed?.number || 'N/A'}
           </div>
           <div className="text-sm text-muted-foreground">
-            {reservation.room?.roomType?.name || reservation.room?.type || 'Bed'}
+            {reservation.room?.roomType?.name || 'Bed'}
           </div>
         </div>
       </TableCell>
@@ -95,7 +104,10 @@ export function ReservationTableRow({
       <TableCell>{formatDate(reservation.checkOut)}</TableCell>
       <TableCell>{getStatusBadge(reservation.status)}</TableCell>
       <TableCell className="font-medium">
-        {formatCurrency(Number(reservation.totalPrice || reservation.finalPrice), reservation.property?.currency || reservation.currency || 'ETB')}
+        {formatCurrency(
+          Number(reservation.totalPrice || reservation.finalPrice),
+          reservation.property?.currency || reservation.currency || 'ETB',
+        )}
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">

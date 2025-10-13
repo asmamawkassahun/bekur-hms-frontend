@@ -1,8 +1,27 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Cell,
+  LabelList,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 interface BookingStatusChartProps {
   data: Array<{ status: string; count: number; fill: string }>;
@@ -24,10 +43,14 @@ export function BookingStatusChart({ data }: BookingStatusChartProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-foreground">Booking Status</CardTitle>
-            <CardDescription className="text-muted-foreground">Current status of all bookings</CardDescription>
+            <CardDescription className="text-muted-foreground">
+              Current status of all bookings
+            </CardDescription>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-foreground">{totalBookings}</div>
+            <div className="text-2xl font-bold text-foreground">
+              {totalBookings}
+            </div>
             <div className="text-xs text-muted-foreground">Total Bookings</div>
           </div>
         </div>
@@ -35,17 +58,25 @@ export function BookingStatusChart({ data }: BookingStatusChartProps) {
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[340px]">
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.5} vertical={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              className="stroke-border"
+              opacity={0.5}
+              vertical={false}
+            />
             <XAxis
               dataKey="status"
               className="stroke-muted-foreground"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
             />
-            <YAxis className="stroke-muted-foreground" style={{ fontSize: "12px" }} />
+            <YAxis
+              className="stroke-muted-foreground"
+              style={{ fontSize: '12px' }}
+            />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value: number) => [value, "Bookings"]}
+                  formatter={(value) => [value, 'Bookings']}
                 />
               }
             />
@@ -67,4 +98,3 @@ export function BookingStatusChart({ data }: BookingStatusChartProps) {
     </Card>
   );
 }
-

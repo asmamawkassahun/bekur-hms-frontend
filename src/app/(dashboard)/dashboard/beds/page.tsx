@@ -145,17 +145,26 @@ export default function BedsPage() {
     lastSearchTerm,
   ]);
 
-  const handleCreateBed = async (formData: { number: string; dormitoryId: string; bedTypeId: string; basePrice: number; status: string; isActive: boolean; description?: string; amenities?: string }) => {
+  const handleCreateBed = async (formData: {
+    number: string;
+    dormitoryId: string;
+    bedTypeId: string;
+    basePrice: number;
+    isActive: boolean;
+    description?: string;
+    amenities?: string;
+  }) => {
     try {
       const data: CreateBedData = {
         number: formData.number,
         dormitoryId: formData.dormitoryId,
         bedTypeId: formData.bedTypeId,
         basePrice: formData.basePrice,
-        status: formData.status as 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'OUT_OF_ORDER',
         isActive: formData.isActive,
         description: formData.description,
-        amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : undefined,
+        amenities: formData.amenities
+          ? formData.amenities.split(',').map((a) => a.trim())
+          : undefined,
       };
       await dispatch(createBed(data)).unwrap();
       success('Bed created');
@@ -176,7 +185,15 @@ export default function BedsPage() {
     }
   };
 
-  const handleEditBed = async (formData: { number: string; dormitoryId: string; bedTypeId: string; basePrice: number; status: string; isActive: boolean; description?: string; amenities?: string }) => {
+  const handleEditBed = async (formData: {
+    number: string;
+    dormitoryId: string;
+    bedTypeId: string;
+    basePrice: number;
+    isActive: boolean;
+    description?: string;
+    amenities?: string;
+  }) => {
     if (!selectedBed) return;
     try {
       const data: UpdateBedData = {
@@ -186,7 +203,9 @@ export default function BedsPage() {
         basePrice: formData.basePrice,
         isActive: formData.isActive,
         description: formData.description,
-        amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : undefined,
+        amenities: formData.amenities
+          ? formData.amenities.split(',').map((a) => a.trim())
+          : undefined,
       };
       // await dispatch(updateBed({ id: selectedBed.id, data })).unwrap();
       success('Bed updated');

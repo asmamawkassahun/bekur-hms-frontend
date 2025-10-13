@@ -1,15 +1,31 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 
 interface RevenueTrendChartProps {
   data: Array<{ date: string; amount: number; bookings: number }>;
   currency?: string;
 }
 
-
-export function RevenueTrendChart({ data, currency = 'USD' }: RevenueTrendChartProps) {
+export function RevenueTrendChart({
+  data,
+  currency = 'USD',
+}: RevenueTrendChartProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -26,10 +42,14 @@ export function RevenueTrendChart({ data, currency = 'USD' }: RevenueTrendChartP
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-foreground">Revenue Trend</CardTitle>
-            <CardDescription className="text-muted-foreground">Daily revenue performance over time</CardDescription>
+            <CardDescription className="text-muted-foreground">
+              Daily revenue performance over time
+            </CardDescription>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</div>
+            <div className="text-2xl font-bold text-foreground">
+              {formatCurrency(totalRevenue)}
+            </div>
             <div className="text-xs text-muted-foreground">Total Revenue</div>
           </div>
         </div>
@@ -44,11 +64,16 @@ export function RevenueTrendChart({ data, currency = 'USD' }: RevenueTrendChartP
                 <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} vertical={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e5e7eb"
+              opacity={0.5}
+              vertical={false}
+            />
             <XAxis
               dataKey="date"
               stroke="#6b7280"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
               tickFormatter={(value) => {
                 // Format date to show only month and day
                 const date = new Date(value);
@@ -57,7 +82,7 @@ export function RevenueTrendChart({ data, currency = 'USD' }: RevenueTrendChartP
             />
             <YAxis
               stroke="#6b7280"
-              style={{ fontSize: "12px" }}
+              style={{ fontSize: '12px' }}
               tickFormatter={(value) => `$${value / 1000}k`}
             />
             <Tooltip
@@ -67,8 +92,8 @@ export function RevenueTrendChart({ data, currency = 'USD' }: RevenueTrendChartP
                 borderRadius: '8px',
                 color: '#374151',
               }}
-              formatter={(value: number, name: string) => [
-                name === 'amount' ? formatCurrency(value) : value,
+              formatter={(value, name) => [
+                name === 'amount' ? formatCurrency(Number(value)) : value,
                 name === 'amount' ? 'Revenue' : 'Bookings',
               ]}
               labelFormatter={(value) => {
@@ -92,4 +117,3 @@ export function RevenueTrendChart({ data, currency = 'USD' }: RevenueTrendChartP
     </Card>
   );
 }
-

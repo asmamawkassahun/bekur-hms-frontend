@@ -149,16 +149,16 @@ export function HourlyRevenueChart({
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const label =
                   name === 'revenue'
                     ? 'Total Revenue'
                     : name === 'roomRevenue'
                       ? 'Room Revenue'
                       : 'Bed Revenue';
-                return [formatCurrency(value), label];
+                return [formatCurrency(Number(value)), label];
               }}
-              labelFormatter={(hour: number) => `Time: ${formatHour(hour)}`}
+              labelFormatter={(hour) => `Time: ${formatHour(hour)}`}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',

@@ -115,10 +115,10 @@ export function GuestDemographicsCharts({
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
               />
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   if (name === 'count') return [value, 'Guests'];
                   if (name === 'revenue')
-                    return [formatCurrency(value), 'Revenue'];
+                    return [formatCurrency(Number(value)), 'Revenue'];
                   return [value, name];
                 }}
                 contentStyle={{
@@ -167,7 +167,7 @@ export function GuestDemographicsCharts({
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
                   <Tooltip
-                    formatter={(value: number) => [value, 'Guests']}
+                    formatter={(value) => [value, 'Guests']}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -200,11 +200,11 @@ export function GuestDemographicsCharts({
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={loyaltyData}
+                    data={loyaltyData as any} // Temporary cast until types are unified; ideally, define a type union extending ChartDataInput
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ status, percent }) =>
+                    label={({ status, percent }: any) =>
                       `${status}: ${(percent * 100).toFixed(0)}%`
                     }
                     outerRadius={80}
@@ -220,7 +220,7 @@ export function GuestDemographicsCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => [value, 'Guests']}
+                    formatter={(value) => [value, 'Guests']}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -267,9 +267,9 @@ export function GuestDemographicsCharts({
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
               />
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   if (name === 'revenue')
-                    return [formatCurrency(value), 'Revenue'];
+                    return [formatCurrency(Number(value)), 'Revenue'];
                   if (name === 'count') return [value, 'Bookings'];
                   return [value, name];
                 }}

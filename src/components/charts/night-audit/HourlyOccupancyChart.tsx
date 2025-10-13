@@ -140,14 +140,14 @@ export function HourlyOccupancyChart({ data }: HourlyOccupancyChartProps) {
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const label =
                   name === 'roomOccupancyRate'
                     ? 'Room Occupancy'
                     : 'Bed Occupancy';
                 return [`${Number(value).toFixed(1)}%`, label];
               }}
-              labelFormatter={(hour: number) => `Time: ${formatHour(hour)}`}
+              labelFormatter={(hour) => `Time: ${formatHour(hour)}`}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',

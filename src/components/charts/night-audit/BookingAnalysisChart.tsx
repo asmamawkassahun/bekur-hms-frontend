@@ -82,7 +82,7 @@ export function BookingAnalysisChart({
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip
-              formatter={(value: number) => [value, 'Count']}
+              formatter={(value) => [value, 'Count']}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',

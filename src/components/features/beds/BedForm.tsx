@@ -31,11 +31,11 @@ const bedSchema = z.object({
   number: z.string().min(1, 'Bed number is required'),
   dormitoryId: z.string().uuid({ message: 'Dormitory is required' }),
   typeId: z.string().uuid({ message: 'Bed type is required' }),
-  price: z.coerce.number().min(0, 'Price must be positive'),
+  price: z.number().min(0, 'Price must be positive'),
   currency: z.string().min(1, 'Currency is required'),
   amenities: z.array(z.string()).optional(),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type BedFormData = z.infer<typeof bedSchema>;
