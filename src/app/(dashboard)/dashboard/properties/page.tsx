@@ -11,6 +11,8 @@ import {
   updateSearchCache,
   setLastSearchTerm,
 } from '@/store/slices/propertySlice';
+import { fetchRooms } from '@/store/slices/roomSlice';
+import { fetchReservations } from '@/store/slices/reservationSlice';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -78,21 +80,43 @@ export default function PropertiesPage() {
   useEffect(() => {
     const fetchStatsData = async () => {
       try {
-        const response = await dispatch(
-          fetchProperties({
-            page: 1,
-            limit: 1000, // Get all properties for stats calculation
-            search: undefined,
-          }),
-        ).unwrap();
+        const [propertiesRes, roomsRes, reservationsRes] = await Promise.all([
+          dispatch(
+            fetchProperties({
+              page: 1,
+              limit: 1000,
+              search: undefined,
+            }),
+          ).unwrap(),
+          dispatch(
+            fetchRooms({
+              page: 1,
+              limit: 1000,
+            }),
+          ).unwrap(),
+          dispatch(
+            fetchReservations({
+              page: 1,
+              limit: 1000,
+            }),
+          ).unwrap(),
+        ]);
 
-        const allProperties = response.data || [];
+        const allProperties = propertiesRes?.data || [];
+        const allRooms = roomsRes?.data || [];
+        const allReservations = reservationsRes?.data || [];
+
+        const totalRooms = roomsRes?.meta?.total ?? allRooms.length;
+        const totalRevenue = allReservations.reduce((sum: number, r: any) => {
+          const price = Number(r?.totalPrice ?? r?.finalPrice ?? 0);
+          return sum + (isNaN(price) ? 0 : price);
+        }, 0);
 
         setStatsData({
-          totalProperties: response.meta?.total || 0,
-          activeProperties: allProperties.filter((p) => p.isActive).length,
-          totalRooms: 0, // Rooms count would need a separate API call
-          totalRevenue: 0, // This would need to be calculated from reservations
+          totalProperties: propertiesRes?.meta?.total || allProperties.length || 0,
+          activeProperties: allProperties.filter((p: any) => p?.isActive).length,
+          totalRooms,
+          totalRevenue,
         });
       } catch (e) {
         console.error('Failed to fetch stats data:', e);
