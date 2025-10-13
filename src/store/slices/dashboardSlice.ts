@@ -25,7 +25,6 @@ export const fetchDashboardOverview = createAsyncThunk(
   async (params: {
     propertyId?: string;
     period?: 'TODAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR';
-    silent?: boolean; // Flag for background refreshes
   }) => {
     const response = await dashboardService.getOverview(params);
     return response.data.data;
@@ -45,12 +44,8 @@ const dashboardSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDashboardOverview.pending, (state, action) => {
-        // Only show loading state if not a silent background refresh
-        const isSilent = action.meta.arg.silent;
-        if (!isSilent) {
-          state.loading = true;
-        }
+      .addCase(fetchDashboardOverview.pending, (state) => {
+        state.loading = true;
         state.error = null;
       })
       .addCase(fetchDashboardOverview.fulfilled, (state, action) => {
@@ -65,11 +60,7 @@ const dashboardSlice = createSlice({
       })
       .addCase(fetchDashboardOverview.rejected, (state, action) => {
         state.loading = false;
-        // Only show errors for non-silent requests
-        const isSilent = action.meta.arg.silent;
-        if (!isSilent) {
-          state.error = action.error.message || 'Failed to fetch dashboard data';
-        }
+        state.error = action.error.message || 'Failed to fetch dashboard data';
       });
   },
 });

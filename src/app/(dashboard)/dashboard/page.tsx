@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
@@ -202,19 +202,6 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastFetchParams, setLastFetchParams] = useState<string>('');
 
-  // Use refs to store current values for auto-refresh without causing re-renders
-  const selectedPropertyIdRef = useRef(selectedPropertyId);
-  const selectedPeriodRef = useRef(selectedPeriod);
-
-  // Update refs when values change
-  useEffect(() => {
-    selectedPropertyIdRef.current = selectedPropertyId;
-  }, [selectedPropertyId]);
-
-  useEffect(() => {
-    selectedPeriodRef.current = selectedPeriod;
-  }, [selectedPeriod]);
-
   // Fetch properties on mount only
   useEffect(() => {
     dispatch(fetchProperties({ page: 1, limit: 100 }));
@@ -235,24 +222,6 @@ export default function DashboardPage() {
       setLastFetchParams(params);
     }
   }, [dispatch, selectedPropertyId, selectedPeriod, lastFetchParams]);
-
-  // Auto-refresh every 60 seconds - set up ONCE and use refs to get current values
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Use ref values to avoid recreating interval on every render
-      // Set silent flag to prevent loading state changes during background refresh
-      dispatch(
-        fetchDashboardOverview({
-          propertyId: selectedPropertyIdRef.current || undefined,
-          period: selectedPeriodRef.current,
-          silent: true, // Background refresh - don't show loading states
-        }),
-      );
-    }, 60000);
-
-    return () => clearInterval(interval);
-    // Only depend on dispatch - interval runs independently
-  }, [dispatch]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
