@@ -16,15 +16,18 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
     return <div>No data available</div>;
   }
 
-  // Debug: Log the actual data structure
-  console.log('GuestAnalyticsReportView received data:', data);
-
   // Handle different possible data structures
   const summary = data.summary || data;
   const demographics = data.demographics || { ageGroups: [], genders: [], countries: [] };
   const bookingPatterns = data.bookingPatterns || { advanceBooking: {}, dayOfWeek: {}, lengthOfStay: {} };
   const loyaltyAnalysis = data.loyaltyAnalysis || [];
   const repeatGuests = data.repeatGuests || [];
+  const charts = data.charts || {};
+
+  // Debug: Log the actual data structure
+  console.log('GuestAnalyticsReportView received data:', data);
+  console.log('Demographics data:', demographics);
+  console.log('Charts data:', charts);
 
   // Handle case where summary might be undefined or empty
   if (!summary || (typeof summary === 'object' && Object.keys(summary).length === 0)) {
@@ -88,26 +91,32 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <CardTitle>Age Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={demographics.ageGroups as any}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(props: any) => `${props.age} ${(props.percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {(demographics.ageGroups || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {charts?.ageDistribution ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={charts.ageDistribution.data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(props: any) => `${props.name} ${(props.percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {(charts.ageDistribution.data || []).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                No data available for chart
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -116,26 +125,38 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <CardTitle>Gender Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={demographics.genders as any}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(props: any) => `${props.gender} ${(props.percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {(demographics.genders || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {demographics.genders && demographics.genders.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={demographics.genders}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(props: any) => `${props.gender} ${(props.percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                    nameKey="gender"
+                  >
+                    {(demographics.genders || []).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      value, 
+                      name
+                    ]}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                No data available for chart
+              </div>
+            )}
           </CardContent>
         </Card>
 

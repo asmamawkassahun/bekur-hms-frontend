@@ -22,7 +22,12 @@ export function OccupancyTrendChart({ data }: OccupancyTrendChartProps) {
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="x" />
         <YAxis />
-        <Tooltip />
+        <Tooltip 
+          formatter={(value: number) => [
+            `${Number(value).toFixed(2)}%`, 
+            'Occupancy Rate'
+          ]}
+        />
         <Legend />
         <Line 
           type="monotone" 
