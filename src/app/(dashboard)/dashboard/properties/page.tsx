@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
@@ -267,6 +267,22 @@ export default function PropertiesPage() {
     { key: 'actions', label: 'Actions', width: 'w-[120px]', sortable: false },
   ];
 
+  // Client-side filtering for type and status
+  const displayedProperties = useMemo(() => {
+    let filtered = properties || [];
+
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((p: Property) => p?.type === typeFilter);
+    }
+
+    if (statusFilter !== 'all') {
+      const isActive = statusFilter === 'active';
+      filtered = filtered.filter((p: Property) => Boolean(p?.isActive) === isActive);
+    }
+
+    return filtered;
+  }, [properties, typeFilter, statusFilter]);
+
   const renderPropertyRow = (property: Property) => (
     <PropertyTableRow
       key={property.id}
@@ -321,7 +337,7 @@ export default function PropertiesPage() {
         title="Properties"
         description="Manage and view all properties"
         columns={columns}
-        data={properties || []}
+        data={displayedProperties}
         loading={loading}
         emptyMessage="No properties found"
         searchBar={
