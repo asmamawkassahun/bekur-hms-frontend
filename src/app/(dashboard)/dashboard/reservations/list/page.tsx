@@ -8,7 +8,7 @@ import {
   createReservation,
   confirmReservation,
   checkInGuest,
-  deleteReservation,
+  cancelReservation,
 } from '@/store/slices/reservationSlice';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,7 +47,7 @@ export default function ReservationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [openDelete, setOpenDelete] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false);
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
 
@@ -187,13 +187,13 @@ export default function ReservationsPage() {
     });
   }, [dispatch, debouncedSearch, statusFilter, showError]);
 
-  const handleDeleteReservation = async () => {
+  const handleCancelReservation = async () => {
     if (!selectedReservation) return;
     try {
-      await dispatch(deleteReservation(selectedReservation.id)).unwrap();
+      await dispatch(cancelReservation({ id: selectedReservation.id })).unwrap();
 
-      success('Reservation deleted');
-      setOpenDelete(false);
+      success('Reservation cancelled');
+      setOpenCancel(false);
       setSelectedReservation(null);
 
       // Refetch with current search term
@@ -211,9 +211,9 @@ export default function ReservationsPage() {
         }),
       );
     } catch (e) {
-      console.error('Delete reservation error:', e);
+      console.error('Cancel reservation error:', e);
       const apiErr = handleApiError(e as AxiosError);
-      showError(apiErr.message || 'Failed to delete reservation');
+      showError(apiErr.message || 'Failed to cancel reservation');
     }
   };
 
@@ -285,9 +285,9 @@ export default function ReservationsPage() {
       onCheckIn={(r) => {
         handleCheckIn(r);
       }}
-      onDelete={(r) => {
+      onCancel={(r) => {
         setSelectedReservation(r);
-        setOpenDelete(true);
+        setOpenCancel(true);
       }}
     />
   );
@@ -354,16 +354,16 @@ export default function ReservationsPage() {
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        open={openDelete}
+        open={openCancel}
         onOpenChange={(open) => {
-          setOpenDelete(open);
+          setOpenCancel(open);
           if (!open) setSelectedReservation(null);
         }}
-        title="Delete Reservation"
-        description={`Are you sure you want to delete this reservation? This action cannot be undone.`}
-        confirmText="Delete"
+        title="Cancel Reservation"
+        description={`Are you sure you want to cancel this reservation? The guest will not be checked in.`}
+        confirmText="Cancel Reservation"
         variant="destructive"
-        onConfirm={handleDeleteReservation}
+        onConfirm={handleCancelReservation}
         loading={loading}
       />
     </div>
