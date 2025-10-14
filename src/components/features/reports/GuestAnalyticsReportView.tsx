@@ -30,6 +30,30 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
     return <div>Summary data not available</div>;
   }
 
+  // Safely derive optional metrics that may not exist on some payloads
+  const avgLengthOfStay: number = Number(((summary as any)?.averageLengthOfStay ?? 0));
+  const avgAdvanceBooking: number = Number(((summary as any)?.averageAdvanceBooking ?? 0));
+
+  // Normalize chart datasets to expected { name: string; value: number } shape
+  const ageGroupsData: Array<{ name: string; value: number }> = (demographics.ageGroups || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ag: any) => ({ name: ag.name ?? ag.label ?? ag.group ?? 'Unknown', value: Number(ag.value ?? ag.count ?? 0) })
+  );
+  const genderData: Array<{ name: string; value: number }> = (demographics.genders || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (g: any) => ({ name: g.name ?? g.label ?? g.gender ?? 'Unknown', value: Number(g.value ?? g.count ?? 0) })
+  );
+  const countriesData: Array<{ name: string; value: number; percentage: number }> = (demographics.countries || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (c: any) => ({
+      name: c.name ?? c.country ?? c.label ?? 'Unknown',
+      value: Number(c.value ?? c.count ?? c.total ?? 0),
+      percentage: Number(
+        c.percentage ?? c.percent ?? (((c.value ?? c.count ?? 0) / Math.max(1, summary.totalGuests || 0)) * 100)
+      ),
+    })
+  );
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -45,21 +69,23 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
         <StatsCard
           title="Repeat Guests"
           value={summary.repeatGuests || 0}
-          description={`${(summary.repeatGuestPercentage || 0).toFixed(1)}% of total`}
+          description={`${(
+            ((summary.repeatGuests || 0) / Math.max(1, summary.totalGuests || 0)) * 100
+          ).toFixed(1)}% of total`}
           icon={UserCheck}
           gradient="green"
         />
 
         <StatsCard
           title="Avg Length of Stay"
-          value={`${(summary.averageLengthOfStay || 0).toFixed(1)} days`}
+          value={`${avgLengthOfStay.toFixed(1)} days`}
           icon={Calendar}
           gradient="blue"
         />
 
         <StatsCard
           title="Advance Booking"
-          value={`${(summary.averageAdvanceBooking || 0).toFixed(1)} days`}
+          value={`${avgAdvanceBooking.toFixed(1)} days`}
           icon={TrendingUp}
           gradient="yellow"
         />
@@ -75,16 +101,16 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={demographics.ageGroups}
+                  data={ageGroupsData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={(props: any) => `${props?.name} ${(((props?.percent ?? 0) as number) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {demographics.ageGroups.map((entry, index) => (
+                  {ageGroupsData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -102,16 +128,16 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={demographics.genders}
+                  data={genderData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={(props: any) => `${props?.name} ${(((props?.percent ?? 0) as number) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {demographics.genders.map((entry, index) => (
+                  {genderData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -129,7 +155,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {demographics.countries.slice(0, 10).map((country, index) => (
+            {countriesData.slice(0, 10).map((country, index) => (
               <div key={index} className="flex justify-between items-center p-2 border rounded">
                 <span className="font-medium">{country.name}</span>
                 <div className="text-right">
@@ -154,7 +180,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             {repeatGuests.slice(0, 10).map((guest) => (
               <div key={guest.id} className="flex justify-between items-center p-2 border rounded">
                 <div>
-                  <div className="font-medium">{guest.guestName}</div>
+                  <div className="font-medium">{(guest as any).guestName ?? guest.name}</div>
                   <div className="text-sm text-muted-foreground">{guest.email}</div>
                 </div>
                 <div className="text-right">
