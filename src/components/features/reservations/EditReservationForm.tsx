@@ -449,7 +449,7 @@ export function EditReservationForm({ reservationId, onSuccess }: EditReservatio
                         <p className="text-gray-600">Update reservation details for {reservation.primaryGuest?.firstName} {reservation.primaryGuest?.lastName}</p>
                     </div>
                     <Link href="/dashboard/reservations/list" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
-                        <Plus className="mr-2 h-4 w-4" />
+                        {/* <Plus className="mr-2 h-4 w-4" /> */}
                         Back to List
                     </Link>
                 </div>
