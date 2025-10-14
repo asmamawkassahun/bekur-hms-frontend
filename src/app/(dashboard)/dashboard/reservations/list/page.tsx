@@ -8,6 +8,7 @@ import {
   createReservation,
   confirmReservation,
   checkInGuest,
+  deleteReservation,
 } from '@/store/slices/reservationSlice';
 import { Button } from '@/components/ui/button';
 import {
@@ -189,8 +190,7 @@ export default function ReservationsPage() {
   const handleDeleteReservation = async () => {
     if (!selectedReservation) return;
     try {
-      // TODO: Uncomment when deleteReservation is implemented
-      // await dispatch(deleteReservation(selectedReservation.id)).unwrap();
+      await dispatch(deleteReservation(selectedReservation.id)).unwrap();
 
       success('Reservation deleted');
       setOpenDelete(false);
