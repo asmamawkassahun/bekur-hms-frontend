@@ -93,10 +93,10 @@ export function ReservationTableRow({
       <TableCell>
         <div>
           <div className="font-medium">
-            {reservation.room?.number || reservation.bed?.number || 'N/A'}
+            {reservation.room?.number || '-'}
           </div>
           <div className="text-sm text-muted-foreground">
-            {reservation.room?.roomType?.name || 'Bed'}
+            {reservation.room?.roomType?.name || ''}
           </div>
         </div>
       </TableCell>
