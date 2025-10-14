@@ -103,7 +103,7 @@ export function OccupancyReportView({ data }: OccupancyReportViewProps) {
                 {dailyData && dailyData.length > 0 ? (
                   dailyData.map((day, index) => (
                     <tr key={index} className="border-b">
-                      <td className="p-2">{day.period || 'N/A'}</td>
+                      <td className="p-2">{day.date || 'N/A'}</td>
                       <td className="text-right p-2">
                         {day.occupiedRooms || 0}
                       </td>
