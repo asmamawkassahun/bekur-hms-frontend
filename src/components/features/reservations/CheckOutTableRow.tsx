@@ -155,14 +155,14 @@ export function CheckOutTableRow({
                     >
                         <Printer className="h-3 w-3 text-blue-700" />
                     </Button> */}
-                    <Button
+                    {/* <Button
                         variant="ghost"
                         size="sm"
                         className=" cursor-pointer text-destructive hover:text-destructive/90"
                         onClick={() => onDelete(reservation)}
                     >
                         <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                 </div>
             </TableCell>
         </TableRow>
