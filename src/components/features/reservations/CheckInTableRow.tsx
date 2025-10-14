@@ -72,10 +72,10 @@ export function CheckInTableRow({
                 {reservation.id.substring(0, 8).toUpperCase()}
             </TableCell>
             <TableCell className="text-xs">
-                {reservation.room?.roomType?.name || 'N/A'}
+                {reservation.room?.roomType?.name || '-'}
             </TableCell>
             <TableCell className="font-medium text-center">
-                {reservation.room?.number || 'N/A'}
+                {reservation.room?.number || '-'}
             </TableCell>
             <TableCell className="min-w-0">
                 <div className="font-medium text-sm truncate">
