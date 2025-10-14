@@ -76,7 +76,7 @@ export const reservationService = {
    * Cancel reservation
    */
   cancel: (id: string, reason?: string) =>
-    apiClient.patch<ApiResponse<Reservation>>(`/bookings/${id}/cancel`, {
+    apiClient.post<ApiResponse<Reservation>>(`/bookings/${id}/cancel`, {
       reason,
     }),
 

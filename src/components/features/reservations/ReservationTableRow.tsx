@@ -2,23 +2,14 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import {
-  Eye,
-  Edit,
-  Trash2,
-  CheckCircle,
-  Clock,
-  XCircle,
-  LogIn,
-  Check,
-} from 'lucide-react';
+import { Eye, Edit, Ban, CheckCircle, Clock, XCircle, LogIn, Check } from 'lucide-react';
 import type { Reservation } from '@/types';
 
 interface ReservationTableRowProps {
   reservation: Reservation;
   onView: (reservation: Reservation) => void;
   onEdit: (reservation: Reservation) => void;
-  onDelete: (reservation: Reservation) => void;
+  onCancel: (reservation: Reservation) => void;
   onConfirm: (reservation: Reservation) => void;
   onCheckIn: (reservation: Reservation) => void;
 }
@@ -27,7 +18,7 @@ export function ReservationTableRow({
   reservation,
   onView,
   onEdit,
-  onDelete,
+  onCancel,
   onConfirm,
   onCheckIn,
 }: ReservationTableRowProps) {
@@ -110,7 +101,7 @@ export function ReservationTableRow({
         )}
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -151,14 +142,18 @@ export function ReservationTableRow({
               <LogIn className="h-4 w-4" />
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="cursor-pointer text-destructive hover:text-destructive/90"
-            onClick={() => onDelete(reservation)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {/* Show cancel button for PENDING/CONFIRMED reservations (before checkout) */}
+          {(reservation.status === 'PENDING' || reservation.status === 'CONFIRMED') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="cursor-pointer text-destructive hover:text-destructive/90"
+              onClick={() => onCancel(reservation)}
+              title="Cancel Reservation"
+            >
+              <Ban className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </TableCell>
     </TableRow>
