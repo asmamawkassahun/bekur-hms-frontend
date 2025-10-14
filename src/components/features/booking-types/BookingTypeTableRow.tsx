@@ -43,7 +43,7 @@ export function BookingTypeTableRow({
       </TableCell>
       <TableCell>{formatDate(bookingType.createdAt)}</TableCell>
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="ghost"
             size="sm"
