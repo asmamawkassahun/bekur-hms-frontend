@@ -594,7 +594,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
       ? '/dashboard/reservations/check-in'
       : '/dashboard/reservations/list';
   const backLinkText =
-    mode === 'direct-checkin' ? 'Check-In List' : 'Book List';
+    mode === 'direct-checkin' ? 'Check-In List' : 'Book to List';
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -609,7 +609,7 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
             href={backLink}
             className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            {/* <Plus className="mr-2 h-4 w-4" /> */}
             {backLinkText}
           </Link>
         </div>
