@@ -109,7 +109,7 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={dailyFinancial}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
+                <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip 
                   formatter={(value: number) => [

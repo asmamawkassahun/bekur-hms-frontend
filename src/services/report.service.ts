@@ -24,19 +24,19 @@ export const reportService = {
     apiClient.post<ApiResponse<ReportResponse>>('/reports/generate', data),
 
   generateOccupancyReport: (data: Omit<GenerateReportDto, 'type'>) =>
-    apiClient.post<ApiResponse<OccupancyReportData>>('/reports/occupancy', data),
+    apiClient.post<ApiResponse<ReportResponse>>('/reports/occupancy', data),
 
   generateRevenueReport: (data: Omit<GenerateReportDto, 'type'>) =>
-    apiClient.post<ApiResponse<RevenueReportData>>('/reports/revenue', data),
+    apiClient.post<ApiResponse<ReportResponse>>('/reports/revenue', data),
 
   generateOperationalReport: (data: Omit<GenerateReportDto, 'type'>) =>
-    apiClient.post<ApiResponse<OperationalReportData>>('/reports/operational', data),
+    apiClient.post<ApiResponse<ReportResponse>>('/reports/operational', data),
 
   generateFinancialReport: (data: Omit<GenerateReportDto, 'type'>) =>
-    apiClient.post<ApiResponse<FinancialReportData>>('/reports/financial', data),
+    apiClient.post<ApiResponse<ReportResponse>>('/reports/financial', data),
 
   generateGuestAnalyticsReport: (data: Omit<GenerateReportDto, 'type'>) =>
-    apiClient.post<ApiResponse<GuestAnalyticsReportData>>('/reports/guest-analytics', data),
+    apiClient.post<ApiResponse<ReportResponse>>('/reports/guest-analytics', data),
 
   // Saved reports management
   listReports: (params?: ReportQueryDto) =>

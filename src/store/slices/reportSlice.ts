@@ -105,7 +105,7 @@ export const generateOccupancyReport = createAsyncThunk(
   async (data: Omit<GenerateReportDto, 'type'>, { rejectWithValue }) => {
     try {
       const res = await reportService.generateOccupancyReport(data);
-      return res.data.data;
+      return res.data?.data?.data as OccupancyReportData;
     } catch (e: unknown) {
       return rejectWithValue(e instanceof Error ? e.message : 'Failed to generate occupancy report');
     }
@@ -117,7 +117,7 @@ export const generateRevenueReport = createAsyncThunk(
   async (data: Omit<GenerateReportDto, 'type'>, { rejectWithValue }) => {
     try {
       const res = await reportService.generateRevenueReport(data);
-      return res.data.data;
+      return res.data?.data?.data as RevenueReportData;
     } catch (e: unknown) {
       return rejectWithValue(e instanceof Error ? e.message : 'Failed to generate revenue report');
     }
@@ -129,7 +129,7 @@ export const generateOperationalReport = createAsyncThunk(
   async (data: Omit<GenerateReportDto, 'type'>, { rejectWithValue }) => {
     try {
       const res = await reportService.generateOperationalReport(data);
-      return res.data.data;
+      return res.data?.data?.data as OperationalReportData;
     } catch (e: unknown) {
       return rejectWithValue(e instanceof Error ? e.message : 'Failed to generate operational report');
     }
@@ -141,7 +141,7 @@ export const generateFinancialReport = createAsyncThunk(
   async (data: Omit<GenerateReportDto, 'type'>, { rejectWithValue }) => {
     try {
       const res = await reportService.generateFinancialReport(data);
-      return res.data.data;
+      return res.data?.data?.data as FinancialReportData;
     } catch (e: unknown) {
       return rejectWithValue(e instanceof Error ? e.message : 'Failed to generate financial report');
     }
@@ -153,7 +153,7 @@ export const generateGuestAnalyticsReport = createAsyncThunk(
   async (data: Omit<GenerateReportDto, 'type'>, { rejectWithValue }) => {
     try {
       const res = await reportService.generateGuestAnalyticsReport(data);
-      return res.data.data;
+      return res.data?.data?.data as GuestAnalyticsReportData;
     } catch (e: unknown) {
       return rejectWithValue(e instanceof Error ? e.message : 'Failed to generate guest analytics report');
     }
