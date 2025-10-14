@@ -60,6 +60,7 @@ import * as z from 'zod';
 import { roomTypeService } from '@/services/room-type.service';
 import { bedTypeService } from '@/services/bed-type.service';
 import { propertyService } from '@/services/property.service';
+import { roomService } from '@/services/room.service';
 import {
   RoomType,
   BedType,
@@ -216,6 +217,22 @@ export default function RoomTypesPage() {
       });
       setProperties(propertiesResponse.data.data || []);
 
+      // Load total rooms (use meta.total if available; fallback to length)
+      let totalRoomsCount = 0;
+      try {
+        const roomsResponse = await roomService.getAll({ page: 1, limit: 1 });
+        const metaTotal = (roomsResponse.data as any)?.meta?.total;
+        if (typeof metaTotal === 'number') {
+          totalRoomsCount = metaTotal;
+        } else {
+          const roomsAllResponse = await roomService.getAll({ page: 1, limit: 1000 });
+          totalRoomsCount = roomsAllResponse.data.data?.length || 0;
+        }
+      } catch (e) {
+        console.warn('Failed to fetch total rooms; defaulting to 0', e);
+        totalRoomsCount = 0;
+      }
+
       // Calculate stats
       const allRoomTypes = roomTypesResponse.data.data || [];
       setStatsData({
@@ -226,7 +243,7 @@ export default function RoomTypesPage() {
             ? allRoomTypes.reduce((sum, rt) => sum + rt.basePrice, 0) /
               allRoomTypes.length
             : 0,
-        totalRooms: 0, // This would need to be calculated from rooms data
+        totalRooms: totalRoomsCount,
       });
     } catch (err) {
       console.error('Failed to load data:', err);
@@ -236,6 +253,7 @@ export default function RoomTypesPage() {
     }
   };
 
+  console.log("stats data: ", statsData);
   // Filter room types
   const filteredRoomTypes = roomTypes.filter((roomType) => {
     const matchesSearch =

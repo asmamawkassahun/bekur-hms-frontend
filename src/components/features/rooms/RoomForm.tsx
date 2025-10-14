@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -111,6 +111,31 @@ export function RoomForm({
     dispatch(fetchRoomTypes({ page: 1, limit: 100 }));
   }, [dispatch]);
 
+  // Reset form when editing a new room to ensure all inputs prefill correctly
+  useEffect(() => {
+    if (!room) return;
+    const defaults: RoomFormData = {
+      number: room.number,
+      propertyId: room.propertyId,
+      typeId: room.roomTypeId,
+      floor: room.floor,
+      capacity: room.roomType?.adultCapacity || 2,
+      basePrice: room.basePrice,
+      currency: 'USD',
+      status: room.status,
+      amenities: [],
+      description: '',
+      isActive: room.isActive,
+    };
+    form.reset(defaults);
+  }, [room, form]);
+
+  // Filter room types by selected property (like AddRoomDialog)
+  const filteredRoomTypes = useMemo(() => {
+    const selectedPropertyId = form.watch('propertyId');
+    return (roomTypes || []).filter((rt: RoomType) => rt.propertyId === selectedPropertyId);
+  }, [roomTypes, form]);
+
   const handleSubmit = (values: RoomFormData) => {
     const payload = {
       ...values,
@@ -143,7 +168,17 @@ export function RoomForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Property</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={(v) => {
+                  field.onChange(v);
+                  // If property changes and current typeId doesn't belong, clear it
+                  const currentTypeId = form.getValues('typeId');
+                  const stillValid = (roomTypes || []).some(
+                    (rt: RoomType) => rt.id === currentTypeId && rt.propertyId === v,
+                  );
+                  if (!stillValid) {
+                    form.setValue('typeId', '');
+                  }
+                }}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select property" />
@@ -174,7 +209,7 @@ export function RoomForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {(roomTypes || []).map((rt: RoomType) => (
+                    {filteredRoomTypes.map((rt: RoomType) => (
                       <SelectItem key={rt.id} value={rt.id}>
                         {rt.name}
                       </SelectItem>

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
   fetchDormitories,
   createDormitory,
+  updateDormitory,
   updateSearchCache,
   setLastSearchTerm,
   deleteDormitory,
@@ -83,6 +84,29 @@ export default function DormitoriesPage() {
 
   const { success, error } = useNotification();
 
+  // Map UI filter values to API enum values
+  const mapTypeFilterToApi = (filter: string) => {
+    if (filter === 'all') return undefined;
+    if (filter === 'MIXED') return 'Mixed';
+    if (filter === 'MALE') return "Men's";
+    if (filter === 'FEMALE') return "Women's";
+    return undefined;
+  };
+
+  // Client-side filtered list to guard against backend filters being ignored
+  const displayedDormitories = useMemo(() => {
+    let items = dormitories || [];
+    const mappedType = mapTypeFilterToApi(typeFilter);
+    if (mappedType) {
+      items = items.filter((d) => d.type === mappedType);
+    }
+    if (activeFilter !== 'all') {
+      const shouldBeActive = activeFilter === 'active';
+      items = items.filter((d) => Boolean(d.isActive) === shouldBeActive);
+    }
+    return items;
+  }, [dormitories, typeFilter, activeFilter]);
+
   // Fetch overall stats data (not affected by search)
   useEffect(() => {
     const fetchStatsData = async () => {
@@ -143,7 +167,7 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
+          type: mapTypeFilterToApi(typeFilter),
         }),
       );
     }
@@ -167,7 +191,7 @@ export default function DormitoriesPage() {
           page: 1,
           limit: 10,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
+          type: mapTypeFilterToApi(typeFilter),
         }),
       );
     } catch (e) {
@@ -212,7 +236,7 @@ export default function DormitoriesPage() {
         amenities: formData.amenities,
         isActive: formData.isActive,
       };
-      // await dispatch(updateDormitory({ id: selectedDormitory.id, data })).unwrap();
+      await dispatch(updateDormitory({ id: selectedDormitory.id, data })).unwrap();
       success('Dormitory updated');
       setOpenEdit(false);
       setSelectedDormitory(null);
@@ -222,7 +246,7 @@ export default function DormitoriesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
+          type: mapTypeFilterToApi(typeFilter),
         }),
       );
     } catch (e) {
@@ -244,7 +268,7 @@ export default function DormitoriesPage() {
           page: pagination.page,
           limit: pagination.limit,
           search: debouncedSearch || undefined,
-          type: typeFilter === 'all' ? undefined : typeFilter,
+          type: mapTypeFilterToApi(typeFilter),
         }),
       );
     } catch (e) {
@@ -316,7 +340,7 @@ export default function DormitoriesPage() {
         title="Dormitories"
         description="Manage and view all dormitories"
         columns={columns}
-        data={dormitories || []}
+        data={displayedDormitories}
         loading={loading}
         emptyMessage="No dormitories found"
         searchBar={

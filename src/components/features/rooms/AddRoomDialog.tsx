@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { AppDispatch, RootState } from '@/store';
 import { closeModal } from '@/store/slices/uiSlice';
 import { useNotification } from '@/hooks/useNotification';
+import { handleApiError } from '@/lib/api/error-handler';
+import type { AxiosError } from 'axios';
 import { roomService } from '@/services/room.service';
 import { roomTypeService } from '@/services/room-type.service';
 import { propertyService } from '@/services/property.service';
@@ -152,8 +154,8 @@ export function AddRoomDialog() {
       refreshRoomsIfOnList();
       close();
     } catch (e) {
-      console.error('Failed to create room:', e);
-      error('Failed to create room');
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message || 'Failed to create room');
     } finally {
       setSubmitting(false);
     }
@@ -167,8 +169,8 @@ export function AddRoomDialog() {
       refreshRoomsIfOnList();
       close();
     } catch (e) {
-      console.error('Failed to create rooms:', e);
-      error('Failed to create rooms');
+      const apiErr = handleApiError(e as AxiosError);
+      error(apiErr.message || 'Failed to create rooms');
     } finally {
       setSubmitting(false);
     }
