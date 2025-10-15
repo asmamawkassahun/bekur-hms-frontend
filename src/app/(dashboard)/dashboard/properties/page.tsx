@@ -369,10 +369,10 @@ export default function PropertiesPage() {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" className="flex items-center gap-2">
+            {/* <Button variant="outline" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               More Filters
-            </Button>
+            </Button> */}
           </div>
         }
         renderRow={renderPropertyRow}

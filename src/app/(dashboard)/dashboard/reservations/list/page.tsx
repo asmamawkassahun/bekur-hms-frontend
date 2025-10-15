@@ -342,13 +342,13 @@ export default function ReservationsPage() {
                 <SelectItem value="NO_SHOW">No Show</SelectItem>
               </SelectContent>
             </Select>
-            <Button
+            {/* <Button
               variant="outline"
               className="flex items-center gap-2 cursor-pointer"
             >
               <Filter className="h-4 w-4" />
               More Filters
-            </Button>
+            </Button> */}
           </div>
         }
         renderRow={renderReservationRow}
