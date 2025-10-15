@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { Logo } from '@/components/ui/logo';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -101,8 +102,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Automata HMS</h1>
+          <div className="flex justify-center mb-4">
+            <Logo size="xl" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">VIGOR HMS</h1>
           <p className="mt-2 text-sm text-gray-600">Hotel Management System</p>
+          <p className="mt-1 text-xs text-gray-500">
+            A TURKY'S GROUP OF COMPANIES
+          </p>
         </div>
 
         <Card>

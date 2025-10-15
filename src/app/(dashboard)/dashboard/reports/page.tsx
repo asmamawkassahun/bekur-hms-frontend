@@ -14,7 +14,7 @@ import {
   generateFinancialReport,
   generateGuestAnalyticsReport,
   clearError,
-  updateFilters
+  updateFilters,
 } from '@/store/slices/reportSlice';
 import { useNotification } from '@/hooks/useNotification';
 import { ReportType } from '@/types/report.types';
@@ -29,20 +29,23 @@ import { FinancialReportView } from '@/components/features/reports/FinancialRepo
 import { GuestAnalyticsReportView } from '@/components/features/reports/GuestAnalyticsReportView';
 import { ReportExportButtons } from '@/components/features/reports/ReportExportButtons';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { BarChart3, TrendingUp, Users, DollarSign, FileText, UserCheck } from 'lucide-react';
+import {
+  BarChart3,
+  TrendingUp,
+  Users,
+  DollarSign,
+  FileText,
+  UserCheck,
+} from 'lucide-react';
 
 export default function ReportsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { properties } = useSelector((s: RootState) => s.property);
   const { roomTypes } = useSelector((s: RootState) => s.roomType);
   const { dormitories } = useSelector((s: RootState) => s.dormitory);
-  const {
-    generatedReports,
-    activeTab,
-    filters,
-    loading,
-    error
-  } = useSelector((s: RootState) => s.reports);
+  const { generatedReports, activeTab, filters, loading, error } = useSelector(
+    (s: RootState) => s.reports,
+  );
   const { error: showError, success } = useNotification();
 
   useEffect(() => {
@@ -122,14 +125,16 @@ export default function ReportsPage() {
       success('Report generated successfully');
     } catch (err) {
       console.error('Report generation failed:', err);
-      showError(`Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      showError(
+        `Failed to generate report: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      );
     }
   };
 
   const getCurrentReport = () => {
     const report = generatedReports[activeTab];
-    // The backend returns the full report object, but we need the data field
-    return report;
+    // The generatedReports directly stores the report data
+    return report || null;
   };
 
   const isGenerating = loading.generating[activeTab];
@@ -142,10 +147,7 @@ export default function ReportsPage() {
       />
 
       {/* Filters */}
-      <ReportFilters
-        onGenerate={handleGenerateReport}
-        loading={isGenerating}
-      />
+      <ReportFilters onGenerate={handleGenerateReport} loading={isGenerating} />
 
       {/* Export Buttons */}
       <div className="flex justify-end">
@@ -153,25 +155,43 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => dispatch(setActiveTab(value as ReportType))}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => dispatch(setActiveTab(value as ReportType))}
+      >
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value={ReportType.OCCUPANCY} className="flex items-center gap-2">
+          <TabsTrigger
+            value={ReportType.OCCUPANCY}
+            className="flex items-center gap-2"
+          >
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">Occupancy</span>
           </TabsTrigger>
-          <TabsTrigger value={ReportType.REVENUE} className="flex items-center gap-2">
+          <TabsTrigger
+            value={ReportType.REVENUE}
+            className="flex items-center gap-2"
+          >
             <DollarSign className="h-4 w-4" />
             <span className="hidden sm:inline">Revenue</span>
           </TabsTrigger>
-          <TabsTrigger value={ReportType.OPERATIONAL} className="flex items-center gap-2">
+          <TabsTrigger
+            value={ReportType.OPERATIONAL}
+            className="flex items-center gap-2"
+          >
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Operational</span>
           </TabsTrigger>
-          <TabsTrigger value={ReportType.FINANCIAL} className="flex items-center gap-2">
+          <TabsTrigger
+            value={ReportType.FINANCIAL}
+            className="flex items-center gap-2"
+          >
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Financial</span>
           </TabsTrigger>
-          <TabsTrigger value={ReportType.GUEST_ANALYTICS} className="flex items-center gap-2">
+          <TabsTrigger
+            value={ReportType.GUEST_ANALYTICS}
+            className="flex items-center gap-2"
+          >
             <UserCheck className="h-4 w-4" />
             <span className="hidden sm:inline">Guest Analytics</span>
           </TabsTrigger>

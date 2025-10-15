@@ -1,6 +1,15 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import type { ChartData } from '@/types/report.types';
 
 interface RevenueByRoomTypeChartProps {
@@ -8,7 +17,7 @@ interface RevenueByRoomTypeChartProps {
 }
 
 export function RevenueByRoomTypeChart({ data }: RevenueByRoomTypeChartProps) {
-  if (!data || !Array.isArray(data.data)) {
+  if (!data || !Array.isArray(data.data) || data.data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
         No data available for chart
@@ -16,19 +25,49 @@ export function RevenueByRoomTypeChart({ data }: RevenueByRoomTypeChartProps) {
     );
   }
 
+  // Filter out invalid data points and ensure values are numbers
+  // Handle both data formats: { x, y } and { name, value }
+  const validData = data.data
+    .map((item) => {
+      // Check if item has 'value' property (format: { name, value })
+      if ('value' in item) {
+        return {
+          name: item.name,
+          value:
+            typeof item.value === 'number'
+              ? item.value
+              : Number(item.value) || 0,
+        };
+      }
+      // Otherwise it has 'x' and 'y' properties (format: { x, y })
+      return {
+        name: item.x,
+        value: typeof item.y === 'number' ? item.y : Number(item.y) || 0,
+      };
+    })
+    .filter((item) => item.value > 0);
+
+  if (validData.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        No valid data available for chart
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data.data}>
+      <BarChart data={validData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
         <YAxis />
-        <Tooltip 
+        <Tooltip
           formatter={(value: number) => [
-            new Intl.NumberFormat('en-US', { 
-              style: 'currency', 
-              currency: 'ETB' 
-            }).format(value), 
-            'Revenue'
+            new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'ETB',
+            }).format(value),
+            'Revenue',
           ]}
         />
         <Legend />
@@ -37,4 +76,3 @@ export function RevenueByRoomTypeChart({ data }: RevenueByRoomTypeChartProps) {
     </ResponsiveContainer>
   );
 }
-

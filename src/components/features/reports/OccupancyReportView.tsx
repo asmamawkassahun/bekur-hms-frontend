@@ -22,7 +22,10 @@ export function OccupancyReportView({ data }: OccupancyReportViewProps) {
   const charts = data.charts || {};
 
   // Handle case where summary might be undefined or empty
-  if (!summary || (typeof summary === 'object' && Object.keys(summary).length === 0)) {
+  if (
+    !summary ||
+    (typeof summary === 'object' && Object.keys(summary).length === 0)
+  ) {
     return <div>Summary data not available</div>;
   }
 
@@ -72,7 +75,9 @@ export function OccupancyReportView({ data }: OccupancyReportViewProps) {
           {charts?.occupancyTrend ? (
             <OccupancyTrendChart data={charts.occupancyTrend} />
           ) : (
-            <div className="text-center text-muted-foreground">Chart data not available</div>
+            <div className="text-center text-muted-foreground">
+              Chart data not available
+            </div>
           )}
         </CardContent>
       </Card>
@@ -98,16 +103,27 @@ export function OccupancyReportView({ data }: OccupancyReportViewProps) {
                 {dailyData && dailyData.length > 0 ? (
                   dailyData.map((day, index) => (
                     <tr key={index} className="border-b">
-                      <td className="p-2">{day.period || 'N/A'}</td>
-                      <td className="text-right p-2">{day.occupiedRooms || 0}</td>
-                      <td className="text-right p-2">{(day.roomOccupancyRate || 0).toFixed(1)}%</td>
-                      <td className="text-right p-2">{day.occupiedBeds || 0}</td>
-                      <td className="text-right p-2">{(day.bedOccupancyRate || 0).toFixed(1)}%</td>
+                      <td className="p-2">{day.date || 'N/A'}</td>
+                      <td className="text-right p-2">
+                        {day.occupiedRooms || 0}
+                      </td>
+                      <td className="text-right p-2">
+                        {(day.roomOccupancyRate || 0).toFixed(1)}%
+                      </td>
+                      <td className="text-right p-2">
+                        {day.occupiedBeds || 0}
+                      </td>
+                      <td className="text-right p-2">
+                        {(day.bedOccupancyRate || 0).toFixed(1)}%
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center text-muted-foreground p-4">
+                    <td
+                      colSpan={5}
+                      className="text-center text-muted-foreground p-4"
+                    >
                       No daily data available
                     </td>
                   </tr>

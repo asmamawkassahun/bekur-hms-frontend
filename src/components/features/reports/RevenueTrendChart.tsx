@@ -1,6 +1,15 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import type { ChartData } from '@/types/report.types';
 
 interface RevenueTrendChartProps {
@@ -8,7 +17,7 @@ interface RevenueTrendChartProps {
 }
 
 export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
-  if (!data || !Array.isArray(data.data)) {
+  if (!data || !Array.isArray(data.data) || data.data.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
         No data available for chart
@@ -16,26 +25,56 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
     );
   }
 
+  // Normalize data format and filter out invalid data points
+  // Handle both data formats: { x, y } and { name, value }
+  const validData = data.data
+    .map((item) => {
+      // Check if item has 'y' property (format: { x, y })
+      if ('y' in item) {
+        return {
+          x: item.x,
+          y: typeof item.y === 'number' ? item.y : Number(item.y) || 0,
+        };
+      }
+      // Otherwise it has 'name' and 'value' properties (format: { name, value })
+      return {
+        x: item.name,
+        y:
+          typeof item.value === 'number' ? item.value : Number(item.value) || 0,
+      };
+    })
+    .filter(
+      (item) => typeof item.y === 'number' && !isNaN(item.y) && item.y >= 0,
+    );
+
+  if (validData.length === 0) {
+    return (
+      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        No valid data available for chart
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data.data}>
+      <LineChart data={validData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="x" />
         <YAxis />
-        <Tooltip 
+        <Tooltip
           formatter={(value: number) => [
-            new Intl.NumberFormat('en-US', { 
-              style: 'currency', 
-              currency: 'ETB' 
-            }).format(value), 
-            'Revenue'
+            new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'ETB',
+            }).format(value),
+            'Revenue',
           ]}
         />
         <Legend />
-        <Line 
-          type="monotone" 
-          dataKey="y" 
-          stroke="#10b981" 
+        <Line
+          type="monotone"
+          dataKey="y"
+          stroke="#10b981"
           strokeWidth={2}
           name="Revenue (ETB)"
         />
@@ -43,4 +82,3 @@ export function RevenueTrendChart({ data }: RevenueTrendChartProps) {
     </ResponsiveContainer>
   );
 }
-

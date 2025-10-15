@@ -22,6 +22,11 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
   const dailyFinancial = data.dailyFinancial || [];
   const charts = data.charts || {};
 
+  // Debug: Log the actual data structure
+  console.log('FinancialReportView received data:', data);
+  console.log('Daily financial data:', dailyFinancial);
+  console.log('Charts data:', charts);
+
   // Handle case where summary might be undefined or empty
   if (!summary || (typeof summary === 'object' && Object.keys(summary).length === 0)) {
     return <div>Summary data not available</div>;
@@ -75,18 +80,61 @@ export function FinancialReportView({ data }: FinancialReportViewProps) {
           <CardTitle>Financial Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dailyFinancial}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue" />
-              <Line type="monotone" dataKey="expenses" stroke="#82ca9d" name="Expenses" />
-              <Line type="monotone" dataKey="profit" stroke="#ffc658" name="Profit" />
-            </LineChart>
-          </ResponsiveContainer>
+          {charts?.netRevenue ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={charts.netRevenue.data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="x" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number) => [
+                    new Intl.NumberFormat('en-US', { 
+                      style: 'currency', 
+                      currency: 'ETB' 
+                    }).format(value), 
+                    'Net Revenue'
+                  ]}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="y" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  name="Net Revenue (ETB)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : dailyFinancial && dailyFinancial.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={dailyFinancial}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number) => [
+                    new Intl.NumberFormat('en-US', { 
+                      style: 'currency', 
+                      currency: 'ETB' 
+                    }).format(value), 
+                    'Net Revenue'
+                  ]}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="netRevenue" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  name="Net Revenue (ETB)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              No data available for chart
+            </div>
+          )}
         </CardContent>
       </Card>
 

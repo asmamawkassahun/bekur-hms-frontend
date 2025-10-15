@@ -1,6 +1,11 @@
-"use client";
+'use client';
 import React, { useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Bed, Users, DollarSign } from 'lucide-react';
@@ -15,7 +20,25 @@ interface RoomViewDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps) {
+export function RoomViewDialog({
+  open,
+  room,
+  onOpenChange,
+}: RoomViewDialogProps) {
+  // Hooks must be called at the top level before any early returns
+  const dispatch = useDispatch<AppDispatch>();
+  const { properties } = useSelector((state: RootState) => state.property);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!properties || properties.length === 0) {
+      dispatch(fetchProperties({ page: 1, limit: 1000 }));
+    }
+  }, [open, properties, dispatch]);
+
+  // Early return after hooks
+  if (!room) return null;
+
   const statusColor: Record<string, string> = {
     AVAILABLE: 'bg-green-100 text-green-800',
     OCCUPIED: 'bg-blue-100 text-blue-800',
@@ -26,17 +49,9 @@ export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps
 
   const currency = 'USD';
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
-
-  const dispatch = useDispatch<AppDispatch>();
-  const { properties } = useSelector((state: RootState) => state.property);
-
-  useEffect(() => {
-    if (!open) return;
-    if (!properties || properties.length === 0) {
-      dispatch(fetchProperties({ page: 1, limit: 1000 }));
-    }
-  }, [open, properties, dispatch]);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(
+      amount || 0,
+    );
 
   const propertyName = properties?.find((p) => p.id === room?.propertyId)?.name;
 
@@ -56,7 +71,9 @@ export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps
 
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className={`${statusColor[room.status] || 'bg-gray-100 text-gray-800'}`}>
+            <Badge
+              className={`${statusColor[room.status] || 'bg-gray-100 text-gray-800'}`}
+            >
               {room.status?.replace('_', ' ')}
             </Badge>
             {room.isActive ? (
@@ -71,11 +88,15 @@ export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Property</div>
-              <div className="font-medium break-words">{propertyName || room.propertyId}</div>
+              <div className="font-medium break-words">
+                {propertyName || room.propertyId}
+              </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Room Type</div>
-              <div className="font-medium break-words">{room.roomType?.name || room.roomTypeId}</div>
+              <div className="font-medium break-words">
+                {room.roomType?.name || room.roomTypeId}
+              </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Floor</div>
@@ -85,7 +106,9 @@ export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps
               <div className="text-sm text-muted-foreground">Base Price</div>
               <div className="font-medium flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
-                {formatCurrency(room.basePrice || room.roomType?.basePrice || 0)}
+                {formatCurrency(
+                  room.basePrice || room.roomType?.basePrice || 0,
+                )}
               </div>
             </div>
           </div>
@@ -97,7 +120,9 @@ export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps
               <div className="text-sm text-muted-foreground">Capacity</div>
               <div className="font-medium flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                {(room.roomType?.adultCapacity || 0) + (room.roomType?.childCapacity || 0)} guests
+                {(room.roomType?.adultCapacity || 0) +
+                  (room.roomType?.childCapacity || 0)}{' '}
+                guests
               </div>
             </div>
             <div className="space-y-2">
@@ -116,5 +141,3 @@ export function RoomViewDialog({ open, room, onOpenChange }: RoomViewDialogProps
 }
 
 export default RoomViewDialog;
-
-

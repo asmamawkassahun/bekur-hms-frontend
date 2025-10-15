@@ -77,9 +77,11 @@ export interface OccupancyReportData {
     averageBedOccupancy: number;
   };
   dailyData: Array<{
-    period: string;
+    date: string;
     occupiedRooms: number;
     occupiedBeds: number;
+    availableRooms: number;
+    availableBeds: number;
     roomOccupancyRate: number;
     bedOccupancyRate: number;
   }>;
@@ -109,7 +111,7 @@ export interface RevenueReportData {
     averageDailyRevenue: number;
   };
   dailyData: Array<{
-    period: string;
+    date: string;
     revenue: number;
     reservations: number;
   }>;
@@ -170,7 +172,7 @@ export interface FinancialReportData {
   };
   revenueByMethod: RevenueByMethod[];
   dailyFinancial: Array<{
-    period: string;
+    date: string;
     revenue: number;
     refunds: number;
     netRevenue: number;
