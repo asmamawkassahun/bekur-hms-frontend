@@ -384,7 +384,7 @@ export function PropertyForm({
         </div>
 
         {/* Channel Manager Integration */}
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-600" />
@@ -405,7 +405,7 @@ export function PropertyForm({
                   <FormLabel>Hotel Code (Optional)</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., BEKUR-MAIN"
+                      placeholder="Enter Aiosell Hotel Code (e.g., BEKUR-MAIN)"
                       className="font-mono uppercase"
                       {...field}
                       onChange={(e) =>
@@ -414,8 +414,7 @@ export function PropertyForm({
                     />
                   </FormControl>
                   <FormDescription className="text-xs">
-                    Enter the hotel code from your Aiosell dashboard. Leave
-                    empty if not using channel manager.
+                    Required only if integrating with Aiosell Channel Manager. Leave empty if not integrating. Must contain uppercase letters, numbers, and hyphens only.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
