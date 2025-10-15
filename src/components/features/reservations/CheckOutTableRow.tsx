@@ -2,14 +2,12 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Edit, ThumbsUp, Eye, Printer, X, CheckCircle, AlertCircle, Clock, Phone } from 'lucide-react';
+import { Edit, ThumbsUp, Eye, Printer, X, CheckCircle, AlertCircle, Clock, Phone, Delete, DeleteIcon, Trash2 } from 'lucide-react';
 
 interface CheckOutTableRowProps {
     reservation: any;
     index: number;
-    onEdit: (reservation: any) => void;
     onView: (reservation: any) => void;
-    onPrint: (reservation: any) => void;
     onDelete: (reservation: any) => void;
     getPaymentStatus: (bookingId: string) => { status: string; paid: number; total: number };
 }
@@ -17,9 +15,7 @@ interface CheckOutTableRowProps {
 export function CheckOutTableRow({
     reservation,
     index,
-    onEdit,
     onView,
-    onPrint,
     onDelete,
     getPaymentStatus,
 }: CheckOutTableRowProps) {
@@ -76,10 +72,10 @@ export function CheckOutTableRow({
                 {reservation.id.substring(0, 8).toUpperCase()}
             </TableCell>
             <TableCell className="text-xs">
-                {reservation.room?.roomType?.name || 'N/A'}
+                {reservation.room?.roomType?.name || '-'}
             </TableCell>
             <TableCell className="font-medium text-center">
-                {reservation.room?.number || 'N/A'}
+                {reservation.room?.number || '-'}
             </TableCell>
             <TableCell className="min-w-0">
                 <div className="font-medium text-sm truncate">
@@ -90,7 +86,7 @@ export function CheckOutTableRow({
                 </div>
             </TableCell>
             <TableCell className="text-xs">
-                {reservation.primaryGuest?.phone || 'N/A'}
+                {reservation.primaryGuest?.phone || '-'}
             </TableCell>
             <TableCell>
                 <div className="text-xs">
@@ -115,58 +111,58 @@ export function CheckOutTableRow({
             <TableCell className="font-medium text-green-600 text-sm">
                 {formatCurrency(paidAmount, reservation.property?.currency)}
             </TableCell>
-            <TableCell className="font-medium text-red-600 text-sm">
+            {/* <TableCell className="font-medium text-red-600 text-sm">
                 {formatCurrency(dueAmount, reservation.property?.currency)}
-            </TableCell>
-            <TableCell>
+            </TableCell> */}
+            {/* <TableCell>
                 <Badge className="bg-red-100 text-red-800 text-xs">
                     Check Out
                 </Badge>
             </TableCell>
             <TableCell>
                 {getPaymentStatusBadge(paymentStatus.status)}
-            </TableCell>
+            </TableCell> */}
             <TableCell>
                 <div className="flex items-center gap-1">
-                    <Button
+                    {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 bg-yellow-100 hover:bg-yellow-200"
                         onClick={() => onEdit(reservation)}
                     >
                         <Edit className="h-3 w-3 text-yellow-700" />
-                    </Button>
-                    <Button
+                    </Button> */}
+                    {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
                     >
                         <ThumbsUp className="h-3 w-3 text-gray-700" />
-                    </Button>
+                    </Button> */}
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 bg-blue-100 hover:bg-blue-200"
+                        className="cursor-pointer"
                         onClick={() => onView(reservation)}
                     >
-                        <Eye className="h-3 w-3 text-blue-700" />
+                        <Eye className="h-3 w-" />
                     </Button>
-                    <Button
+                    {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 bg-blue-100 hover:bg-blue-200"
                         onClick={() => onPrint(reservation)}
                     >
                         <Printer className="h-3 w-3 text-blue-700" />
-                    </Button>
-                    <Button
+                    </Button> */}
+                    {/* <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 bg-red-100 hover:bg-red-200"
+                        className=" cursor-pointer text-destructive hover:text-destructive/90"
                         onClick={() => onDelete(reservation)}
                     >
-                        <X className="h-3 w-3 text-red-700" />
-                    </Button>
+                        <Trash2 className="h-4 w-4" />
+                    </Button> */}
                 </div>
             </TableCell>
         </TableRow>

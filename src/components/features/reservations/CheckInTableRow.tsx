@@ -72,10 +72,10 @@ export function CheckInTableRow({
                 {reservation.id.substring(0, 8).toUpperCase()}
             </TableCell>
             <TableCell className="text-xs">
-                {reservation.room?.roomType?.name || 'N/A'}
+                {reservation.room?.roomType?.name || '-'}
             </TableCell>
             <TableCell className="font-medium text-center">
-                {reservation.room?.number || 'N/A'}
+                {reservation.room?.number || '-'}
             </TableCell>
             <TableCell className="min-w-0">
                 <div className="font-medium text-sm truncate">
@@ -118,7 +118,7 @@ export function CheckInTableRow({
             <TableCell>
                 <div className="flex items-center gap-2">
                     <Button
-                        variant="ghost"
+                        // variant="ghost"
                         size="sm"
                         className="h-8 px-3 bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
                         onClick={() => onEdit(reservation)}
@@ -127,9 +127,9 @@ export function CheckInTableRow({
                         <Edit className="h-4 w-4 text-yellow-700" />
                     </Button>
                     <Button
-                        variant="ghost"
+                        // variant="ghost"
                         size="sm"
-                        className="h-8 px-3 bg-red-100 hover:bg-red-200 cursor-pointer"
+                        className="h-8 px-3 bg-red-100 !hover:bg-red-200 cursor-pointer"
                         onClick={() => onCheckOut(reservation)}
                         title="Check Out Guest"
                     >

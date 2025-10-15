@@ -96,8 +96,8 @@ export function GuestSelectionDialog({
                                     className={`
                                         p-4 border rounded-lg cursor-pointer transition-all
                                         ${isGuestSelected(guest.id)
-                                            ? 'border-blue-500 bg-blue-50'
-                                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                            ? 'bg-muted'
+                                            : 'border-gray-200 dark:border-gray-800  hover:bg-muted'
                                         }
                                     `}
                                 >
@@ -107,7 +107,7 @@ export function GuestSelectionDialog({
                                                 <User className="h-5 w-5 text-blue-600" />
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-gray-900">
+                                                <h4 className="font-semibold">
                                                     {guest.firstName} {guest.lastName}
                                                     {guest.loyaltyTier && (
                                                         <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
@@ -115,7 +115,7 @@ export function GuestSelectionDialog({
                                                         </span>
                                                     )}
                                                 </h4>
-                                                <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                                                <div className="flex gap-4 text-sm text-muted-foreground mt-1">
                                                     {guest.email && (
                                                         <div className="flex items-center gap-1">
                                                             <Mail className="h-3 w-3" />

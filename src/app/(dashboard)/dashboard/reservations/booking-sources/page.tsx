@@ -62,6 +62,8 @@ export default function BookingSourcesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bookingTypeFilter, setBookingTypeFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -70,11 +72,11 @@ export default function BookingSourcesPage() {
   const [selectedBookingSource, setSelectedBookingSource] =
     useState<BookingSource | null>(null);
 
-  // Load data
+  // Load data with pagination
   useEffect(() => {
-    dispatch(fetchBookingSources({ page: 1, limit: 100 }));
+    dispatch(fetchBookingSources({ page, limit }));
     dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
-  }, [dispatch]);
+  }, [dispatch, page, limit]);
 
   // Filtered data
   const filteredBookingSources = bookingSources.filter((bs) => {
@@ -99,7 +101,7 @@ export default function BookingSourcesPage() {
     inactive: bookingSources.filter((bs) => !bs.isActive).length,
     averageCommission:
       bookingSources.length > 0
-        ? bookingSources.reduce((sum, bs) => sum + bs.commissionRate, 0) /
+        ? bookingSources.reduce((sum, bs) => sum + Number(bs.commissionRate), 0) /
           bookingSources.length
         : 0,
   };
@@ -114,7 +116,7 @@ export default function BookingSourcesPage() {
       ).unwrap();
       success('Booking source created successfully');
       setCreateOpen(false);
-      dispatch(fetchBookingSources({ page: 1, limit: 100 }));
+      dispatch(fetchBookingSources({ page: 1, limit }));
     } catch (err) {
       error('Failed to create booking source');
       console.error(err);
@@ -133,7 +135,7 @@ export default function BookingSourcesPage() {
       success('Booking source updated successfully');
       setEditOpen(false);
       setSelectedBookingSource(null);
-      dispatch(fetchBookingSources({ page: 1, limit: 100 }));
+      dispatch(fetchBookingSources({ page, limit }));
     } catch (err) {
       error('Failed to update booking source');
       console.error(err);
@@ -148,7 +150,7 @@ export default function BookingSourcesPage() {
       success('Booking source deleted successfully');
       setDeleteOpen(false);
       setSelectedBookingSource(null);
-      dispatch(fetchBookingSources({ page: 1, limit: 100 }));
+      dispatch(fetchBookingSources({ page, limit }));
     } catch (err) {
       error('Failed to delete booking source');
       console.error(err);
@@ -166,7 +168,7 @@ export default function BookingSourcesPage() {
       success(
         `Booking source ${bookingSource.isActive ? 'deactivated' : 'activated'} successfully`,
       );
-      dispatch(fetchBookingSources({ page: 1, limit: 100 }));
+      dispatch(fetchBookingSources({ page, limit }));
     } catch (err) {
       error('Failed to toggle booking source status');
       console.error(err);
@@ -278,6 +280,17 @@ export default function BookingSourcesPage() {
         data={filteredBookingSources}
         loading={loading}
         renderRow={renderBookingSourceRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* Create Dialog */}

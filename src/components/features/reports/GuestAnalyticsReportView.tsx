@@ -36,6 +36,30 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
     return <div>Summary data not available</div>;
   }
 
+  // Safely derive optional metrics that may not exist on some payloads
+  const avgLengthOfStay: number = Number(((summary as any)?.averageLengthOfStay ?? 0));
+  const avgAdvanceBooking: number = Number(((summary as any)?.averageAdvanceBooking ?? 0));
+
+  // Normalize chart datasets to expected { name: string; value: number } shape
+  const ageGroupsData: Array<{ name: string; value: number }> = (demographics.ageGroups || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ag: any) => ({ name: ag.name ?? ag.label ?? ag.group ?? 'Unknown', value: Number(ag.value ?? ag.count ?? 0) })
+  );
+  const genderData: Array<{ name: string; value: number }> = (demographics.genders || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (g: any) => ({ name: g.name ?? g.label ?? g.gender ?? 'Unknown', value: Number(g.value ?? g.count ?? 0) })
+  );
+  const countriesData: Array<{ name: string; value: number; percentage: number }> = (demographics.countries || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (c: any) => ({
+      name: c.name ?? c.country ?? c.label ?? 'Unknown',
+      value: Number(c.value ?? c.count ?? c.total ?? 0),
+      percentage: Number(
+        c.percentage ?? c.percent ?? (((c.value ?? c.count ?? 0) / Math.max(1, summary.totalGuests || 0)) * 100)
+      ),
+    })
+  );
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -50,6 +74,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
 
         <StatsCard
           title="Repeat Guests"
+
           value={summary?.repeatGuests || 0}
           description={`${summary?.totalGuests ? ((summary.repeatGuests / summary.totalGuests) * 100).toFixed(1) : '0.0'}% of total`}
           icon={UserCheck}
@@ -57,6 +82,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
         />
 
         <StatsCard
+
           title="New Guests"
           value={summary?.newGuests || 0}
           description={`${summary?.totalGuests ? ((summary.newGuests / summary.totalGuests) * 100).toFixed(1) : '0.0'}% of total`}
@@ -65,6 +91,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
         />
 
         <StatsCard
+
           title="Avg Stays per Guest"
           value={`${(summary?.averageStaysPerGuest || 0).toFixed(1)} stays`}
           description="Average number of stays per guest"
@@ -80,6 +107,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <CardTitle>Guest Demographics by Age</CardTitle>
           </CardHeader>
           <CardContent>
+
             {charts?.ageDistribution ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -114,6 +142,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
             <CardTitle>Guest Demographics by Gender</CardTitle>
           </CardHeader>
           <CardContent>
+
             {demographics.genders && demographics.genders.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -191,6 +220,7 @@ export function GuestAnalyticsReportView({ data }: GuestAnalyticsReportViewProps
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
+
             {loyaltyAnalysis && loyaltyAnalysis.length > 0 ? (
               loyaltyAnalysis.map((tier: any, index: number) => (
                 <div key={index} className="flex justify-between items-center p-2 border rounded">

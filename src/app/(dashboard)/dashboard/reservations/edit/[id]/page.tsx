@@ -28,7 +28,7 @@ export default function EditReservationPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen">
             <EditReservationForm
                 reservationId={reservationId}
                 onSuccess={handleSuccess}

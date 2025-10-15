@@ -19,6 +19,7 @@ import { reservationService } from '@/services/reservation.service';
 import type { Reservation } from '@/types';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { useNotification } from '@/hooks/useNotification';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 export default function ReservationDetailPage() {
   const params = useParams();
@@ -113,14 +114,15 @@ export default function ReservationDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div>
+          <PageHeader title="Reservation Details" description={`Booking ID: ${reservation.id.slice(0, 8)}`} />
+          {/* <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Reservation Details
             </h1>
             <p className="text-gray-600">
               Booking ID: {reservation.id.slice(0, 8)}
             </p>
-          </div>
+          </div> */}
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(reservation.status)}
@@ -151,15 +153,15 @@ export default function ReservationDetailPage() {
                 <h3 className="font-semibold text-lg">
                   {primaryGuest?.firstName} {primaryGuest?.lastName}
                 </h3>
-                <p className="text-sm text-gray-600">{primaryGuest?.email}</p>
-                <p className="text-sm text-gray-600">{primaryGuest?.phone}</p>
+                <p className="text-sm text-muted-foreground">{primaryGuest?.email}</p>
+                <p className="text-sm text-muted-foreground">{primaryGuest?.phone}</p>
               </div>
 
               {allGuests.length > 1 && (
                 <>
                   <Separator />
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-2">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-2">
                       Additional Guests ({allGuests.length - 1})
                     </h4>
                     <div className="space-y-2">
@@ -170,7 +172,7 @@ export default function ReservationDetailPage() {
                             <p className="font-medium">
                               {bg.guest?.firstName} {bg.guest?.lastName}
                             </p>
-                            <p className="text-gray-600">{bg.guest?.email}</p>
+                            <p className="text-muted-foreground">{bg.guest?.email}</p>
                           </div>
                         ))}
                     </div>
@@ -191,23 +193,23 @@ export default function ReservationDetailPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Check-in</p>
+                  <p className="text-sm text-muted-foreground">Check-in</p>
                   <p className="font-medium">
                     {formatDate(reservation.checkIn)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Check-out</p>
+                  <p className="text-sm text-muted-foreground">Check-out</p>
                   <p className="font-medium">
                     {formatDate(reservation.checkOut)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Adults</p>
+                  <p className="text-sm text-muted-foreground">Adults</p>
                   <p className="font-medium">{reservation.adults}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Children</p>
+                  <p className="text-sm text-muted-foreground">Children</p>
                   <p className="font-medium">{reservation.children}</p>
                 </div>
               </div>
@@ -215,14 +217,14 @@ export default function ReservationDetailPage() {
               <Separator />
 
               <div>
-                <p className="text-sm text-gray-600">Booking Type</p>
+                <p className="text-sm text-muted-foreground">Booking Type</p>
                 <p className="font-medium">
                   {reservation.bookingType?.name || 'N/A'}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-600">Booking Source</p>
+                <p className="text-sm text-muted-foreground">Booking Source</p>
                 <p className="font-medium">
                   {reservation.bookingSource?.name || 'N/A'}
                 </p>
@@ -231,7 +233,7 @@ export default function ReservationDetailPage() {
               {reservation.specialRequests &&
                 reservation.specialRequests.length > 0 && (
                   <div>
-                    <p className="text-sm text-gray-600">Special Requests</p>
+                    <p className="text-sm text-muted-foreground">Special Requests</p>
                     <ul className="list-disc list-inside">
                       {reservation.specialRequests.map((req, idx) => (
                         <li key={idx} className="text-sm">
@@ -244,7 +246,7 @@ export default function ReservationDetailPage() {
 
               {reservation.notes && (
                 <div>
-                  <p className="text-sm text-gray-600">Notes</p>
+                  <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="text-sm">{reservation.notes}</p>
                 </div>
               )}
@@ -261,9 +263,9 @@ export default function ReservationDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600">Property</p>
+                <p className="text-sm text-muted-foreground">Property</p>
                 <p className="font-medium">{reservation.property?.name}</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {reservation.property?.address}, {reservation.property?.city}
                 </p>
               </div>
@@ -271,12 +273,12 @@ export default function ReservationDetailPage() {
               <Separator />
 
               <div>
-                <p className="text-sm text-gray-600">Room</p>
+                <p className="text-sm text-muted-foreground">Room</p>
                 <p className="font-medium">
                   {reservation.room?.number} -{' '}
                   {reservation.room?.roomType?.name}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Floor {reservation.room?.floor}
                 </p>
               </div>
@@ -295,13 +297,13 @@ export default function ReservationDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Base Price</span>
+                <span className="text-muted-foreground">Base Price</span>
                 <span className="font-medium">
                   {formatCurrency(reservation.basePrice)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
+                <span className="text-muted-foreground">Tax</span>
                 <span className="font-medium">
                   {formatCurrency(reservation.taxAmount)}
                 </span>
@@ -324,15 +326,15 @@ export default function ReservationDetailPage() {
                 <>
                   <Separator />
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
+                    <span className="text-muted-foreground">
                       Commission ({reservation.commissionRate}%)
                     </span>
-                    <span className="text-gray-600">
+                    <span className="text-muted-foreground">
                       {formatCurrency(reservation.commissionAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between font-semibold">
-                    <span className="text-gray-600">Net Revenue</span>
+                    <span className="text-muted-foreground">Net Revenue</span>
                     <span>{formatCurrency(reservation.netRevenue)}</span>
                   </div>
                 </>
@@ -350,20 +352,20 @@ export default function ReservationDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div>
-                <p className="text-gray-600">Created</p>
+                <p className="text-muted-foreground">Created</p>
                 <p className="font-medium">
                   {formatDate(reservation.createdAt)}
                 </p>
               </div>
               <div>
-                <p className="text-gray-600">Last Updated</p>
+                <p className="text-muted-foreground">Last Updated</p>
                 <p className="font-medium">
                   {formatDate(reservation.updatedAt)}
                 </p>
               </div>
               {reservation.confirmedAt && (
                 <div>
-                  <p className="text-gray-600">Confirmed At</p>
+                  <p className="text-muted-foreground">Confirmed At</p>
                   <p className="font-medium">
                     {formatDate(reservation.confirmedAt)}
                   </p>
@@ -371,7 +373,7 @@ export default function ReservationDetailPage() {
               )}
               {reservation.checkedInAt && (
                 <div>
-                  <p className="text-gray-600">Checked In At</p>
+                  <p className="text-muted-foreground">Checked In At</p>
                   <p className="font-medium">
                     {formatDate(reservation.checkedInAt)}
                   </p>
@@ -379,7 +381,7 @@ export default function ReservationDetailPage() {
               )}
               {reservation.checkedOutAt && (
                 <div>
-                  <p className="text-gray-600">Checked Out At</p>
+                  <p className="text-muted-foreground">Checked Out At</p>
                   <p className="font-medium">
                     {formatDate(reservation.checkedOutAt)}
                   </p>

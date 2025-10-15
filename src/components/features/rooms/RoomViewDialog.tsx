@@ -53,7 +53,9 @@ export function RoomViewDialog({
       amount || 0,
     );
 
-  const propertyName = properties?.find((p) => p.id === room.propertyId)?.name;
+  const propertyName = properties?.find((p) => p.id === room?.propertyId)?.name;
+
+  if (!room) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
