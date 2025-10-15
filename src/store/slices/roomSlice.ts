@@ -60,6 +60,7 @@ export const fetchRooms = createAsyncThunk(
       search?: string;
       propertyId?: string;
       status?: string;
+      isActive?: boolean;
     } = {},
     { rejectWithValue },
   ) => {

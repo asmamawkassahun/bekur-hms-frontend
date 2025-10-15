@@ -35,7 +35,13 @@ const ROOM_STATUSES = [
   'OUT_OF_ORDER',
 ] as const;
 
-const roomSchema = z.object({
+const MAINTENANCE_STATUSES = [
+  'CLEANING',
+  'MAINTENANCE',
+  'OUT_OF_ORDER',
+] as const;
+
+const roomCreateSchema = z.object({
   number: z.string().min(1, 'Room number is required'),
   propertyId: z.string().uuid({ message: 'Property is required' }),
   typeId: z.string().uuid({ message: 'Room type is required' }),
@@ -55,7 +61,23 @@ const roomSchema = z.object({
   isActive: z.boolean(),
 });
 
-type RoomFormData = z.infer<typeof roomSchema>;
+const roomEditSchema = z.object({
+  number: z.string().min(1, 'Room number is required'),
+  propertyId: z.string().uuid({ message: 'Property is required' }),
+  typeId: z.string().uuid({ message: 'Room type is required' }),
+  floor: z.number().int().min(0).optional(),
+  capacity: z.number().int().min(1, 'Capacity must be at least 1'),
+  basePrice: z.number().min(0, 'Price must be positive'),
+  currency: z.string().min(1, 'Currency is required'),
+  status: z.enum(['CLEANING', 'MAINTENANCE', 'OUT_OF_ORDER']).optional(),
+  amenities: z.array(z.string()).optional(),
+  description: z.string().optional(),
+  isActive: z.boolean(),
+});
+
+type RoomCreateFormData = z.infer<typeof roomCreateSchema>;
+type RoomEditFormData = z.infer<typeof roomEditSchema>;
+type RoomFormData = RoomCreateFormData | RoomEditFormData;
 
 interface RoomFormProps {
   room?: Room;
@@ -73,22 +95,29 @@ export function RoomForm({
   const dispatch = useDispatch<AppDispatch>();
   const { properties } = useSelector((state: RootState) => state.property);
   const { roomTypes } = useSelector((state: RootState) => state.roomType);
+  const isEdit = Boolean(room);
+
+  const schema = React.useMemo(() => (isEdit ? roomEditSchema : roomCreateSchema), [isEdit]);
 
   const form = useForm<RoomFormData>({
-    resolver: zodResolver(roomSchema),
-    defaultValues: room
+    resolver: zodResolver(schema),
+    defaultValues: isEdit
       ? {
-          number: room.number,
-          propertyId: room.propertyId,
-          typeId: room.roomTypeId,
-          floor: room.floor,
-          capacity: room.roomType?.adultCapacity || 2,
-          basePrice: room.basePrice,
+          number: room!.number,
+          propertyId: room!.propertyId,
+          typeId: room!.roomTypeId,
+          floor: room!.floor,
+          capacity: room!.roomType?.adultCapacity || 2,
+          basePrice: room!.basePrice,
           currency: 'USD',
-          status: room.status,
+          status: (MAINTENANCE_STATUSES as readonly string[]).includes(room!.status as string)
+            ? (room!.status as any)
+            : undefined,
           amenities: [],
           description: '',
-          isActive: room.isActive,
+          isActive: (MAINTENANCE_STATUSES as readonly string[]).includes(room!.status as string)
+            ? false
+            : true,
         }
       : {
           number: '',
@@ -122,13 +151,25 @@ export function RoomForm({
       capacity: room.roomType?.adultCapacity || 2,
       basePrice: room.basePrice,
       currency: 'USD',
-      status: room.status,
+      status: (MAINTENANCE_STATUSES as readonly string[]).includes(room.status as string)
+        ? (room.status as any)
+        : (undefined as any),
       amenities: [],
       description: '',
-      isActive: room.isActive,
+      isActive: (MAINTENANCE_STATUSES as readonly string[]).includes(room.status as string)
+        ? false
+        : true,
     };
     form.reset(defaults);
   }, [room, form]);
+
+  // When maintenance status is selected, disable and set isActive to false
+  const watchedStatus = form.watch('status' as any);
+  useEffect(() => {
+    if (watchedStatus) {
+      form.setValue('isActive' as any, false, { shouldValidate: true });
+    }
+  }, [watchedStatus, form]);
 
   // Filter room types by selected property (like AddRoomDialog)
   const filteredRoomTypes = useMemo(() => {
@@ -137,8 +178,16 @@ export function RoomForm({
   }, [roomTypes, form]);
 
   const handleSubmit = (values: RoomFormData) => {
+    // Force isActive=false when a maintenance status is selected so DB persists it
+    const isMaintenance = Boolean(
+      (values as any)?.status &&
+        (MAINTENANCE_STATUSES as readonly string[]).includes(
+          ((values as any).status as string) || '',
+        ),
+    );
     const payload = {
       ...values,
+      isActive: isMaintenance ? false : (values as any).isActive,
       amenities: values.amenities?.join(', '),
     };
     onSubmit(payload as RoomFormData);
@@ -262,14 +311,17 @@ export function RoomForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={(field.value as any)} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {ROOM_STATUSES.map((status) => (
+                    {(isEdit
+                      ? (MAINTENANCE_STATUSES as readonly string[])
+                      : ROOM_STATUSES
+                    ).map((status) => (
                       <SelectItem key={status} value={status}>
                         {status?.replace('_', ' ') || 'Unknown'}
                       </SelectItem>
@@ -388,6 +440,7 @@ export function RoomForm({
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
+                  disabled={Boolean(watchedStatus)}
                 />
               </FormControl>
               <div className="space-y-1 leading-none">

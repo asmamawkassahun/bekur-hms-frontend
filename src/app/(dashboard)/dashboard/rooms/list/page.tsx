@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
@@ -103,7 +103,7 @@ export default function RoomsPage() {
           totalRooms: allRooms.length,
           availableRooms: allRooms.filter((r) => r.status === 'AVAILABLE')
             .length,
-          occupiedRooms: allRooms.filter((r) => r.status === 'OCCUPIED').length,
+          occupiedRooms: allRooms.filter((r) => r.status === 'CLEANING').length,
           maintenanceRooms: allRooms.filter((r) => r.status === 'MAINTENANCE')
             .length,
         });
@@ -143,11 +143,27 @@ export default function RoomsPage() {
         page,
         limit,
         search: debouncedSearch || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
+        // When Available filter selected, fetch by isActive=true
+        status:
+          statusFilter !== 'AVAILABLE' && statusFilter !== 'all'
+            ? statusFilter
+            : undefined,
+        isActive: statusFilter === 'AVAILABLE' ? true : undefined,
         propertyId: propertyFilter === 'all' ? undefined : propertyFilter,
       }),
     );
   }, [dispatch, debouncedSearch, statusFilter, propertyFilter, page, limit]);
+
+  // Client-side filter: for AVAILABLE, ensure only isActive=true
+  const displayedRooms = React.useMemo(() => {
+    let list = rooms || [];
+    if (statusFilter === 'AVAILABLE') {
+      list = list.filter((r) => r.isActive === true);
+    } else if (statusFilter !== 'all') {
+      list = list.filter((r) => r.status === statusFilter);
+    }
+    return list;
+  }, [rooms, statusFilter]);
 
   const handleCreateRoom = async (data: any) => {
     try {
@@ -270,7 +286,7 @@ export default function RoomsPage() {
       </PageHeader>
 
       {/* Stats Cards */}
-      <RoomStatsCards stats={statsData} />
+      {/* <RoomStatsCards stats={statsData} /> */}
 
       {/* Data Table with integrated search and filters */}
       <DataTable
@@ -297,7 +313,7 @@ export default function RoomsPage() {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="AVAILABLE">Available</SelectItem>
-                <SelectItem value="OCCUPIED">Occupied</SelectItem>
+                <SelectItem value="CLEANING">Cleaning</SelectItem>
                 <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
                 <SelectItem value="OUT_OF_ORDER">Out of Order</SelectItem>
               </SelectContent>
@@ -311,10 +327,10 @@ export default function RoomsPage() {
                 {/* This would be populated from properties state */}
               </SelectContent>
             </Select>
-            <Button variant="outline" className="flex items-center gap-2">
+            {/* <Button variant="outline" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               More Filters
-            </Button>
+            </Button> */}
           </div>
         }
         renderRow={renderRoomRow}
