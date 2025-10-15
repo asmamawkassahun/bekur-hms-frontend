@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
-import { handleApiError } from '@/lib/api/error-handler';
+import { getErrorMessage } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
 import type { Property, CreatePropertyData, UpdatePropertyData } from '@/types';
 
@@ -177,8 +177,10 @@ export default function PropertiesPage() {
         description: formData.description ?? undefined,
         isActive: formData.isActive !== undefined ? formData.isActive : true,
         policies: formData.policies ?? undefined,
-        website: formData.website ?? undefined,
-        hotelCode: formData.hotelCode ?? undefined,
+        website: formData.website?.trim() ? formData.website.trim() : undefined,
+        hotelCode: formData.hotelCode?.trim()
+          ? formData.hotelCode.trim().toUpperCase()
+          : undefined,
       };
       await dispatch(createProperty(data)).unwrap();
       success('Property created');
@@ -192,8 +194,7 @@ export default function PropertiesPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -203,9 +204,11 @@ export default function PropertiesPage() {
       // Ensure all fields are properly sent to backend
       const data: UpdatePropertyData = {
         ...formData,
-        website: formData.website ?? undefined,
+        website: formData.website?.trim() ? formData.website.trim() : undefined,
         policies: formData.policies ?? undefined,
-        hotelCode: formData.hotelCode ?? undefined,
+        hotelCode: formData.hotelCode?.trim()
+          ? formData.hotelCode.trim().toUpperCase()
+          : undefined,
         taxRate: typeof formData.taxRate === 'string' ? Number(formData.taxRate) : formData.taxRate,
       };
 
@@ -222,8 +225,7 @@ export default function PropertiesPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -243,8 +245,7 @@ export default function PropertiesPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -426,15 +427,15 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selectedProperty.phone || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.phone || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedProperty.email || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.email || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Website</p>
-                  <p className="font-medium">{selectedProperty.website || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.website || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Timezone</p>
@@ -450,7 +451,7 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Hotel Code</p>
-                  <p className="font-medium">{selectedProperty.hotelCode || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.hotelCode || '-'}</p>
                 </div>
               </div>
               {selectedProperty.description && (
