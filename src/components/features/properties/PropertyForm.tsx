@@ -384,7 +384,7 @@ export function PropertyForm({
         </div>
 
         {/* Channel Manager Integration */}
-        <Card className="">
+        {/* <Card className="">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-600" />
@@ -421,7 +421,7 @@ export function PropertyForm({
               )}
             />
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Description and Policies */}
         <FormField
