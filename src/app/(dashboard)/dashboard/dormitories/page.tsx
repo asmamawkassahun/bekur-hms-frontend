@@ -324,7 +324,7 @@ export default function DormitoriesPage() {
       </PageHeader>
 
       {/* Stats Cards */}
-      <DormitoryStatsCards stats={statsData} />
+      {/* <DormitoryStatsCards stats={statsData} /> */}
 
       {/* Data Table with integrated search and filters */}
       <DataTable
