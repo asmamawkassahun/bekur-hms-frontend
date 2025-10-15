@@ -57,6 +57,8 @@ export default function BookingTypesPage() {
   // State
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -64,10 +66,10 @@ export default function BookingTypesPage() {
   const [selectedBookingType, setSelectedBookingType] =
     useState<BookingType | null>(null);
 
-  // Load data
+  // Load data with pagination
   useEffect(() => {
-    dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
-  }, [dispatch]);
+    dispatch(fetchBookingTypes({ page, limit }));
+  }, [dispatch, page, limit]);
 
   // Filtered data
   const filteredBookingTypes = bookingTypes.filter((bt) => {
@@ -99,7 +101,7 @@ export default function BookingTypesPage() {
       await dispatch(createBookingType(data as CreateBookingTypeData)).unwrap();
       success('Booking type created successfully');
       setCreateOpen(false);
-      dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
+      dispatch(fetchBookingTypes({ page: 1, limit }));
     } catch (err) {
       error('Failed to create booking type');
       console.error(err);
@@ -118,7 +120,7 @@ export default function BookingTypesPage() {
       success('Booking type updated successfully');
       setEditOpen(false);
       setSelectedBookingType(null);
-      dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
+      dispatch(fetchBookingTypes({ page, limit }));
     } catch (err) {
       error('Failed to update booking type');
       console.error(err);
@@ -133,7 +135,7 @@ export default function BookingTypesPage() {
       success('Booking type deleted successfully');
       setDeleteOpen(false);
       setSelectedBookingType(null);
-      dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
+      dispatch(fetchBookingTypes({ page, limit }));
     } catch (err) {
       error('Failed to delete booking type');
       console.error(err);
@@ -151,7 +153,7 @@ export default function BookingTypesPage() {
       success(
         `Booking type ${bookingType.isActive ? 'deactivated' : 'activated'} successfully`,
       );
-      dispatch(fetchBookingTypes({ page: 1, limit: 100 }));
+      dispatch(fetchBookingTypes({ page, limit }));
     } catch (err) {
       error('Failed to toggle booking type status');
       console.error(err);
@@ -239,6 +241,17 @@ export default function BookingTypesPage() {
         data={filteredBookingTypes}
         loading={loading}
         renderRow={renderBookingTypeRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* Create Dialog */}

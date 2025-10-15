@@ -59,6 +59,8 @@ export default function GuestsPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [loyaltyFilter, setLoyaltyFilter] = useState("all");
   const [openCreate, setOpenCreate] = useState(false);
   const [openView, setOpenView] = useState(false);
@@ -140,21 +142,17 @@ export default function GuestsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with caching
+  // Fetch with pagination
   useEffect(() => {
-    const shouldFetch =
-      !searchCache[debouncedSearch] || debouncedSearch !== lastSearchTerm;
-    if (shouldFetch) {
-      dispatch(
-        fetchGuests({
-          page: 1,
-          limit: 10,
-          search: debouncedSearch || undefined,
-          loyaltyTier: loyaltyFilter === "all" ? undefined : loyaltyFilter,
-        })
-      );
-    }
-  }, [dispatch, debouncedSearch, loyaltyFilter, searchCache, lastSearchTerm]);
+    dispatch(
+      fetchGuests({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+        loyaltyTier: loyaltyFilter === "all" ? undefined : loyaltyFilter,
+      })
+    );
+  }, [dispatch, debouncedSearch, loyaltyFilter, page, limit]);
 
   const handleCreateGuest = async (
     data: CreateGuestData & { documents?: { front?: File; back?: File } }
@@ -396,6 +394,17 @@ export default function GuestsPage() {
           </div>
         }
         renderRow={renderGuestRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* View Guest Dialog */}

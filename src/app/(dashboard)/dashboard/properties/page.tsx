@@ -56,6 +56,8 @@ export default function PropertiesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
@@ -147,27 +149,16 @@ export default function PropertiesPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with caching
+  // Fetch with pagination
   useEffect(() => {
-    const shouldFetch =
-      !searchCache[debouncedSearch] || debouncedSearch !== lastSearchTerm;
-    if (shouldFetch) {
-      dispatch(
-        fetchProperties({
-          page: 1,
-          limit: 10,
-          search: debouncedSearch || undefined,
-        }),
-      );
-    }
-  }, [
-    dispatch,
-    debouncedSearch,
-    typeFilter,
-    statusFilter,
-    searchCache,
-    lastSearchTerm,
-  ]);
+    dispatch(
+      fetchProperties({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+      }),
+    );
+  }, [dispatch, debouncedSearch, page, limit]);
 
   const handleCreateProperty = async (formData: Partial<CreatePropertyData> & Pick<CreatePropertyData, 'name' | 'type' | 'address' | 'city' | 'country' | 'timezone' | 'currency'>) => {
     try {
@@ -385,6 +376,17 @@ export default function PropertiesPage() {
           </div>
         }
         renderRow={renderPropertyRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* View Property Dialog */}

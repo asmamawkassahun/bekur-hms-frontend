@@ -23,7 +23,7 @@ import type { Payment } from '@/types/payment.types';
 export default function CheckInPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const { reservations, loading } = useSelector(
+  const { reservations, loading, pagination } = useSelector(
     (state: RootState) => state.reservation,
   );
   const { payments } = useSelector((state: RootState) => state.payment);
@@ -40,8 +40,10 @@ export default function CheckInPage() {
   const [selectedReservationForPayment, setSelectedReservationForPayment] =
     useState<any>(null);
   const [unpaidAmount, setUnpaidAmount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  // Fetch pending/confirmed reservations and checked-in reservations on mount
+  // Initial fetch for confirmed (stats) and payments
   useEffect(() => {
     dispatch(
       fetchReservations({
@@ -50,23 +52,23 @@ export default function CheckInPage() {
         filters: { status: 'CONFIRMED' },
       }),
     );
+    dispatch(fetchPayments({ page: 1, limit: 1000 }));
+  }, [dispatch]);
 
-    // Fetch checked-in reservations for the list
+  // Fetch checked-in reservations with pagination
+  useEffect(() => {
     dispatch(
       fetchReservations({
-        page: 1,
-        limit: 100,
+        page,
+        limit,
         filters: { status: 'CHECKED_IN' },
       }),
     ).then((result: any) => {
-      if (result.payload?.data) {
+      if (result?.payload?.data) {
         setCheckedInReservations(result.payload.data);
       }
     });
-
-    // Fetch all payments to match with reservations
-    dispatch(fetchPayments({ page: 1, limit: 1000 }));
-  }, [dispatch]);
+  }, [dispatch, page, limit]);
 
   // Set default check-in time to now
   useEffect(() => {
@@ -121,8 +123,8 @@ export default function CheckInPage() {
 
       dispatch(
         fetchReservations({
-          page: 1,
-          limit: 100,
+          page,
+          limit,
           filters: { status: 'CHECKED_IN' },
         }),
       ).then((result: any) => {
@@ -230,8 +232,8 @@ export default function CheckInPage() {
       // Refresh the checked-in reservations list
       dispatch(
         fetchReservations({
-          page: 1,
-          limit: 100,
+          page,
+          limit,
           filters: { status: 'CHECKED_IN' },
         }),
       ).then((result: any) => {
@@ -412,6 +414,17 @@ export default function CheckInPage() {
             getPaymentStatus={getPaymentStatus}
           />
         )}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* Payment Dialog */}

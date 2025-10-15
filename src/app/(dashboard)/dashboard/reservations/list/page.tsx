@@ -46,6 +46,8 @@ export default function ReservationsPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
   const [openCancel, setOpenCancel] = useState(false);
   const [selectedReservation, setSelectedReservation] =
@@ -167,12 +169,12 @@ export default function ReservationsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with filtering - always fetch when filters change
+  // Fetch with pagination
   useEffect(() => {
     dispatch(
       fetchReservations({
-        page: 1,
-        limit: 100, // Increased limit to show more results
+        page,
+        limit,
         filters: {
           status:
             statusFilter === 'all'
@@ -185,7 +187,7 @@ export default function ReservationsPage() {
       console.error('Failed to fetch reservations:', err);
       showError('Failed to load reservations');
     });
-  }, [dispatch, debouncedSearch, statusFilter, showError]);
+  }, [dispatch, debouncedSearch, statusFilter, showError, page, limit]);
 
   const handleCancelReservation = async () => {
     if (!selectedReservation) return;
@@ -350,6 +352,17 @@ export default function ReservationsPage() {
           </div>
         }
         renderRow={renderReservationRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* Delete Confirmation Dialog */}

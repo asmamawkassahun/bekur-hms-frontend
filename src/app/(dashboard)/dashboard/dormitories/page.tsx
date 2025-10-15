@@ -61,6 +61,8 @@ export default function DormitoriesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   // Status is not part of Dormitory type; using active filter instead
   const [activeFilter, setActiveFilter] = useState<
     'all' | 'active' | 'inactive'
@@ -157,28 +159,17 @@ export default function DormitoriesPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with caching
+  // Fetch with pagination
   useEffect(() => {
-    const shouldFetch =
-      !searchCache[debouncedSearch] || debouncedSearch !== lastSearchTerm;
-    if (shouldFetch) {
-      dispatch(
-        fetchDormitories({
-          page: 1,
-          limit: 10,
-          search: debouncedSearch || undefined,
-          type: mapTypeFilterToApi(typeFilter),
-        }),
-      );
-    }
-  }, [
-    dispatch,
-    debouncedSearch,
-    activeFilter,
-    typeFilter,
-    searchCache,
-    lastSearchTerm,
-  ]);
+    dispatch(
+      fetchDormitories({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+        type: mapTypeFilterToApi(typeFilter),
+      }),
+    );
+  }, [dispatch, debouncedSearch, typeFilter, page, limit]);
 
   const handleCreateDormitory = async (data: CreateDormitoryData) => {
     try {
@@ -386,6 +377,17 @@ export default function DormitoriesPage() {
           </div>
         }
         renderRow={renderDormitoryRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* Edit Dormitory Dialog */}

@@ -42,7 +42,7 @@ import type { Payment } from '@/types/payment.types';
 
 export default function CheckOutPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { reservations, loading } = useSelector(
+  const { reservations, loading, pagination } = useSelector(
     (state: RootState) => state.reservation,
   );
   const { payments } = useSelector((state: RootState) => state.payment);
@@ -60,8 +60,10 @@ export default function CheckOutPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Reservation | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  // Fetch checked-in reservations and checked-out reservations on mount
+  // Initial fetch for stats and payments
   useEffect(() => {
     dispatch(
       fetchReservations({
@@ -70,12 +72,15 @@ export default function CheckOutPage() {
         filters: { status: 'CHECKED_IN' },
       }),
     );
+    dispatch(fetchPayments({ page: 1, limit: 1000 }));
+  }, [dispatch]);
 
-    // Fetch checked-out reservations for the list
+  // Fetch checked-out reservations with pagination
+  useEffect(() => {
     dispatch(
       fetchReservations({
-        page: 1,
-        limit: 100,
+        page,
+        limit,
         filters: { status: 'CHECKED_OUT' },
       }),
     ).then((result: any) => {
@@ -83,10 +88,7 @@ export default function CheckOutPage() {
         setCheckedOutReservations(result.payload.data);
       }
     });
-
-    // Fetch all payments to match with reservations
-    dispatch(fetchPayments({ page: 1, limit: 1000 }));
-  }, [dispatch]);
+  }, [dispatch, page, limit]);
 
   // Set default check-out time to now
   useEffect(() => {
@@ -136,8 +138,8 @@ export default function CheckOutPage() {
 
       dispatch(
         fetchReservations({
-          page: 1,
-          limit: 100,
+          page,
+          limit,
           filters: { status: 'CHECKED_OUT' },
         }),
       ).then((result: any) => {
@@ -299,6 +301,17 @@ export default function CheckOutPage() {
             getPaymentStatus={getPaymentStatus}
           />
         )}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* View Checkout Details */}

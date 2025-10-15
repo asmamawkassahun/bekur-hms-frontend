@@ -317,50 +317,59 @@ export default function StaffPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              Page {pagination.totalPages ? page : 0} of {pagination.totalPages}
-              {pagination.total ? ` • ${pagination.total} total` : ''}
-            </div>
-            <div className="flex items-center gap-2">
-              <Select
-                value={String(limit)}
-                onValueChange={(v) => {
-                  setLimit(Number(v));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[110px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 / page</SelectItem>
-                  <SelectItem value="20">20 / page</SelectItem>
-                  <SelectItem value="50">50 / page</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                className="cursor-pointer"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                className="cursor-pointer"
-                disabled={
-                  pagination.totalPages && page >= pagination.totalPages
-                    ? true
-                    : false
-                }
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          {(() => {
+            const totalItems =
+              typeof pagination?.total === 'number'
+                ? pagination.total
+                : filtered.length;
+            if (totalItems <= 10) return null;
+            return (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Page {pagination.totalPages ? page : 0} of {pagination.totalPages}
+                  {pagination.total ? ` • ${pagination.total} total` : ''}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={String(limit)}
+                    onValueChange={(v) => {
+                      setLimit(Number(v));
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[110px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 / page</SelectItem>
+                      <SelectItem value="20">20 / page</SelectItem>
+                      <SelectItem value="50">50 / page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    className="cursor-pointer"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="cursor-pointer"
+                    disabled={
+                      pagination.totalPages && page >= pagination.totalPages
+                        ? true
+                        : false
+                    }
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
 

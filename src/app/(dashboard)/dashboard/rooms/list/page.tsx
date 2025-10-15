@@ -56,6 +56,8 @@ export default function RoomsPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
   const [propertyFilter, setPropertyFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
@@ -134,29 +136,18 @@ export default function RoomsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with caching
+  // Fetch with pagination
   useEffect(() => {
-    const shouldFetch =
-      !searchCache[debouncedSearch] || debouncedSearch !== lastSearchTerm;
-    if (shouldFetch) {
-      dispatch(
-        fetchRooms({
-          page: 1,
-          limit: 10,
-          search: debouncedSearch || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter,
-          propertyId: propertyFilter === 'all' ? undefined : propertyFilter,
-        }),
-      );
-    }
-  }, [
-    dispatch,
-    debouncedSearch,
-    statusFilter,
-    propertyFilter,
-    searchCache,
-    lastSearchTerm,
-  ]);
+    dispatch(
+      fetchRooms({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        propertyId: propertyFilter === 'all' ? undefined : propertyFilter,
+      }),
+    );
+  }, [dispatch, debouncedSearch, statusFilter, propertyFilter, page, limit]);
 
   const handleCreateRoom = async (data: any) => {
     try {
@@ -327,6 +318,17 @@ export default function RoomsPage() {
           </div>
         }
         renderRow={renderRoomRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* View Room Dialog */}
