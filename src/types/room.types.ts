@@ -27,6 +27,28 @@ export interface RoomTypeBed {
   bedType: BedType;
 }
 
+// Room Type Image Types
+export interface RoomTypeImage {
+  id: string;
+  roomTypeId: string;
+  fileName: string;
+  fileUrl: string;
+  description?: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UploadRoomTypeImageData {
+  description?: string;
+  displayOrder?: number;
+}
+
+export interface UpdateRoomTypeImageData {
+  description?: string;
+  displayOrder?: number;
+}
+
 // Room Type Types
 export interface RoomType {
   id: string;
@@ -39,7 +61,8 @@ export interface RoomType {
   childCapacity: number;
   basePrice: number;
   amenities: string[];
-  images?: string[];
+  images?: string[]; // Legacy field for backward compatibility
+  roomTypeImages?: RoomTypeImage[]; // New structured images
   reserveCondition?: string;
   roomCode?: string; // Aiosell room code
   ratePlanCodes?: string[]; // Aiosell rate plan codes

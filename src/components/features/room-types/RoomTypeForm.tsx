@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -25,12 +25,14 @@ import { TagInput } from '@/components/ui/tag-input';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Button } from '@/components/ui/button';
 import { BedConfigurationSection } from './BedConfigurationSection';
+import { RoomTypeImageUpload } from './RoomTypeImageUpload';
 import type {
   RoomType,
   Property,
   BedType,
   CreateRoomTypeData,
   UpdateRoomTypeData,
+  RoomTypeImage,
 } from '@/types';
 
 const createRoomTypeSchema = z.object({
@@ -70,7 +72,7 @@ interface RoomTypeFormProps {
   roomType?: RoomType;
   properties: Property[];
   bedTypes: BedType[];
-  onSubmit: (data: CreateRoomTypeData | UpdateRoomTypeData) => void;
+  onSubmit: (data: CreateRoomTypeData | UpdateRoomTypeData, tempImages?: RoomTypeImage[]) => void;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -84,6 +86,7 @@ export function RoomTypeForm({
   onCancel,
   loading = false,
 }: RoomTypeFormProps) {
+  const [images, setImages] = useState<RoomTypeImage[]>([]);
   const schema = mode === 'create' ? createRoomTypeSchema : editRoomTypeSchema;
 
   const form = useForm<CreateRoomTypeData | UpdateRoomTypeData>({
@@ -110,8 +113,52 @@ export function RoomTypeForm({
     },
   });
 
-  const handleSubmit = (data: CreateRoomTypeData | UpdateRoomTypeData) => {
-    onSubmit(data);
+  // Load existing images when editing
+  useEffect(() => {
+    if (mode === 'edit' && roomType?.roomTypeImages) {
+      setImages(roomType.roomTypeImages);
+    }
+  }, [mode, roomType?.roomTypeImages]);
+
+  const handleSubmit = async (data: CreateRoomTypeData | UpdateRoomTypeData) => {
+    // Include image URLs in the legacy images field for backward compatibility
+    const imageUrls = images.map(img => img.fileUrl);
+    
+    // For edit mode, exclude beds field as it should be updated separately
+    const submitData = mode === 'edit' 
+      ? {
+          ...data,
+          images: imageUrls,
+          // Exclude beds field for updates
+        }
+      : {
+          ...data,
+          images: imageUrls,
+        };
+    
+    // Remove beds, propertyId, roomCode, and ratePlanCodes fields for edit mode
+    if (mode === 'edit') {
+      if ('beds' in submitData) {
+        delete (submitData as any).beds;
+      }
+      if ('propertyId' in submitData) {
+        delete (submitData as any).propertyId;
+      }
+      if ('roomCode' in submitData) {
+        delete (submitData as any).roomCode;
+      }
+      if ('ratePlanCodes' in submitData) {
+        delete (submitData as any).ratePlanCodes;
+      }
+    }
+    
+    // If we have temporary images (from creation mode), we need to upload them after room type creation
+    if (mode === 'create' && images.some(img => img.id.startsWith('temp-'))) {
+      // Store the images to upload after room type creation - pass them separately
+      onSubmit(submitData, images);
+    } else {
+      onSubmit(submitData);
+    }
   };
 
   // Get selected property to check for hotelCode
@@ -140,6 +187,7 @@ export function RoomTypeForm({
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
+                  disabled={mode === 'edit'}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -154,6 +202,11 @@ export function RoomTypeForm({
                     ))}
                   </SelectContent>
                 </Select>
+                {mode === 'edit' && (
+                  <p className="text-xs text-muted-foreground">
+                    Property cannot be changed after creation
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -322,23 +375,24 @@ export function RoomTypeForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="images"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Images</FormLabel>
-              <FormControl>
-                <ImageUpload
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  maxImages={5}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Room Type Images */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Room Images</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Upload up to 5 images to showcase this room type
+            </p>
+          </CardHeader>
+          <CardContent>
+            <RoomTypeImageUpload
+              roomTypeId={roomType?.id || 'new'}
+              images={images}
+              onImagesChange={setImages}
+              maxImages={5}
+              disabled={loading}
+            />
+          </CardContent>
+        </Card>
 
         <BedConfigurationSection
           beds={form.watch('beds') || []}
@@ -354,7 +408,10 @@ export function RoomTypeForm({
                 Channel Manager Codes (Optional)
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Configure for Aiosell distribution
+                {mode === 'edit' 
+                  ? 'Channel manager codes cannot be changed after creation'
+                  : 'Configure for Aiosell distribution'
+                }
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -368,6 +425,7 @@ export function RoomTypeForm({
                       <Input
                         placeholder="e.g., SUITE, DELUXE, STANDARD"
                         className="font-mono uppercase"
+                        disabled={mode === 'edit'}
                         {...field}
                         onChange={(e) =>
                           field.onChange(e.target.value.toUpperCase())
@@ -375,7 +433,10 @@ export function RoomTypeForm({
                       />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Unique identifier (uppercase, alphanumeric)
+                      {mode === 'edit' 
+                        ? 'Cannot be changed after creation'
+                        : 'Unique identifier (uppercase, alphanumeric)'
+                      }
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -389,22 +450,27 @@ export function RoomTypeForm({
                   <FormItem>
                     <FormLabel>Rate Plan Codes</FormLabel>
                     <FormControl>
-                      <TagInput
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        placeholder="e.g., SUITE-S-101"
-                      />
+                      <div className={mode === 'edit' ? 'opacity-50 pointer-events-none' : ''}>
+                        <TagInput
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          placeholder="e.g., SUITE-S-101"
+                        />
+                      </div>
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Add one per occupancy type. Press Enter after each.
+                      {mode === 'edit' 
+                        ? 'Cannot be changed after creation'
+                        : 'Add one per occupancy type. Press Enter after each.'
+                      }
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Quick add buttons */}
-              {form.watch('roomCode') && (
+              {/* Quick add buttons - only show in create mode */}
+              {mode === 'create' && form.watch('roomCode') && (
                 <div className="flex flex-wrap gap-2">
                   <span className="text-xs text-muted-foreground">
                     Quick add:

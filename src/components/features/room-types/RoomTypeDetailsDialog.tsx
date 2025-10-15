@@ -8,6 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { RoomTypeImageGallery } from './RoomTypeImageGallery';
 import { BedDouble, Users, DollarSign, Home, Square } from 'lucide-react';
 import type { RoomType, Property, BedType } from '@/types';
 
@@ -198,29 +199,19 @@ export function RoomTypeDetailsDialog({
           )}
 
           {/* Images */}
-          {roomType.images && roomType.images.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Images</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {roomType.images.map((image, index) => (
-                    <div
-                      key={index}
-                      className="aspect-video bg-muted rounded-lg overflow-hidden"
-                    >
-                      <img
-                        src={image}
-                        alt={`Room type ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Room Images</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RoomTypeImageGallery
+                images={roomType.roomTypeImages || []}
+                roomTypeName={roomType.name}
+                showOrder={true}
+                maxPreview={5}
+              />
+            </CardContent>
+          </Card>
 
           {/* Reserve Condition */}
           {roomType.reserveCondition && (
