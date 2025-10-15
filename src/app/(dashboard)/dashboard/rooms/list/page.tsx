@@ -246,7 +246,7 @@ export default function RoomsPage() {
     { key: 'capacity', label: 'Capacity', width: 'w-[120px]' },
     { key: 'price', label: 'Price', width: 'w-[120px]' },
     { key: 'status', label: 'Status', width: 'w-[120px]' },
-    { key: 'amenities', label: 'Amenities', width: 'w-[200px]' },
+    // { key: 'amenities', label: 'Amenities', width: 'w-[200px]' },
     { key: 'actions', label: 'Actions', width: 'w-[120px]', sortable: false },
   ];
 

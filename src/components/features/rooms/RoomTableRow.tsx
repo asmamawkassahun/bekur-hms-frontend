@@ -83,7 +83,7 @@ export function RoomTableRow({
         </div>
       </TableCell>
       <TableCell>{getStatusBadge(room.status)}</TableCell>
-      <TableCell>
+      {/* <TableCell>
         <div className="space-y-1">
           {room.roomType?.amenities && room.roomType?.amenities.length > 0 && (
             <div className="text-sm">
@@ -93,9 +93,9 @@ export function RoomTableRow({
             </div>
           )}
         </div>
-      </TableCell>
+      </TableCell> */}
       <TableCell className="text-right">
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
