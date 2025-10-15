@@ -227,7 +227,7 @@ export default function CheckOutPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3 ">
         <StatsCard
           title="Ready to Check Out"
           value={checkOutStats.checkedIn}
@@ -249,13 +249,13 @@ export default function CheckOutPage() {
           icon={LogOut}
           gradient="blue"
         />
-        <StatsCard
+        {/* <StatsCard
           title="Unpaid Checkouts"
           value={checkOutStats.unpaidCheckouts}
           description="Payment pending"
           icon={AlertCircle}
           gradient="rose"
-        />
+        /> */}
       </div>
 
       {/* Check-Out List */}
