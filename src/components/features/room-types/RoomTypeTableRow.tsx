@@ -2,7 +2,7 @@ import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import type { RoomType } from '@/types';
 
 interface RoomTypeTableRowProps {
@@ -35,9 +35,30 @@ export function RoomTypeTableRow({
   return (
     <TableRow className="hover:bg-muted/50">
       <TableCell className="font-medium">
-        <div>
-          <div className="font-semibold">{roomType.name}</div>
-         
+        <div className="flex items-center gap-3">
+          {/* Image Preview */}
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            {roomType.roomTypeImages && roomType.roomTypeImages.length > 0 ? (
+              <img
+                src={roomType.roomTypeImages[0].fileUrl.startsWith('http') ? roomType.roomTypeImages[0].fileUrl : `http://${roomType.roomTypeImages[0].fileUrl}`}
+                alt={roomType.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ImageIcon className="h-4 w-4 text-gray-400" />
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <div className="font-semibold">{roomType.name}</div>
+            {roomType.roomTypeImages && roomType.roomTypeImages.length > 0 && (
+              <div className="text-xs text-gray-500">
+                {roomType.roomTypeImages.length} image{roomType.roomTypeImages.length !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>

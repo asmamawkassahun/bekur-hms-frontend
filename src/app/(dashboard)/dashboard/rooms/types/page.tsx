@@ -69,6 +69,7 @@ import {
   UpdateRoomTypeData,
   CreateBedTypeData,
   UpdateBedTypeData,
+  RoomTypeImage,
 } from '@/types';
 
 // Import extracted components
@@ -270,9 +271,36 @@ export default function RoomTypesPage() {
   });
 
   // Room Type CRUD
-  const onCreateSubmit = async (data: CreateRoomTypeData | UpdateRoomTypeData) => {
+  const onCreateSubmit = async (data: CreateRoomTypeData | UpdateRoomTypeData, tempImages?: RoomTypeImage[]) => {
     try {
-      await roomTypeService.create(data as CreateRoomTypeData);
+      // Create the room type first
+      const response = await roomTypeService.create(data as CreateRoomTypeData);
+      const createdRoomType = response.data.data;
+      
+      // If there are temporary images, upload them now
+      if (tempImages && tempImages.length > 0 && createdRoomType) {
+        const uploadPromises = tempImages.map(async (image: RoomTypeImage, index: number) => {
+          try {
+            // Convert the blob URL back to a file
+            const response = await fetch(image.fileUrl);
+            const blob = await response.blob();
+            const file = new File([blob], image.fileName, { type: blob.type });
+            
+            const uploadData = {
+              description: image.description,
+              displayOrder: index + 1,
+            };
+            
+            return roomTypeService.uploadImage(createdRoomType.id, file, uploadData);
+          } catch (err) {
+            console.error('Failed to upload image:', err);
+            return null;
+          }
+        });
+        
+        await Promise.all(uploadPromises);
+      }
+      
       success('Room type created successfully');
       setCreateOpen(false);
       createForm.reset();
@@ -287,7 +315,19 @@ export default function RoomTypesPage() {
     if (!selectedRoomType) return;
 
     try {
+      // Update the room type (without beds field)
       await roomTypeService.update(selectedRoomType.id, data);
+      
+      // If beds were modified, update them separately
+      if ('beds' in data && data.beds) {
+        try {
+          await roomTypeService.updateBeds(selectedRoomType.id, data.beds);
+        } catch (bedErr) {
+          console.warn('Failed to update bed configuration:', bedErr);
+          // Don't fail the entire operation if bed update fails
+        }
+      }
+      
       success('Room type updated successfully');
       setEditOpen(false);
       setSelectedRoomType(null);
