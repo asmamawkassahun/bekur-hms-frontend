@@ -101,7 +101,7 @@ export default function BookingSourcesPage() {
     inactive: bookingSources.filter((bs) => !bs.isActive).length,
     averageCommission:
       bookingSources.length > 0
-        ? bookingSources.reduce((sum, bs) => sum + bs.commissionRate, 0) /
+        ? bookingSources.reduce((sum, bs) => sum + Number(bs.commissionRate), 0) /
           bookingSources.length
         : 0,
   };
