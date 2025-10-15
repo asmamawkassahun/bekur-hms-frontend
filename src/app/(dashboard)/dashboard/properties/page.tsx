@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import {
@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Filter } from 'lucide-react';
 import { useNotification } from '@/hooks/useNotification';
-import { handleApiError } from '@/lib/api/error-handler';
+import { getErrorMessage } from '@/lib/api/error-handler';
 import type { AxiosError } from 'axios';
 import type { Property, CreatePropertyData, UpdatePropertyData } from '@/types';
 
@@ -56,6 +56,8 @@ export default function PropertiesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [openCreate, setOpenCreate] = useState(false);
@@ -147,27 +149,16 @@ export default function PropertiesPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with caching
+  // Fetch with pagination
   useEffect(() => {
-    const shouldFetch =
-      !searchCache[debouncedSearch] || debouncedSearch !== lastSearchTerm;
-    if (shouldFetch) {
-      dispatch(
-        fetchProperties({
-          page: 1,
-          limit: 10,
-          search: debouncedSearch || undefined,
-        }),
-      );
-    }
-  }, [
-    dispatch,
-    debouncedSearch,
-    typeFilter,
-    statusFilter,
-    searchCache,
-    lastSearchTerm,
-  ]);
+    dispatch(
+      fetchProperties({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+      }),
+    );
+  }, [dispatch, debouncedSearch, page, limit]);
 
   const handleCreateProperty = async (formData: Partial<CreatePropertyData> & Pick<CreatePropertyData, 'name' | 'type' | 'address' | 'city' | 'country' | 'timezone' | 'currency'>) => {
     try {
@@ -186,8 +177,10 @@ export default function PropertiesPage() {
         description: formData.description ?? undefined,
         isActive: formData.isActive !== undefined ? formData.isActive : true,
         policies: formData.policies ?? undefined,
-        website: formData.website ?? undefined,
-        hotelCode: formData.hotelCode ?? undefined,
+        website: formData.website?.trim() ? formData.website.trim() : undefined,
+        hotelCode: formData.hotelCode?.trim()
+          ? formData.hotelCode.trim().toUpperCase()
+          : undefined,
       };
       await dispatch(createProperty(data)).unwrap();
       success('Property created');
@@ -201,8 +194,7 @@ export default function PropertiesPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -212,9 +204,11 @@ export default function PropertiesPage() {
       // Ensure all fields are properly sent to backend
       const data: UpdatePropertyData = {
         ...formData,
-        website: formData.website ?? undefined,
+        website: formData.website?.trim() ? formData.website.trim() : undefined,
         policies: formData.policies ?? undefined,
-        hotelCode: formData.hotelCode ?? undefined,
+        hotelCode: formData.hotelCode?.trim()
+          ? formData.hotelCode.trim().toUpperCase()
+          : undefined,
         taxRate: typeof formData.taxRate === 'string' ? Number(formData.taxRate) : formData.taxRate,
       };
 
@@ -231,8 +225,7 @@ export default function PropertiesPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -252,8 +245,7 @@ export default function PropertiesPage() {
         }),
       );
     } catch (e) {
-      const apiErr = handleApiError(e as AxiosError);
-      error(apiErr.message);
+      error(getErrorMessage(e));
     }
   };
 
@@ -266,6 +258,22 @@ export default function PropertiesPage() {
     { key: 'createdAt', label: 'Created', width: 'w-[200px]' },
     { key: 'actions', label: 'Actions', width: 'w-[120px]', sortable: false },
   ];
+
+  // Client-side filtering for type and status
+  const displayedProperties = useMemo(() => {
+    let filtered = properties || [];
+
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((p: Property) => p?.type === typeFilter);
+    }
+
+    if (statusFilter !== 'all') {
+      const isActive = statusFilter === 'active';
+      filtered = filtered.filter((p: Property) => Boolean(p?.isActive) === isActive);
+    }
+
+    return filtered;
+  }, [properties, typeFilter, statusFilter]);
 
   const renderPropertyRow = (property: Property) => (
     <PropertyTableRow
@@ -321,7 +329,7 @@ export default function PropertiesPage() {
         title="Properties"
         description="Manage and view all properties"
         columns={columns}
-        data={properties || []}
+        data={displayedProperties}
         loading={loading}
         emptyMessage="No properties found"
         searchBar={
@@ -362,13 +370,24 @@ export default function PropertiesPage() {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" className="flex items-center gap-2">
+            {/* <Button variant="outline" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               More Filters
-            </Button>
+            </Button> */}
           </div>
         }
         renderRow={renderPropertyRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* View Property Dialog */}
@@ -408,15 +427,15 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selectedProperty.phone || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.phone || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedProperty.email || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.email || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Website</p>
-                  <p className="font-medium">{selectedProperty.website || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.website || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Timezone</p>
@@ -432,7 +451,7 @@ export default function PropertiesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Hotel Code</p>
-                  <p className="font-medium">{selectedProperty.hotelCode || 'N/A'}</p>
+                  <p className="font-medium">{selectedProperty.hotelCode || '-'}</p>
                 </div>
               </div>
               {selectedProperty.description && (

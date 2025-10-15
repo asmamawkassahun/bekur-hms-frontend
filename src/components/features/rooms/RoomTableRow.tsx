@@ -22,7 +22,7 @@ export function RoomTableRow({
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       AVAILABLE: { color: 'bg-green-100 text-green-800', icon: Bed },
-      OCCUPIED: { color: 'bg-blue-100 text-blue-800', icon: Bed },
+      CLEANING: { color: 'bg-blue-100 text-blue-800', icon: Bed },
       MAINTENANCE: { color: 'bg-red-100 text-red-800', icon: Bed },
       OUT_OF_ORDER: { color: 'bg-gray-100 text-gray-800', icon: Bed },
     };
@@ -35,7 +35,7 @@ export function RoomTableRow({
     return (
       <Badge className={`${config.color} flex items-center gap-1`}>
         <Icon className="h-3 w-3" />
-        {status?.replace('_', ' ') || 'Unknown'}
+        {status?.replace('_', ' ') || 'AVAILABLE'}
       </Badge>
     );
   };

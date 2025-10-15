@@ -16,6 +16,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   ChevronUp,
   ChevronDown,
   FileDown,
@@ -30,6 +37,16 @@ interface Column<T> {
   width?: string;
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
+}
+
+interface DataTablePaginationProps {
+  page: number;
+  limit: number;
+  total?: number; // total items
+  totalPages?: number; // if provided by backend; else computed
+  pageSizeOptions?: number[]; // default [10, 20, 50]
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }
 
 interface DataTableProps<T> {
@@ -47,6 +64,7 @@ interface DataTableProps<T> {
   sortDirection?: 'asc' | 'desc';
   renderRow?: (item: T, index: number) => React.ReactNode;
   className?: string;
+  pagination?: DataTablePaginationProps;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -64,6 +82,7 @@ export function DataTable<T extends Record<string, any>>({
   sortDirection,
   renderRow,
   className = '',
+  pagination,
 }: DataTableProps<T>) {
   const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -419,6 +438,65 @@ export function DataTable<T extends Record<string, any>>({
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        {(() => {
+          if (!pagination) return null;
+          const totalItems =
+            typeof pagination.total === 'number'
+              ? pagination.total
+              : data.length;
+          if (totalItems <= 10) return null;
+          const computedTotalPages = Math.max(
+            1,
+            pagination.totalPages ?? Math.ceil(totalItems / Math.max(1, pagination.limit)),
+          );
+          const pageSizeOptions = pagination.pageSizeOptions ?? [10, 20, 50];
+          return (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Page {computedTotalPages ? pagination.page : 0} of {computedTotalPages}
+                {typeof pagination.total === 'number' ? ` • ${pagination.total} total` : ''}
+              </div>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={String(pagination.limit)}
+                  onValueChange={(v) => {
+                    const newLimit = Number(v);
+                    if (!Number.isNaN(newLimit)) {
+                      pagination.onLimitChange(newLimit);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[110px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pageSizeOptions.map((o) => (
+                      <SelectItem key={o} value={String(o)}>
+                        {o} / page
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  disabled={pagination.page <= 1}
+                  onClick={() => pagination.onPageChange(Math.max(1, pagination.page - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={pagination.page >= computedTotalPages}
+                  onClick={() => pagination.onPageChange(pagination.page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );

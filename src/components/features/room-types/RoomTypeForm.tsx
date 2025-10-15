@@ -402,7 +402,7 @@ export function RoomTypeForm({
 
         {/* Channel Manager Codes - Only show if property has hotelCode */}
         {selectedProperty?.hotelCode && (
-          <Card className="border-blue-200 bg-blue-50/50">
+          <Card className="">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">
                 Channel Manager Codes (Optional)

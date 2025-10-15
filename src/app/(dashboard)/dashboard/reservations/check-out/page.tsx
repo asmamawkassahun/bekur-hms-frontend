@@ -6,6 +6,7 @@ import { AppDispatch, RootState } from '@/store';
 import {
   fetchReservations,
   checkOutGuest,
+  deleteReservation,
 } from '@/store/slices/reservationSlice';
 import { fetchPayments } from '@/store/slices/paymentSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,11 +35,14 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { DataTable } from '@/components/shared/DataTable';
 import { CheckOutTableRow } from '@/components/features/reservations/CheckOutTableRow';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import type { Reservation } from '@/types';
 import type { Payment } from '@/types/payment.types';
 
 export default function CheckOutPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { reservations, loading } = useSelector(
+  const { reservations, loading, pagination } = useSelector(
     (state: RootState) => state.reservation,
   );
   const { payments } = useSelector((state: RootState) => state.payment);
@@ -53,8 +57,13 @@ export default function CheckOutPage() {
   const [checkedOutReservations, setCheckedOutReservations] = useState<any[]>(
     [],
   );
+  const [viewOpen, setViewOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Reservation | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  // Fetch checked-in reservations and checked-out reservations on mount
+  // Initial fetch for stats and payments
   useEffect(() => {
     dispatch(
       fetchReservations({
@@ -63,12 +72,15 @@ export default function CheckOutPage() {
         filters: { status: 'CHECKED_IN' },
       }),
     );
+    dispatch(fetchPayments({ page: 1, limit: 1000 }));
+  }, [dispatch]);
 
-    // Fetch checked-out reservations for the list
+  // Fetch checked-out reservations with pagination
+  useEffect(() => {
     dispatch(
       fetchReservations({
-        page: 1,
-        limit: 100,
+        page,
+        limit,
         filters: { status: 'CHECKED_OUT' },
       }),
     ).then((result: any) => {
@@ -76,10 +88,7 @@ export default function CheckOutPage() {
         setCheckedOutReservations(result.payload.data);
       }
     });
-
-    // Fetch all payments to match with reservations
-    dispatch(fetchPayments({ page: 1, limit: 1000 }));
-  }, [dispatch]);
+  }, [dispatch, page, limit]);
 
   // Set default check-out time to now
   useEffect(() => {
@@ -129,8 +138,8 @@ export default function CheckOutPage() {
 
       dispatch(
         fetchReservations({
-          page: 1,
-          limit: 100,
+          page,
+          limit,
           filters: { status: 'CHECKED_OUT' },
         }),
       ).then((result: any) => {
@@ -181,6 +190,20 @@ export default function CheckOutPage() {
     };
   };
 
+  const handleDeleteCheckout = async () => {
+    if (!selectedRow) return;
+    try {
+      await dispatch(deleteReservation(selectedRow.id)).unwrap();
+      setCheckedOutReservations((prev) => prev.filter((r) => r.id !== selectedRow.id));
+      setDeleteOpen(false);
+      setSelectedRow(null);
+      success('Checkout record deleted');
+    } catch (err: any) {
+      console.error('Delete checkout error:', err);
+      showError(err?.message || 'Failed to delete checkout record');
+    }
+  };
+
   // Calculate stats for checkout
   const checkOutStats = {
     checkedIn: reservations.filter((r) => r.status === 'CHECKED_IN').length,
@@ -204,7 +227,7 @@ export default function CheckOutPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3 ">
         <StatsCard
           title="Ready to Check Out"
           value={checkOutStats.checkedIn}
@@ -226,13 +249,13 @@ export default function CheckOutPage() {
           icon={LogOut}
           gradient="blue"
         />
-        <StatsCard
+        {/* <StatsCard
           title="Unpaid Checkouts"
           value={checkOutStats.unpaidCheckouts}
           description="Payment pending"
           icon={AlertCircle}
           gradient="rose"
-        />
+        /> */}
       </div>
 
       {/* Check-Out List */}
@@ -249,9 +272,9 @@ export default function CheckOutPage() {
           { key: 'checkIn', label: 'Check In', width: 'w-[120px]' },
           { key: 'checkOut', label: 'Check Out', width: 'w-[120px]' },
           { key: 'paidAmount', label: 'Paid', width: 'w-[90px]' },
-          { key: 'dueAmount', label: 'Due', width: 'w-[90px]' },
-          { key: 'bookingStatus', label: 'Status', width: 'w-[100px]' },
-          { key: 'paymentStatus', label: 'Payment', width: 'w-[100px]' },
+          // { key: 'dueAmount', label: 'Due', width: 'w-[90px]' },
+          // { key: 'bookingStatus', label: 'Status', width: 'w-[100px]' },
+          // { key: 'paymentStatus', label: 'Payment', width: 'w-[100px]' },
           {
             key: 'actions',
             label: 'Actions',
@@ -267,13 +290,103 @@ export default function CheckOutPage() {
             key={reservation.id}
             reservation={reservation}
             index={index}
-            onEdit={(reservation) => console.log('Edit:', reservation)}
-            onView={(reservation) => console.log('View:', reservation)}
-            onPrint={(reservation) => console.log('Print:', reservation)}
-            onDelete={(reservation) => console.log('Delete:', reservation)}
+            onView={(reservation) => {
+              setSelectedRow(reservation);
+              setViewOpen(true);
+            }}
+            onDelete={(reservation) => {
+              setSelectedRow(reservation);
+              setDeleteOpen(true);
+            }}
             getPaymentStatus={getPaymentStatus}
           />
         )}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
+      />
+
+      {/* View Checkout Details */}
+      <Dialog
+        open={viewOpen}
+        onOpenChange={(open) => {
+          setViewOpen(open);
+          if (!open) setSelectedRow(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Checkout Details</DialogTitle>
+          </DialogHeader>
+          {selectedRow && (
+            <div className="space-y-4 text-sm">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <div className="text-muted-foreground">Booking No.</div>
+                  <div className="font-medium">{selectedRow.id}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Guest</div>
+                  <div className="font-medium">
+                    {selectedRow.primaryGuest?.firstName} {selectedRow.primaryGuest?.lastName}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Room</div>
+                  <div className="font-medium">{selectedRow.room?.roomType?.name} • {selectedRow.room?.number}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Check In</div>
+                  <div className="font-medium">{new Date(selectedRow.checkedInAt || selectedRow.checkIn).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Check Out</div>
+                  <div className="font-medium">{new Date(selectedRow.checkedOutAt || selectedRow.checkOut).toLocaleString()}</div>
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">Payment</div>
+                {(() => {
+                  const p = getPaymentStatus(selectedRow.id);
+                  return (
+                    <div className="font-medium">
+                      Status: {p.status} • Paid: {p.paid}
+                    </div>
+                  );
+                })()}
+              </div>
+              {selectedRow.notes && (
+                <div>
+                  <div className="text-muted-foreground">Notes</div>
+                  <div className="whitespace-pre-wrap">{selectedRow.notes}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Checkout Confirm */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setSelectedRow(null);
+        }}
+        title="Delete Checkout"
+        description={`Are you sure you want to delete checkout ${selectedRow ? selectedRow.id : ''}? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteCheckout}
+        loading={loading}
       />
     </div>
   );

@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -33,7 +34,7 @@ const singleRoomSchema = z.object({
   roomTypeId: z.string().min(1, 'Room type is required'),
   number: z.string().min(1, 'Room number is required'),
   floor: z.number().min(0, 'Floor must be 0 or greater'),
-  status: z.enum(['AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE', 'OUT_OF_ORDER']),
+  isActive: z.boolean(),
 });
 
 const bulkRoomSchema = z.object({
@@ -43,6 +44,7 @@ const bulkRoomSchema = z.object({
   prefix: z.string().min(1, 'Prefix is required'),
   count: z.number().min(1, 'Count must be at least 1').max(50, 'Count cannot exceed 50'),
   startingNumber: z.number().min(1, 'Starting number must be at least 1'),
+  isActive: z.boolean(),
 });
 
 type SingleFormValues = z.infer<typeof singleRoomSchema>;
@@ -68,7 +70,7 @@ export function AddRoomDialog() {
       roomTypeId: '',
       number: '',
       floor: 0,
-      status: 'AVAILABLE',
+      isActive: true,
     },
   });
 
@@ -81,6 +83,7 @@ export function AddRoomDialog() {
       prefix: '',
       count: 1,
       startingNumber: 1,
+      isActive: true,
     },
   });
 
@@ -148,7 +151,7 @@ export function AddRoomDialog() {
   const onSingleSubmit = async (data: SingleFormValues) => {
     try {
       setSubmitting(true);
-      const payload: CreateRoomData = { ...data, isActive: true } as CreateRoomData;
+      const payload: CreateRoomData = { ...data } as CreateRoomData;
       await roomService.create(payload);
       success('Room created successfully');
       refreshRoomsIfOnList();
@@ -259,24 +262,14 @@ export function AddRoomDialog() {
                             </FormItem>
                           )} />
 
-                          <FormField control={singleForm.control} name="status" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="AVAILABLE">Available</SelectItem>
-                                  <SelectItem value="OCCUPIED">Occupied</SelectItem>
-                                  <SelectItem value="CLEANING">Cleaning</SelectItem>
-                                  <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                                  <SelectItem value="OUT_OF_ORDER">Out of Order</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
+                          <FormField control={singleForm.control} name="isActive" render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>Active Room</FormLabel>
+                              </div>
                             </FormItem>
                           )} />
                         </div>
@@ -399,6 +392,17 @@ export function AddRoomDialog() {
                         )} />
                       </div>
 
+                      <FormField control={bulkForm.control} name="isActive" render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Active Rooms</FormLabel>
+                          </div>
+                        </FormItem>
+                      )} />
+
                       {bulkForm.watch('roomTypeId') && (
                         <Card className="bg-muted/50">
                           <CardContent className="pt-4">
@@ -431,7 +435,7 @@ export function AddRoomDialog() {
                                 <Badge key={index} variant="outline" className="text-xs">{roomNumber}</Badge>
                               ))}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2">Rooms will be created with status: Available</p>
+                            <p className="text-xs text-muted-foreground mt-2">Rooms will be created as Active</p>
                           </CardContent>
                         </Card>
                       )}

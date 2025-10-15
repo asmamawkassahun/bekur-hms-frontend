@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -14,6 +14,8 @@ import type { Property } from '@/types';
 export default function AiosellOverviewPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     loadProperties();
@@ -32,6 +34,12 @@ export default function AiosellOverviewPage() {
       setLoading(false);
     }
   };
+
+  const displayedProperties = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return properties.slice(startIndex, endIndex);
+  }, [properties, page, limit]);
 
   const columns = [
     { key: 'property', label: 'Property', width: 'w-[200px]' },
@@ -68,10 +76,20 @@ export default function AiosellOverviewPage() {
         title="Connected Properties"
         description="Properties integrated with Aiosell Channel Manager"
         columns={columns}
-        data={properties}
+        data={displayedProperties}
         loading={loading}
         emptyMessage="No properties connected to Aiosell yet. Add a hotel code to your properties to enable integration."
         renderRow={renderAiosellRow}
+        pagination={{
+          page,
+          limit,
+          total: properties.length,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
     </div>
   );

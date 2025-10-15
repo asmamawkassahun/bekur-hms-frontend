@@ -48,6 +48,7 @@ import { useNotification } from '@/hooks/useNotification';
 import type { RootState, AppDispatch } from '@/store';
 import type { Guest, Reservation } from '@/types';
 import Link from 'next/link';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 interface EditReservationFormProps {
     reservationId: string;
@@ -425,11 +426,12 @@ export function EditReservationForm({ reservationId, onSuccess }: EditReservatio
 
     if (!reservation) {
         return (
-            <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+            <div className="p-6 space-y-6 min-h-screen">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center py-12">
-                        <h1 className="text-2xl font-bold text-gray-900 mb-4">Reservation Not Found</h1>
-                        <p className="text-gray-600 mb-6">The reservation you're looking for doesn't exist or has been deleted.</p>
+                        <PageHeader title="Reservation Not Found" description="The reservation you're looking for doesn't exist or has been deleted." />
+                        {/* <h1 className="text-2xl font-bold text-gray-900 mb-4">Reservation Not Found</h1>
+                        <p className="text-gray-600 mb-6">The reservation you're looking for doesn't exist or has been deleted.</p> */}
                         <Link href="/dashboard/reservations/list" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
                             Back to Reservations
                         </Link>
@@ -440,16 +442,17 @@ export function EditReservationForm({ reservationId, onSuccess }: EditReservatio
     }
 
     return (
-        <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="p-6 space-y-6 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
-                    <div>
+                    <PageHeader title="Edit Reservation" description={`Update reservation details for ${reservation.primaryGuest?.firstName} ${reservation.primaryGuest?.lastName}`} />
+                    {/* <div>
                         <h1 className="text-2xl font-bold text-gray-900">Edit Reservation</h1>
                         <p className="text-gray-600">Update reservation details for {reservation.primaryGuest?.firstName} {reservation.primaryGuest?.lastName}</p>
-                    </div>
+                    </div> */}
                     <Link href="/dashboard/reservations/list" className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer">
-                        <Plus className="mr-2 h-4 w-4" />
+                        {/* <Plus className="mr-2 h-4 w-4" /> */}
                         Back to List
                     </Link>
                 </div>
@@ -826,15 +829,15 @@ export function EditReservationForm({ reservationId, onSuccess }: EditReservatio
                                             {selectedGuests.map((guest) => (
                                                 <div
                                                     key={guest.id}
-                                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                                                    className="flex items-center justify-between p-3 bg-accent dark:bg-muted rounded-lg border border-border"
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <User className="h-5 w-5 text-gray-500" />
                                                         <div>
-                                                            <p className="font-medium text-gray-900">
+                                                            <p className="font-medium dark:text-foreground">
                                                                 {guest.firstName} {guest.lastName}
                                                             </p>
-                                                            <p className="text-sm text-gray-500">
+                                                            <p className="text-sm text-muted-foreground">
                                                                 {guest.email} {guest.phone && `• ${guest.phone}`}
                                                             </p>
                                                         </div>
@@ -933,28 +936,60 @@ export function EditReservationForm({ reservationId, onSuccess }: EditReservatio
                                 <h4 className="font-semibold text-gray-900">Billing Details</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div className="space-y-2">
-                                        <Label className="text-gray-600">Booking Charge</Label>
-                                        <div className="p-2 bg-gray-50 rounded border text-center">
+                                        <Label>Booking Charge</Label>
+                                        {/* <div className="p-2 bg-gray-50 rounded border text-center">
                                             {pricingData?.pricing?.subtotal || 0}
-                                        </div>
+                                        </div> */}
+                                        <Input
+                                            id="bookingCharge"
+                                            type="number"
+                                            value={pricingData?.pricing?.subtotal || 0}
+                                            placeholder="Booking Charge"
+                                            readOnly
+                                            className="bg-gray-50"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-gray-600">Tax</Label>
-                                        <div className="p-2 bg-gray-50 rounded border text-center">
+                                        <Label>Tax</Label>
+                                        {/* <div className="p-2 bg-gray-50 rounded border text-center">
                                             {pricingData?.pricing?.taxAmount || 0}
-                                        </div>
+                                        </div> */}
+                                        <Input
+                                            id="tax"
+                                            type="number"
+                                            value={pricingData?.pricing?.taxAmount || 0}
+                                            placeholder="Tax"
+                                            readOnly
+                                            className="bg-gray-50"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-gray-600">Service Charge</Label>
-                                        <div className="p-2 bg-gray-50 rounded border text-center">
+                                        <Label >Service Charge</Label>
+                                        {/* <div className="p-2 bg-gray-50 rounded border text-center">
                                             0
-                                        </div>
+                                        </div> */}
+                                        <Input
+                                            id="serviceCharge"
+                                            type="number"
+                                            value={0}
+                                            placeholder="Service Charge"
+                                            readOnly
+                                            className="bg-gray-50"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-gray-600">Total</Label>
-                                        <div className="p-2 bg-gray-50 rounded border text-center font-semibold">
+                                        <Label >Total</Label>
+                                        {/* <div className="p-2 bg-gray-50 rounded border text-center font-semibold">
                                             {pricingData?.pricing?.totalPrice || 0}
-                                        </div>
+                                        </div> */}
+                                        <Input
+                                            id="total"
+                                            type="number"
+                                            value={pricingData?.pricing?.totalPrice || 0}
+                                            placeholder="Total"
+                                            readOnly
+                                            className="bg-gray-50"
+                                        />
                                     </div>
                                 </div>
                             </div>

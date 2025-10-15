@@ -8,6 +8,7 @@ import {
   createReservation,
   confirmReservation,
   checkInGuest,
+  cancelReservation,
 } from '@/store/slices/reservationSlice';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,8 +46,10 @@ export default function ReservationsPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [openDelete, setOpenDelete] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false);
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
 
@@ -166,12 +169,12 @@ export default function ReservationsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch with filtering - always fetch when filters change
+  // Fetch with pagination
   useEffect(() => {
     dispatch(
       fetchReservations({
-        page: 1,
-        limit: 100, // Increased limit to show more results
+        page,
+        limit,
         filters: {
           status:
             statusFilter === 'all'
@@ -184,16 +187,15 @@ export default function ReservationsPage() {
       console.error('Failed to fetch reservations:', err);
       showError('Failed to load reservations');
     });
-  }, [dispatch, debouncedSearch, statusFilter, showError]);
+  }, [dispatch, debouncedSearch, statusFilter, showError, page, limit]);
 
-  const handleDeleteReservation = async () => {
+  const handleCancelReservation = async () => {
     if (!selectedReservation) return;
     try {
-      // TODO: Uncomment when deleteReservation is implemented
-      // await dispatch(deleteReservation(selectedReservation.id)).unwrap();
+      await dispatch(cancelReservation({ id: selectedReservation.id })).unwrap();
 
-      success('Reservation deleted');
-      setOpenDelete(false);
+      success('Reservation cancelled');
+      setOpenCancel(false);
       setSelectedReservation(null);
 
       // Refetch with current search term
@@ -211,9 +213,9 @@ export default function ReservationsPage() {
         }),
       );
     } catch (e) {
-      console.error('Delete reservation error:', e);
+      console.error('Cancel reservation error:', e);
       const apiErr = handleApiError(e as AxiosError);
-      showError(apiErr.message || 'Failed to delete reservation');
+      showError(apiErr.message || 'Failed to cancel reservation');
     }
   };
 
@@ -285,9 +287,9 @@ export default function ReservationsPage() {
       onCheckIn={(r) => {
         handleCheckIn(r);
       }}
-      onDelete={(r) => {
+      onCancel={(r) => {
         setSelectedReservation(r);
-        setOpenDelete(true);
+        setOpenCancel(true);
       }}
     />
   );
@@ -340,30 +342,41 @@ export default function ReservationsPage() {
                 <SelectItem value="NO_SHOW">No Show</SelectItem>
               </SelectContent>
             </Select>
-            <Button
+            {/* <Button
               variant="outline"
               className="flex items-center gap-2 cursor-pointer"
             >
               <Filter className="h-4 w-4" />
               More Filters
-            </Button>
+            </Button> */}
           </div>
         }
         renderRow={renderReservationRow}
+        pagination={{
+          page,
+          limit,
+          total: pagination?.total,
+          totalPages: pagination?.totalPages,
+          onPageChange: (p) => setPage(Math.max(1, p)),
+          onLimitChange: (l) => {
+            setLimit(l);
+            setPage(1);
+          },
+        }}
       />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        open={openDelete}
+        open={openCancel}
         onOpenChange={(open) => {
-          setOpenDelete(open);
+          setOpenCancel(open);
           if (!open) setSelectedReservation(null);
         }}
-        title="Delete Reservation"
-        description={`Are you sure you want to delete this reservation? This action cannot be undone.`}
-        confirmText="Delete"
+        title="Cancel Reservation"
+        description={`Are you sure you want to cancel this reservation? The guest will not be checked in.`}
+        confirmText="Cancel Reservation"
         variant="destructive"
-        onConfirm={handleDeleteReservation}
+        onConfirm={handleCancelReservation}
         loading={loading}
       />
     </div>

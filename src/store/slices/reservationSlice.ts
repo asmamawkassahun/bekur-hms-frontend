@@ -195,9 +195,17 @@ export const cancelReservation = createAsyncThunk(
     try {
       const response = await reservationService.cancel(id, reason);
       return response.data;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to cancel reservation';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      // Extract error message from API response
+      let errorMessage = 'Failed to cancel reservation';
+
+      if (error?.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       return rejectWithValue(errorMessage);
     }
   },

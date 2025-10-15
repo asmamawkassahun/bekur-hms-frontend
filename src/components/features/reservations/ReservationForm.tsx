@@ -53,6 +53,7 @@ import { useNotification } from '@/hooks/useNotification';
 import type { RootState, AppDispatch } from '@/store';
 import type { Guest } from '@/types';
 import Link from 'next/link';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 interface ReservationFormProps {
   mode: 'booking' | 'direct-checkin';
@@ -594,22 +595,23 @@ export function ReservationForm({ mode, onSuccess }: ReservationFormProps) {
       ? '/dashboard/reservations/check-in'
       : '/dashboard/reservations/list';
   const backLinkText =
-    mode === 'direct-checkin' ? 'Check-In List' : 'Book List';
+    mode === 'direct-checkin' ? 'Check-In List' : 'Book to List';
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div>
+          <PageHeader title={pageTitle} description={pageDescription} />
+          {/* <div>
             <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
             <p className="text-gray-600">{pageDescription}</p>
-          </div>
+          </div> */}
           <Link
             href={backLink}
             className="bg-primary flex items-center px-4 py-1.5 rounded-md text-primary-foreground hover:bg-primary/90 cursor-pointer"
           >
-            <Plus className="mr-2 h-4 w-4" />
+            {/* <Plus className="mr-2 h-4 w-4" /> */}
             {backLinkText}
           </Link>
         </div>
